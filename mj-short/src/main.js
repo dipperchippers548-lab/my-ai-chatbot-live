@@ -540,7 +540,7 @@ shot(28.9, 32.4, () => {
   return { scene, cam, update(tl, d, t) {
     u.value = t; ex.reset(); ex.skin(1); const paid = tl > 1.25, a = tl - 1.25; ex.face(paid ? 'happy' : 'worried'); const k = ss(0, .8, tl); ex.root.position.set(lerp(-2.2, 0, k), 0, 0); ex.root.rotation.y = lerp(1.2, 0, k); if (k < 1) ex.walk(tl * 12, .6);
     if (paid) { ex.arms[0].rotation.x = -1.2; ex.arms[1].rotation.x = -1.2; ex.body.position.y = Math.abs(Math.sin(tl * 8)) * .04; } sweatAt(dr, tl, ex.root.position.x, 2.0, 0, paid ? 0 : 3); dr.forEach(p => p.visible = !paid);
-    check.visible = paid; check.position.set(0, 1.28, .75); check.rotation.z = Math.sin(t * 4) * .03; check.scale.setScalar(paid ? pop(a) * .74 : .001);
+    bc.visible = !paid; check.visible = paid; check.position.set(0, 1.28, .75); check.rotation.z = Math.sin(t * 4) * .03; check.scale.setScalar(paid ? pop(a) * .74 : .001);
     cash.forEach(c => { const i = c.userData, q = (a * .75 + i / 16) % 1; c.visible = paid; c.position.set(((i * 37) % 16 / 16 - .5) * 3.4 + Math.sin(q * 6 + i) * .2, 4.6 - q * 5, ((i * 53) % 7 / 7 - .5) * 1.6 + .3); c.rotation.set(q * 7 + i, q * 5, i); });
     look(cam, 0, 1.7, 3.9 * punch(tl, .15) * (paid ? punch(a, .18) : 1), 0, 1.5, 0);
   } };
