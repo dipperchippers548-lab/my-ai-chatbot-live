@@ -1,13 +1,16 @@
 """Synthesise the sound effects and mix them under the voiceover -> build/mix.wav"""
-import numpy as np, wave
+import numpy as np, wave, json
 from scipy.signal import butter, lfilter
 SR = 44100
-w = wave.open('build/voice44k.wav'); voice = np.frombuffer(w.readframes(w.getnframes()), dtype=np.int16).astype(np.float64) / 32768; w.close()
-N = int(39.6 * SR); voice = np.pad(voice, (0, max(0, N - len(voice))))[:N]
+CUT = json.load(open('build/cuts.json'))
+def tm(t):  # original time -> time after the pauses are cut
+    return t - sum(min(t, b) - a for a, b in CUT['cuts'] if t > a)
+w = wave.open('build/voice_cut.wav'); voice = np.frombuffer(w.readframes(w.getnframes()), dtype=np.int16).astype(np.float64) / 32768; w.close()
+N = int(CUT['duration'] * SR); voice = np.pad(voice, (0, max(0, N - len(voice))))[:N]
 voice *= 0.84 / np.abs(voice).max()
 sfx = np.zeros(N); rs = np.random.RandomState(3)
 def put(sig, t, g=1.0):
-    i = int(t * SR); sig = sig[:max(0, N - i)]; sfx[i:i + len(sig)] += sig * g
+    i = int(tm(t) * SR); sig = sig[:max(0, N - i)]; sfx[i:i + len(sig)] += sig * g
 def tt(d): return np.arange(int(d * SR)) / SR
 def env(d, a=.005, r=None):
     t = tt(d); r = r or d * .7; return np.minimum(1, t / a) * np.minimum(1, (d - t) / r)
@@ -48,10 +51,10 @@ put(blip(520, .1), 18.6, .12); put(blip(780, .14), 18.72, .12)
 for i, t in enumerate(np.arange(20.15, 22.6, .483)): put(sweep(220, 520, .13) * env(.13), t, .07)
 put(arp((1568, 1976, 2349, 3136)), 22.86, .13)
 put(vowel(520, 380, .75), 24.85, .16)
-for i, t in enumerate(np.arange(26.3, 28.4, .14)): put(tick(2600 if i % 2 else 2000), t, .12)
-put(pop(), 28.5, .22)
-put(blip(1760, .09), 29.72, .12); put(blip(1760, .09), 29.86, .12)
-hum = (np.sin(2 * np.pi * 58 * tt(3.05)) + .3 * np.sin(2 * np.pi * 116 * tt(3.05))) * env(3.05, .1, .15); put(hum, 29.72, .02)
+for i, t in enumerate(np.arange(26.25, 28.0, .14)): put(tick(2600 if i % 2 else 2000), t, .07)
+put(pop(), 28.08, .11)
+put(blip(1760, .09), 29.8, .12); put(blip(1760, .09), 29.94, .12)
+HD = tm(32.8) - tm(29.8); hum = (np.sin(2 * np.pi * 58 * tt(HD)) + .3 * np.sin(2 * np.pi * 116 * tt(HD))) * env(HD, .1, .15); put(hum, 29.8, .02)
 put(blip(1200, .08), 32.84, .08)
 for i in range(6): put(vowel(250 - i * 12, 215 - i * 12, .1, ((700, 1100), (1200, 1700))), 34.66 + i * .17, .14)
 put(vowel(233, 220, .42, ((300, 700), (900, 1400))), 36.48, .13); put(vowel(196, 165, .6, ((300, 700), (900, 1400))), 36.92, .13)

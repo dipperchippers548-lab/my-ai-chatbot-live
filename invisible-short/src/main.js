@@ -447,11 +447,11 @@ shot(26.0, 29.7, () => {
   clock.position.set(0, 2.35, 0); scene.add(clock);
   const crumbs = [...Array(8)].map((_, i) => { const c = box(.09, .09, .09, mat({ color: [0xc98a3c, 0x4fb53a, 0xd8372c, 0xf4c21a][i % 4] })); scene.add(c); return c; });
   return { scene, cam, update(tl, d, t) {
-    u.value = t * 1.6; const k = ss(.25, 2.4, tl), gone = tl > 2.5;
-    hourH.rotation.z = -k * Math.PI * 2 / 3; minH.rotation.z = -k * Math.PI * 8; clock.rotation.z = Math.sin(tl * 3) * .05; clock.scale.setScalar(1 + (gone ? Math.exp(-(tl - 2.5) * 6) * .25 : 0));
+    u.value = t * 1.6; const k = ss(.2, 2.0, tl), gone = tl > 2.08;
+    hourH.rotation.z = -k * Math.PI * 2 / 3; minH.rotation.z = -k * Math.PI * 8; clock.rotation.z = Math.sin(tl * 3) * .05; clock.scale.setScalar(1 + (gone ? Math.exp(-(tl - 2.08) * 6) * .25 : 0));
     const s = gone ? 0 : (1 - Math.floor(k * 7) / 7 * .82) * (1 + Math.sin(tl * 26) * .04);
     bg.visible = !gone; bg.scale.setScalar(.95 * s); bg.position.set(0, .85, 0); bg.rotation.set(.38, tl * 1.4, Math.sin(tl * 9) * .06);
-    crumbs.forEach((c, i) => { const a = tl - 2.5; c.visible = gone && a < .7; const an = i / 8 * 6.283; c.position.set(Math.cos(an) * a * 2.2, .85 + Math.sin(an) * a * 2.2 - a * a * 2.5, 0); c.rotation.set(a * 9, a * 7, 0); });
+    crumbs.forEach((c, i) => { const a = tl - 2.08; c.visible = gone && a < .7; const an = i / 8 * 6.283; c.position.set(Math.cos(an) * a * 2.2, .85 + Math.sin(an) * a * 2.2 - a * a * 2.5, 0); c.rotation.set(a * 9, a * 7, 0); });
     look(cam, 0, 1.3, 6.0, 0, 1.2, 0);
   } };
 });
@@ -528,7 +528,7 @@ function buildCaptions(words) {
     cur.push(w); if (/[.,?!]$/.test(w.w)) flush();
   }
   flush();
-  chunks.forEach((c, i) => { const n = chunks[i + 1]; c.s -= .06; c.e = n && n.s - c.e < .45 ? n.s - .06 : c.e + .22; });
+  chunks.forEach((c, i) => { const n = chunks[i + 1]; c.s -= .06; c.e = n ? n.s - .06 : c.e + .5; });
 }
 function drawCaption(t) {
   const c = chunks.find(c => t >= c.s && t < c.e); if (!c) return;
@@ -562,8 +562,10 @@ function renderAt(t) {
   drawCaption(t);
 }
 window.renderTime = t => { renderAt(t); return out.toDataURL('image/jpeg', .93); };
-window.renderFrame = i => window.renderTime((i + .5) / FPS);
-window.frameCount = Math.round(DUR * FPS);
+const cutInfo = await (await fetch('/build/cuts.json')).json();
+const toOriginal = tc => { let t = tc; for (const [a, b] of cutInfo.cuts) { if (t >= a) t += b - a; else break; } return Math.min(t, DUR - .001); };
+window.renderFrame = i => window.renderTime(toOriginal((i + .5) / FPS));
+window.frameCount = Math.round(cutInfo.duration * FPS);
 const words = await (await fetch('/build/words.json')).json(); buildCaptions(words);
 await document.fonts.load('900 58px Nunito');
 window.captionChunks = chunks;
