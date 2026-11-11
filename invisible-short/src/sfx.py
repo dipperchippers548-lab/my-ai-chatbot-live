@@ -60,8 +60,11 @@ for i in range(6): put(vowel(250 - i * 12, 215 - i * 12, .1, ((700, 1100), (1200
 put(vowel(233, 220, .42, ((300, 700), (900, 1400))), 36.48, .13); put(vowel(196, 165, .6, ((300, 700), (900, 1400))), 36.92, .13)
 put(shimmer(False), 37.95, .13)
 sfx = sfx - np.mean(sfx)
-mix = voice + sfx; mix = np.tanh(mix * 1.05) / np.tanh(1.05) * .95
+from music import make_music
+music = make_music(CUT['duration'], tm); music *= 10 ** (-37.5 / 20) / np.sqrt(np.mean(music ** 2))  # sits well under the voice
+mix = voice + sfx + music; mix = np.tanh(mix * 1.05) / np.tanh(1.05) * .95
 def db(x): return 20 * np.log10(np.sqrt(np.mean(x ** 2)) + 1e-9)
+print('music rms %.1f dB peak %.2f' % (db(music), np.abs(music).max()))
 print('voice rms %.1f dB peak %.2f | sfx rms %.1f dB peak %.2f | mix peak %.2f' % (db(voice), np.abs(voice).max(), db(sfx), np.abs(sfx).max(), np.abs(mix).max()))
 worst = sorted((((db(sfx[i:i + SR // 2]) - db(voice[i:i + SR // 2])), i / SR) for i in range(0, N - SR // 2, SR // 4) if db(voice[i:i + SR // 2]) > -30), reverse=True)[:6]
 print('loudest sfx relative to speech (dB, at s):', [(round(a, 1), b) for a, b in worst])
