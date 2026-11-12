@@ -158,7 +158,7 @@ shot(7.05, 8.03, () => { const S = world(), hs = town(S.G.belly), kid = person(S
   return { ...S, update(tl, d, t) { S.G.breathe(breath(t * 2)); kid.set('smug'); kid.arms[0].rotation.x = -1.3; kid.root.position.y = 7 + Math.abs(Math.sin(t * 6)) * .35; look(S.cam, [2.2, 9.2, 10.2], [.4, 8.4, 5.4]); } }; });
 // 5-8 the three rules
 function sRules(n, hi, extra) { return () => { const S = world(), hs = town(S.G.belly), B = rulesBoard(S.cam), kid = person(S.G.belly, PEOPLE[n === 0 ? 1 : n === 1 ? 0 : n === 2 ? 3 : 2], .2, 5.8, 0, .36), lines = ['1. never run', '2. never shout', '3. never EVER sneeze'].slice(0, n);
-  return { ...S, update(tl, d, t) { S.G.breathe(breath(t)); B.draw(lines, hi); B.m.scale.setScalar(n === 0 ? pop(tl) : 1); B.m.position.set(-.44, .6, -3.6); B.m.scale.multiplyScalar(.78); extra && extra(kid, tl, t); look(S.cam, [-.5, 8.5, 9.8], [-.6, 7.9, 5.8]); } }; }; }
+  return { ...S, update(tl, d, t) { S.G.breathe(breath(t)); B.draw(lines, hi); B.m.scale.setScalar(n === 0 ? pop(tl) : 1); B.m.position.set(-.44, .6, -3.6); B.m.scale.multiplyScalar(.78); extra && extra(kid, tl, t); look(S.cam, [-.5, 8.9, 10.4], [-.6, 8.3, 5.8]); } }; }; }
 shot(8.03, 9.22, sRules(0, -1, (k, tl) => { k.set('happy'); }));
 shot(9.22, 9.78, sRules(1, 0, (k, tl, t) => { k.set('shocked'); k.legs[0].rotation.x = -.7; k.legs[1].rotation.x = .6; k.arms[0].rotation.x = .7; k.arms[1].rotation.x = -.7; }));
 shot(9.78, 10.63, sRules(2, 1, (k, tl, t) => { k.set('shh'); k.arms[1].rotation.x = -2.2; k.arms[1].rotation.z = -.15; }));
@@ -177,7 +177,7 @@ shot(15.38, 17.41, () => { const S = world(dawnTex), hs = town(S.G.belly), rings
   return { ...S, update(tl, d, t) { const sn = Math.max(0, Math.sin(t * 5)); S.G.face(sn > .3 ? 'snore' : 'sleep'); S.G.breathe(breath(t)); rings.forEach((r, i) => { const q = (tl * 1.2 + i / 3) % 1; r.position.set(0, 10 + q * 3, -12); r.scale.setScalar(1 + q * 4); r.material.opacity = 1 - q; });
     zs.forEach((z, i) => { const q = (t * .5 + i / 3) % 1; z.position.set(-2 + i * 2, 11 + q * 6, -13); z.scale.setScalar(1.5 + q * 2); });
     hs.forEach((h, i) => { if (h) { h.userData.wins.forEach(w => { w.position.x = (w.position.x > 0 ? .6 : -.6) + Math.sin(t * 60 + i) * .06; w.rotation.z = Math.sin(t * 50 + i) * .2; }); h.rotation.z = Math.sin(t * 40 + i) * .03; } });
-    const k = ss(0, 1.0, tl); S.cam.up.set(0, 0, k < .5 ? 0 : 1); if (k < .5) look(S.cam, [0, 30, -32], [0, 9, -10]); else look(S.cam, [0, 26, -6], [0, 9.4, -11]); shake(S.cam, t, .15 * sn); } }; });
+    const k = ss(0, 1.0, tl); if (k < .5) S.cam.up.set(0, 1, 0); else S.cam.up.set(0, 0, 1); if (k < .5) look(S.cam, [0, 30, -32], [0, 9, -10]); else look(S.cam, [0, 26, -6], [0, 9.4, -11]); shake(S.cam, t, .15 * sn); } }; });
 // 12 "and the chickens lift off the ground."
 shot(17.41, 19.23, () => { const S = world(dawnTex), hs = town(S.G.belly), ch = [...Array(6)].map((_, i) => { const c = chicken(); c.position.set(-2.5 + i, 7, 4 + (i % 2)); S.G.belly.add(c); return c; });
   return { ...S, update(tl, d, t) { S.G.breathe(breath(t)); ch.forEach((c, i) => { const up = ss(.2 + i * .1, 1.6, tl); c.position.y = 7 + up * (2 + i * .3) + Math.sin(t * 4 + i) * .1; c.rotation.z = Math.sin(t * 3 + i) * .3 * up; c.userData.wings.forEach((w, j) => w.rotation.z = (j ? 1 : -1) * (.3 + Math.abs(Math.sin(t * 22 + i)) * 1.0)); }); look(S.cam, [1, 9.0, 12.5], [.3, 9.0, 4.5]); shake(S.cam, t, .05); } }; });
@@ -201,13 +201,13 @@ shot(27.36, 29.01, () => { const S = world(nightTex, true), hs = town(S.G.belly,
   return { ...S, update(tl, d, t) { WINM.forEach(w => w.emissiveIntensity = 1.4); S.G.breathe(.5); baker.set('sad'); baker.head.rotation.x = .25; look(S.cam, [3.6, 10.2, 7.2], [1.6, 7.4, 1.8]); } }; });
 // 18 "So now we have four rules."
 shot(29.01, 30.77, () => { const S = world(), hs = town(S.G.belly, false), B = rulesBoard(S.cam), kid = person(S.G.belly, PEOPLE[2], .2, 5.8, 0, .36);
-  return { ...S, update(tl, d, t) { S.G.breathe(breath(t)); B.draw(['1. never run', '2. never shout', '3. never EVER sneeze', tl > .8 ? '4. NO. SNEEZING.' : ''], tl > .8 ? 3 : -1); B.m.position.set(-.44, .6, -3.6); B.m.scale.setScalar(.78); kid.set('annoyed'); look(S.cam, [-.5, 8.5, 9.8], [-.6, 7.9, 5.8]); } }; });
+  return { ...S, update(tl, d, t) { S.G.breathe(breath(t)); B.draw(['1. never run', '2. never shout', '3. never EVER sneeze', tl > .8 ? '4. NO. SNEEZING.' : ''], tl > .8 ? 3 : -1); B.m.position.set(-.44, .6, -3.6); B.m.scale.setScalar(.78); kid.set('annoyed'); look(S.cam, [-.5, 8.9, 10.4], [-.6, 8.3, 5.8]); } }; });
 // 19 "And no more bakery."
 shot(30.77, 32.28, () => { const S = world(), hs = town(S.G.belly, false), baker = person(S.G.belly, BAKER, 1.8, 2.6, -.3, .36), bread = mesh(rb(.9, .45, .45, .2), mat(0xd89048), 0, 0, 0), sign = hudSign(S.cam, 'CLOSED FOREVER', '#ffffff', '#ff4a6a', .7); baker.arms[0].add(bread); bread.position.set(0, -2.05, .4);
   return { ...S, update(tl, d, t) { S.G.breathe(breath(t)); baker.set('sad'); baker.arms[0].rotation.x = -1.2; baker.head.rotation.z = Math.sin(t * 3) * .08; sign.scale.setScalar(pop(tl - .35)); look(S.cam, [2.6, 9.4, 6.8], [1.8, 8.4, 2.6]); } }; });
 // 20 "And this morning, for the first time ever,"
 shot(32.28, 34.66, () => { const S = world(dawnTex), hs = town(S.G.belly, false), ppl = [0, 1, 2].map(i => person(S.G.belly, PEOPLE[i], -2 + i * 2, 5.0)), zs = [0, 1].map(() => zLetter(S.scene));
-  return { ...S, update(tl, d, t) { S.G.breathe(breath(t)); ppl.forEach(p => p.set('happy')); zs.forEach((z, i) => { const q = (t * .3 + i / 2) % 1; z.position.set(-2 - q * 4, 12 + q * 7, -14); z.scale.setScalar(2 + q * 3); }); const k = ss(0, d, tl); S.cam.up.set(0, 0, k > .5 ? 1 : 0); look(S.cam, [lerp(-18, 0, k), lerp(18, 28, k), lerp(26, -8, k)], [0, lerp(6, 9.4, k), lerp(0, -11, k)]); } }; });
+  return { ...S, update(tl, d, t) { S.G.breathe(breath(t)); ppl.forEach(p => p.set('happy')); zs.forEach((z, i) => { const q = (t * .3 + i / 2) % 1; z.position.set(-2 - q * 4, 12 + q * 7, -14); z.scale.setScalar(2 + q * 3); }); const k = ss(0, d, tl); if (k > .5) S.cam.up.set(0, 0, 1); else S.cam.up.set(0, 1, 0); look(S.cam, [lerp(-18, 0, k), lerp(18, 28, k), lerp(26, -8, k)], [0, lerp(6, 9.4, k), lerp(0, -11, k)]); } }; });
 // 21 "he opened one eye."
 shot(34.66, DUR + .1, () => { const S = world(dawnTex), hs = town(S.G.belly, false);
   return { ...S, update(tl, d, t) { S.G.breathe(.6); S.G.face(tl > .2 ? 'oneEye' : 'sleep'); S.cam.up.set(0, 0, 1); const z = tl > .2 ? lerp(19, 15, ss(.2, .6, tl)) : 19; look(S.cam, [1.5, z + 9.4, -12], [1.5, 9.4, -11]); if (tl > .2) shake(S.cam, t, .2 * Math.exp(-(tl - .2) * 6)); } }; });
