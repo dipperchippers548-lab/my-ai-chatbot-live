@@ -6,8 +6,42 @@ export function makePost(renderer, W, H) {
   const rtScene = new THREE.WebGLRenderTarget(W, H, { type: THREE.HalfFloatType, samples: 4 });
   rtScene.depthTexture = new THREE.DepthTexture(W, H); rtScene.depthTexture.type = THREE.UnsignedIntType;
   const rtDof = new THREE.WebGLRenderTarget(W, H, { type: THREE.HalfFloatType });
+  // ambient occlusion from depth (half resolution) -> multiplied into the image before the lens blur
+  const rtAO = new THREE.WebGLRenderTarget(Math.ceil(W / 2), Math.ceil(H / 2), { type: THREE.HalfFloatType });
+  const rtComp = new THREE.WebGLRenderTarget(W, H, { type: THREE.HalfFloatType });
+  const aoMat = new THREE.ShaderMaterial({
+    uniforms: { tDepth: { value: rtScene.depthTexture }, near: { value: .05 }, far: { value: 600 }, proj: { value: new THREE.Matrix4() }, projInv: { value: new THREE.Matrix4() }, radius: { value: .2 }, res: { value: new THREE.Vector2(W / 2, H / 2) } },
+    vertexShader: vs,
+    fragmentShader: `#include <packing>
+      uniform sampler2D tDepth; uniform float near, far, radius; uniform mat4 proj, projInv; uniform vec2 res; varying vec2 vUv;
+      vec3 viewPos(vec2 uv){ float d = texture2D(tDepth, uv).x; vec4 c = vec4(uv * 2. - 1., d * 2. - 1., 1.); vec4 v = projInv * c; return v.xyz / v.w; }
+      void main(){
+        float d0 = texture2D(tDepth, vUv).x; if (d0 >= .9999) { gl_FragColor = vec4(1.); return; }
+        vec3 P = viewPos(vUv); vec2 px = 1. / res;
+        vec3 N = normalize(cross(viewPos(vUv + vec2(px.x, 0.)) - P, viewPos(vUv + vec2(0., px.y)) - P));
+        float noise = fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(.06711056, .00583715))));
+        float occ = 0.; const int S = 14; float r = radius * clamp(-P.z / 3., .6, 3.);
+        for (int i = 0; i < S; i++) {
+          float fi = (float(i) + noise) / float(S); float a = fi * 37.7 + noise * 6.28;
+          vec3 dir = vec3(cos(a) * sqrt(1. - fi * fi), sin(a) * sqrt(1. - fi * fi), fi); // hemisphere sample
+          vec3 t = normalize(abs(N.y) < .99 ? cross(N, vec3(0., 1., 0.)) : cross(N, vec3(1., 0., 0.))); vec3 b = cross(N, t);
+          vec3 Sp = P + (t * dir.x + b * dir.y + N * dir.z) * r * (.25 + .75 * fi * fi);
+          vec4 c = proj * vec4(Sp, 1.); vec2 suv = c.xy / c.w * .5 + .5;
+          float sz = viewPos(suv).z; float range = smoothstep(0., 1., r / abs(P.z - sz));
+          occ += (sz >= Sp.z + .02 ? 1. : 0.) * range; }
+        float ao = 1. - occ / float(S); gl_FragColor = vec4(vec3(ao), 1.); }`,
+    depthTest: false, depthWrite: false
+  });
+  const compMat = new THREE.ShaderMaterial({
+    uniforms: { tColor: { value: rtScene.texture }, tAO: { value: rtAO.texture }, aoRes: { value: new THREE.Vector2(W / 2, H / 2) }, strength: { value: .75 } },
+    vertexShader: vs,
+    fragmentShader: `uniform sampler2D tColor, tAO; uniform vec2 aoRes; uniform float strength; varying vec2 vUv;
+      void main(){ float a = 0.; for (int x = -1; x <= 1; x++) for (int y = -1; y <= 1; y++) a += texture2D(tAO, vUv + vec2(float(x), float(y)) * 1.5 / aoRes).r; a /= 9.;
+        vec4 c = texture2D(tColor, vUv); gl_FragColor = vec4(c.rgb * mix(1., a, strength), 1.); }`,
+    depthTest: false, depthWrite: false
+  });
   const dofMat = new THREE.ShaderMaterial({
-    uniforms: { tColor: { value: rtScene.texture }, tDepth: { value: rtScene.depthTexture }, near: { value: .05 }, far: { value: 600 }, focus: { value: 3 }, cInf: { value: 0 }, res: { value: new THREE.Vector2(W, H) } },
+    uniforms: { tColor: { value: rtComp.texture }, tDepth: { value: rtScene.depthTexture }, near: { value: .05 }, far: { value: 600 }, focus: { value: 3 }, cInf: { value: 0 }, res: { value: new THREE.Vector2(W, H) } },
     vertexShader: vs,
     fragmentShader: `#include <packing>
       uniform sampler2D tColor, tDepth; uniform float near, far, focus, cInf; uniform vec2 res; varying vec2 vUv;
@@ -27,7 +61,7 @@ export function makePost(renderer, W, H) {
     depthTest: false, depthWrite: false
   });
   const finalMat = new THREE.ShaderMaterial({
-    uniforms: { t: { value: rtDof.texture }, exposure: { value: 1.0 }, sat: { value: 1.1 }, vig: { value: .16 }, flash: { value: 0 } },
+    uniforms: { t: { value: rtDof.texture }, exposure: { value: 1.04 }, sat: { value: 1.15 }, vig: { value: .14 }, flash: { value: 0 } },
     vertexShader: vs,
     fragmentShader: `uniform sampler2D t; uniform float exposure, sat, vig, flash; varying vec2 vUv;
       vec3 RRTAndODTFit(vec3 v){ vec3 a = v * (v + .0245786) - .000090537; vec3 b = v * (.983729 * v + .4329510) + .238081; return a / b; }
@@ -42,11 +76,14 @@ export function makePost(renderer, W, H) {
   });
   const qs = new THREE.Scene(), qc = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1); const quad = new THREE.Mesh(quadGeo, dofMat); qs.add(quad);
   return {
-    dofMat, finalMat,
+    dofMat, finalMat, aoMat, compMat,
     render(scene, cam, { focus = 3, cInf = 0, exposure = 1, flash = 0 } = {}) {
       dofMat.uniforms.near.value = cam.near; dofMat.uniforms.far.value = cam.far; dofMat.uniforms.focus.value = focus; dofMat.uniforms.cInf.value = cInf;
-      finalMat.uniforms.exposure.value = exposure; finalMat.uniforms.flash.value = flash;
+      finalMat.uniforms.exposure.value = exposure * 1.04; finalMat.uniforms.flash.value = flash;
       renderer.setRenderTarget(rtScene); renderer.render(scene, cam);
+      aoMat.uniforms.proj.value.copy(cam.projectionMatrix); aoMat.uniforms.projInv.value.copy(cam.projectionMatrixInverse); aoMat.uniforms.near.value = cam.near; aoMat.uniforms.far.value = cam.far;
+      quad.material = aoMat; renderer.setRenderTarget(rtAO); renderer.render(qs, qc);
+      quad.material = compMat; renderer.setRenderTarget(rtComp); renderer.render(qs, qc);
       quad.material = dofMat; renderer.setRenderTarget(rtDof); renderer.render(qs, qc);
       quad.material = finalMat; renderer.setRenderTarget(null); renderer.render(qs, qc);
     }

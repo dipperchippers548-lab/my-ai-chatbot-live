@@ -17,6 +17,11 @@ export function makeStory({ cam, world, lulu, biscuit, bobble, bubbles, TL }) {
     return clamp(v);
   }
   const mouthOf = (who, t) => { const arr = TL.mouth[who]; const f = t * TL.fps, i = Math.floor(f); if (i < 0 || i >= arr.length - 1) return 0; return lerp(arr[i], arr[i + 1], f - i); };
+  const VOWEL = { bub: 'ah', bles: 'eh', ble: 'eh', round: 'ow', and: 'ah', float: 'oo', ing: 'ee', up: 'ah', down: 'ow', in: 'ee', the: 'eh', air: 'eh', ev: 'eh', ery: 'ee', where: 'eh',
+    ti: 'ah', ny: 'ee', one: 'ah', two: 'oo', three: 'ee', a: 'ah', bove: 'ah', tree: 'ee', lu: 'oo', pops: 'ah', them: 'eh', pop: 'ah', big: 'ee', wob: 'ah', off: 'ah', ground: 'ow',
+    then: 'eh', it: 'ee', goes: 'oo', bis: 'ee', cuit: 'ee', jumps: 'ah', to: 'oo', catch: 'ah', too: 'oo', on: 'ah', his: 'ee', nose: 'oo', choo: 'oo' };
+  const SYL = TL.sung.flatMap(l => l.notes.map(([s, m, t0, d]) => ({ v: VOWEL[s.toLowerCase().replace(/[^a-z]/g, '')] || 'ah', t0, t1: t0 + d })));
+  const vowelAt = t => { const s = SYL.find(x => t >= x.t0 - .04 && t < x.t1); return s ? s.v : 'ah'; };
   const pulse = (t, t0, a = .04, d = .25) => (t >= t0 && t < t0 + d) ? Math.sin((t - t0) / d * Math.PI) * a : 0;
   const near = (t, list, w) => list.some(x => Math.abs(t - x) < w);
 
@@ -26,11 +31,11 @@ export function makeStory({ cam, world, lulu, biscuit, bobble, bubbles, TL }) {
   const SH = [
     [0, B(2), { p: [0, 4.6, 7.4], l: [0, 4.2, -8], fov: 42 }, { p: [.15, 1.0, 3.3], l: [0, .72, 0], fov: 38 }, 'lulu', 4, 'crane'],
     [B(2), B(3), { p: [.85, .82, 2.5], l: [.25, .62, .1], fov: 36 }, { p: [.7, .8, 2.15], l: [.25, .64, .1], fov: 36 }, 'lulu', 9],
-    [B(3), B(4), { p: [-.55, .86, 1.75], l: [-.02, .74, 0], fov: 34 }, { p: [-.4, .84, 1.5], l: [0, .74, 0], fov: 34 }, 'lulu', 12],
+    [B(3), B(4), { p: [-.55, .86, 1.75], l: [-.02, .67, 0], fov: 34 }, { p: [-.4, .84, 1.5], l: [0, .67, 0], fov: 34 }, 'lulu', 12],
     [B(4), B(5), { p: [.55, .32, 1.55], l: [-.25, 1.45, -1], fov: 46 }, { p: [.5, .3, 1.45], l: [-.35, 1.9, -1.2], fov: 46 }, 'lulu', 7],
     [B(5), B(6), { p: [2.6, 1.15, 3.1], l: [.3, .55, .1], fov: 38 }, { p: [-1.4, 1.1, 3.4], l: [.2, .55, .1], fov: 38 }, 'lulu', 3],
     [B(6), B(7), { p: [0, .95, 2.3], l: [0, .7, 0], fov: 38 }, { p: [0, 2.5, 4.9], l: [0, .7, 0], fov: 40 }, 'lulu', 2],
-    [B(7), B(8), { p: [.22, .8, 1.75], l: [0, .8, 0], fov: 34 }, { p: [.2, .8, 1.55], l: [0, .8, 0], fov: 34 }, 'lulu', 11],
+    [B(7), B(8), { p: [.22, .82, 1.75], l: [0, .7, 0], fov: 34 }, { p: [.2, .82, 1.55], l: [0, .71, 0], fov: 34 }, 'lulu', 11],
     [B(8), B(9), { p: [.9, .45, 1.7], l: [-.2, 1.0, 0], fov: 44 }, { p: [.9, .4, 1.75], l: [-2.6, 3.2, -3.4], fov: 46 }, 'tree', 3],
     [B(9), B(10), { p: [.75, .82, 2.05], l: [.05, .74, .15], fov: 35 }, { p: [.6, .8, 1.85], l: [.05, .76, .15], fov: 35 }, 'lulu', 10],
     [B(10), B(11), { p: [.95, .55, 2.9], l: [.38, .45, .3], fov: 40 }, { p: [.7, .62, 3.0], l: [.32, .5, .3], fov: 40 }, 'biscuit', 6],
@@ -39,12 +44,12 @@ export function makeStory({ cam, world, lulu, biscuit, bobble, bubbles, TL }) {
     [B(13), B(14), { p: [-.42, 1.36, 2.65], l: [-.48, 1.16, .42], fov: 36 }, { p: [-.43, 1.35, 2.4], l: [-.48, 1.16, .42], fov: 36 }, 'bobble', 10],
     [B(14), B(15), { p: [.05, 1.0, 3.5], l: [-.22, .98, .25], fov: 42 }, { p: [.05, .98, 3.25], l: [-.2, .92, .25], fov: 42 }, 'lulu', 5],
     [B(15), B(16), { p: [1.35, .55, 2.45], l: [.55, .6, .35], fov: 38 }, { p: [1.25, .55, 2.3], l: [.55, .62, .35], fov: 38 }, 'biscuit', 7],
-    [B(16), B(17), { p: [.48, .47, 1.3], l: [.57, .43, .55], fov: 32 }, { p: [.5, .46, 1.18], l: [.57, .43, .55], fov: 32 }, 'biscuit', 13],
+    [B(16), B(17), { p: [.46, .5, 1.6], l: [.57, .37, .55], fov: 32 }, { p: [.47, .49, 1.45], l: [.57, .37, .55], fov: 32 }, 'biscuit', 12],
     [B(17), B(18), { p: [.32, .8, 2.75], l: [.3, .52, .2], fov: 38 }, { p: [.3, .78, 2.55], l: [.3, .52, .2], fov: 38 }, 'lulu', 8],
     [B(18), B(18, 2), { p: [.5, .45, 1.45], l: [.57, .43, .5], fov: 34 }, { p: [.52, .45, 1.35], l: [.57, .43, .5], fov: 34 }, 'biscuit', 12],
     [B(18, 2), B(19), { p: [.52, .45, 1.35], l: [.57, .43, .5], fov: 34 }, { p: [-.4, 1.25, 4.3], l: [.2, .7, 0], fov: 40 }, 'lulu', 2, 'whip'],
     [B(19), B(20), { p: [-1.9, 1.1, 3.3], l: [.2, .6, 0], fov: 40 }, { p: [1.9, 1.1, 3.3], l: [.2, .6, 0], fov: 40 }, 'lulu', 3],
-    [B(20), B(21), { p: [.35, .82, 1.6], l: [0, .74, 0], fov: 34 }, { p: [.3, .8, 1.42], l: [0, .74, 0], fov: 34 }, 'lulu', 12],
+    [B(20), B(21), { p: [.35, .82, 1.6], l: [0, .67, 0], fov: 34 }, { p: [.3, .8, 1.42], l: [0, .67, 0], fov: 34 }, 'lulu', 12],
     [B(21), B(22), { p: [1.3, .42, 2.3], l: [-1.6, 1.45, -2.2], fov: 46 }, { p: [1.25, .36, 2.2], l: [-1.6, 1.95, -2.2], fov: 46 }, 'lulu', 2],
     [B(22), B(23), { p: [0, 1.2, 2.7], l: [.2, .6, 0], fov: 40 }, { p: [0, 3.3, 4.3], l: [.2, .5, 0], fov: 42 }, 'lulu', 2],
     [B(23), B(24), { p: [.2, .92, 2.55], l: [.25, .7, .1], fov: 38 }, { p: [.2, .9, 2.35], l: [.25, .7, .1], fov: 38 }, 'lulu', 6],
@@ -67,7 +72,7 @@ export function makeStory({ cam, world, lulu, biscuit, bobble, bubbles, TL }) {
   function luluPose(t) {
     const ph = beatPh(t), bn = beatN(t), bar = Math.floor((t - PRE) / BAR) + 1;
     const bounceDance = Math.sin(ph * Math.PI) ** 2;  // dip every beat
-    const p = { look: 'cam', blink: blinkAt(t, 1), mouth: Math.min(1, mouthOf('lulu', t) * 1.15), aim: 'up' };
+    const p = { look: 'cam', blink: blinkAt(t, 1), mouth: Math.min(1, mouthOf('lulu', t) * 1.15), aim: 'up', shape: vowelAt(t), curlL: .3, curlR: 1.15 };
     const singing = p.mouth > .05;
     const sway = Math.sin((t - PRE) / BEAT * Math.PI) * .06;
     const idle = () => { p.crouch = .04 * bounceDance; p.sway = sway * .4; p.armL = [.05, .22, -.3]; p.armR = [-.2, .22, -.5]; };
@@ -79,7 +84,7 @@ export function makeStory({ cam, world, lulu, biscuit, bobble, bubbles, TL }) {
     } else if (t < B(3)) { // bar 2: "Let's blow bubbles!" lifts the wand, then blows
       const lift = ss(B(2, .2), B(2, 1.2), t), blow = ss(B(2, 2.6), B(2, 2.95), t) * (1 - ss(B(3) - .1, B(3) + .15, t));
       p.armR = [lerp(-.2, -1.05, lift), lerp(.22, .15, lift), lerp(-.5, -1.25, lift)];
-      if (blow > 0) { p.armR = [lerp(-1.05, -1.2, blow), lerp(.15, .05, blow), lerp(-1.25, -1.75, blow)]; p.aim = 'mouth'; p.shape = blow > .5 ? 'oo' : undefined; p.mouth = blow > .5 ? .3 + .2 * Math.sin(t * 30) : p.mouth; p.look = 'ring'; }
+      if (blow > 0) { p.armR = [lerp(-1.05, -1.2, blow), lerp(.15, .05, blow), lerp(-1.25, -1.75, blow)]; p.aim = 'mouth'; p.shape = blow > .5 ? 'oo' : p.shape; p.mouth = blow > .5 ? .3 + .2 * Math.sin(t * 30) : p.mouth; p.look = 'ring'; }
       p.brows = lift * .5;
     } else if (t < B(7)) { // chorus 1: wave the wand in circles, dance
       const w = (t - B(3)) / BEAT * Math.PI * .5;
@@ -91,15 +96,15 @@ export function makeStory({ cam, world, lulu, biscuit, bobble, bubbles, TL }) {
     } else if (t < B(8)) { // "Tiny bubbles, one, two, three" - counts the bubbles in front of her
       p.look = 'hero'; p.armR = [-.2, .22, -.5]; p.aim = 'down';
       const cnt = [B(7, 2), B(7, 2.5), B(7, 3)].filter(x => t > x).length;
-      p.armL = cnt ? [-1.35, .25 - cnt * .12, -.4] : [-.6, .25, -1.2]; p.brows = .4;
+      p.armL = cnt ? [-1.35, .25 - cnt * .12, -.4] : [-.6, .25, -1.2]; p.brows = .4; p.pointL = cnt ? 1 : 0; p.curlL = cnt ? 1.1 : .3;
     } else if (t < B(9)) { // "floating up above the tree" - looks up, points
       p.look = 'hero'; p.headTurn = -.25 * ss(B(8), B(8, 2), t); p.nod = -.35 * ss(B(8), B(8, 2.5), t);
-      p.armL = [-2.2, .45, -.15]; p.armR = [-.2, .22, -.5]; p.aim = 'down'; p.wide = .5;
+      p.armL = [-2.2, .45, -.15]; p.armR = [-.2, .22, -.5]; p.aim = 'down'; p.wide = .5; p.pointL = 1; p.curlL = 1.1;
     } else if (t < B(10)) { // "Lulu pops them, pop, pop, pop!" - pokes three bubbles
       const pops = [B(9, 2), B(9, 2.5), B(9, 3)];
       p.look = 'hero'; p.armR = [-.2, .22, -.5]; p.aim = 'down';
       const k = pops.reduce((a, x, i) => a + Math.max(0, 1 - Math.abs(t - x) / .14) * (i % 2 ? -1 : 1), 0);
-      p.armL = [-1.45 - .35 * Math.abs(k), .3 + .25 * k, -.15]; p.crouch = .05 + .08 * bounceDance;
+      p.armL = [-1.45 - .35 * Math.abs(k), .3 + .25 * k, -.15]; p.crouch = .05 + .08 * bounceDance; p.pointL = 1; p.curlL = 1.1;
       p.jump = pops.reduce((a, x) => a + (t > x - .1 && t < x + .15 ? Math.sin((t - x + .1) / .25 * Math.PI) * .03 : 0), 0);
     } else if (t < B(11)) { // instrumental: giggles at Biscuit
       p.look = 'biscuit'; const g = ss(B(10, .9), B(10, 1.2), t) * (1 - ss(B(10, 3), B(10, 3.6), t));
@@ -112,7 +117,7 @@ export function makeStory({ cam, world, lulu, biscuit, bobble, bubbles, TL }) {
     } else if (t < B(15)) { // Bobble talks, then POP
       p.look = 'bobble'; p.nod = -.25; p.brows = .5; p.armL = [-.3, .3, -.9]; p.armR = [-.3, .3, -.9]; p.aim = 'down';
       const pop = popT;
-      if (t > pop) { const s = 1 - ss(pop + .8, pop + 1.6, t); p.wide = s; p.brows = s; p.shape = s > .4 ? 'oo' : undefined; p.mouth = s > .4 ? .5 : p.mouth; p.armL = [-.6, 1.2 * s, -1.4 * s]; p.armR = [-.6, 1.2 * s, -1.4 * s]; p.jump = pulse(t, pop, .05, .3); }
+      if (t > pop) { const s = 1 - ss(pop + .8, pop + 1.6, t); p.wide = s; p.brows = s; p.shape = s > .4 ? 'oo' : p.shape; p.mouth = s > .4 ? .5 : p.mouth; p.armL = [-.6, 1.2 * s, -1.4 * s]; p.armR = [-.6, 1.2 * s, -1.4 * s]; p.jump = pulse(t, pop, .05, .3); }
     } else if (t < B(17)) { // watches Biscuit jump / sneeze
       p.look = 'biscuit'; p.headTurn = .3; p.armL = [-.2, .3, -.6]; p.armR = [-.2, .3, -.6]; p.aim = 'down';
       if (t > ev('sneeze')[0]) { p.blink = Math.max(p.blink, .55); p.headTilt = .15; }
@@ -123,7 +128,7 @@ export function makeStory({ cam, world, lulu, biscuit, bobble, bubbles, TL }) {
       const w = (t - B(19)) / BEAT * Math.PI * .5;
       p.armR = [-1.0 + .38 * Math.sin(w), .35 + .45 * Math.cos(w), -.55]; p.aim = 'up';
       p.armL = [.2 * Math.sin(ph * Math.PI * 2), .5 + .6 * bounceDance, -.5]; p.crouch = .12 * bounceDance; p.sway = sway * 1.3; p.headTilt = sway * 1.8;
-      if (bar === 21) { p.look = 'sky'; p.armL = [-2.3, .5, -.1]; p.nod = -.3; }
+      if (bar === 21) { p.look = 'sky'; p.armL = [-2.3, .5, -.1]; p.nod = -.3; p.pointL = 1; p.curlL = 1.1; }
       if (bar === 22) { p.turn = sss(B(22), B(22, 3), t) * Math.PI * 2; p.armL = [-.1, 1.4, -.2]; p.armR = [-.2, 1.4, -.2]; }
     } else if (t < B(24)) { // POP!
       const u = ss(B(23) - .1, B(23) + .1, t); p.armL = [-.2, 2.6 * u, -.2]; p.armR = [-.2, 2.6 * u, -.2]; p.aim = 'up';
@@ -234,7 +239,7 @@ export function makeStory({ cam, world, lulu, biscuit, bobble, bubbles, TL }) {
   // bar 15: one for Biscuit to catch; bar 16: one lands on his nose and pops at the sneeze
   bubbles.hero({ ts: B(15) - .3, tp: ev('snap')[0], r: .05, seed: .45, path: t => [.85 + .05 * Math.sin(t * 2), .95 - .1 * ss(B(15), ev('snap')[0], t), .62] });
   const sn = ev('sneeze')[0];
-  bubbles.hero({ ts: B(16) - .2, tp: sn + .05, r: .045, seed: .62, path: t => { const nose = biscuit.head.localToWorld(V(0, .012, .205)); const k = sss(B(16) - .2, B(16, 1), t); return [lerp(nose.x + .25, nose.x, k), lerp(nose.y + .45, nose.y + .035, k), lerp(nose.z + .1, nose.z, k)]; } });
+  bubbles.hero({ ts: B(16) - .2, tp: sn + .05, r: .032, seed: .62, path: t => { const nose = biscuit.head.localToWorld(V(0, -.004, .2)); const k = sss(B(16) - .2, B(16, 1), t); return [lerp(nose.x + .25, nose.x, k), lerp(nose.y + .45, nose.y + .028, k), lerp(nose.z + .1, nose.z + .01, k)]; } });
   // final chorus: lots of bubbles from the wand + a bubble breeze
   bubbles.emit({ t0: B(19), t1: B(23) - .2, n: 120, from: ts => ringAt(ts).toArray(), dir: [0, .6, .8], speed: 1.0, spread: .9, seed: 7, life: [3, 5.5] });
   bubbles.emit({ t0: B(18, 2), t1: B(23) - .3, n: 110, from: [-3, .8, 1], dir: [1, .3, .1], speed: .6, spread: .8, seed: 8, life: [4, 7], wind: [.5, 0, .05] });

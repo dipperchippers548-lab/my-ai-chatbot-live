@@ -1,9 +1,10 @@
 // The backyard: sky dome, lawn, Lulu's house, picket fence, round trees, bushes, flowers, toys, distant houses.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { ctex, rng, std, mesh, grp, lumpy } from './lib.js';
 
-export const SKY_TOP = new THREE.Color('#2f86e6'), SKY_HOR = new THREE.Color('#bfe4ff');
+export const SKY_TOP = new THREE.Color('#2479de'), SKY_HOR = new THREE.Color('#b0defd');
 const rb = (w, h, d, r = .04, s = 3) => new RoundedBoxGeometry(w, h, d, s, Math.min(r, w / 2 - 1e-3, h / 2 - 1e-3, d / 2 - 1e-3));
 
 export function skyDome() {
@@ -35,6 +36,7 @@ export function cloud(parent, x, y, z, s, seed) {
 function lawnTex() {
   return ctex(1024, 1024, (g, w, h) => {
     g.fillStyle = '#72c23b'; g.fillRect(0, 0, w, h); const r = rng(5);
+    for (let b = 0; b < 4; b++) { g.fillStyle = b % 2 ? 'rgba(170,230,90,.10)' : 'rgba(40,110,30,.06)'; g.fillRect(0, b * h / 4, w, h / 4); }
     for (let i = 0; i < 2600; i++) { const x = r() * w, y = r() * h, s = 10 + r() * 60; const l = r(); g.fillStyle = l > .5 ? `rgba(160,220,80,${.05 + r() * .07})` : `rgba(40,120,30,${.04 + r() * .06})`; g.beginPath(); g.ellipse(x, y, s, s * .7, r() * 3, 0, 7); g.fill(); }
     for (let i = 0; i < 9000; i++) { const x = r() * w, y = r() * h; g.strokeStyle = r() > .5 ? 'rgba(190,240,110,.25)' : 'rgba(40,110,30,.22)'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(x, y); g.lineTo(x + (r() - .5) * 4, y - 5 - r() * 6); g.stroke(); }
   });
@@ -75,6 +77,16 @@ export function house(parent, o) {
   const ch = mesh(rb(.7, 2.2, .7, .04), std('#c96a52', { roughness: .85 }), g, w * .28, h + rh * .7, -d * .12); mesh(rb(.85, .15, .85, .03), white, ch, 0, 1.12, 0);
   if (detail) {
     for (const wx of [-w * .3, w * .3]) { windowUnit(g, wx, h * .72, d / 2 + .02, 1.1, 1.25); windowUnit(g, wx, h * .3, d / 2 + .02, 1.1, 1.25); }
+    const shutTex = ctex(64, 128, (gg) => { gg.fillStyle = '#4e9fc4'; gg.fillRect(0, 0, 64, 128); gg.fillStyle = 'rgba(0,0,0,.18)'; for (let y = 6; y < 128; y += 12) gg.fillRect(6, y, 52, 4); gg.strokeStyle = 'rgba(255,255,255,.25)'; gg.lineWidth = 3; gg.strokeRect(3, 3, 58, 122); });
+    const shutM = std('#ffffff', { map: shutTex, roughness: .6 });
+    const boxM = std('#ffffff', { roughness: .5 }), soil = std('#6b4430'), fl = ['#ff6b8a', '#ffd23f', '#ffffff', '#b07cff'].map(c => std(c, { roughness: .5 }));
+    for (const wx of [-w * .3, w * .3]) for (const wy of [h * .3, h * .72]) {
+      for (const s of [-1, 1]) mesh(rb(.42, 1.35, .06, .02), shutM, g, wx + s * .8, wy, d / 2 + .04);
+      if (wy < h * .5) { mesh(rb(1.3, .26, .3, .04), boxM, g, wx, wy - .82, d / 2 + .2); mesh(new THREE.BoxGeometry(1.2, .04, .22), soil, g, wx, wy - .7, d / 2 + .2, false);
+        for (let k = 0; k < 9; k++) { mesh(new THREE.SphereGeometry(.07, 12, 8), fl[k % 4], g, wx - .5 + k * .125, wy - .62 + (k % 2) * .04, d / 2 + .2 + ((k * 7) % 3 - 1) * .05, false); mesh(new THREE.SphereGeometry(.08, 10, 8), leafMats[k % 4], g, wx - .45 + k * .11, wy - .68, d / 2 + .14, false); } }
+    }
+    // roof fascia boards
+    for (const s of [-1, 1]) { const f = mesh(rb(.18, Math.hypot(d / 2 + .5, 2.6) + .1, .1, .03), white, g, s * (w / 2 + .42), h + 1.3, 0); f.rotation.set(0, Math.PI / 2, 0); }
     windowUnit(g, 0, h * .72, d / 2 + .02, .9, 1.0);
     // door with round window, frame, step and little porch roof
     const dg = grp(g, 0, 0, d / 2 + .03);
@@ -103,11 +115,23 @@ export function fence(parent, pts, color = '#fbfaf6') {
 }
 
 const leafMats = ['#4fae3a', '#5cb941', '#45a033', '#62c04a'].map(c => std(c, { roughness: .85 }));
+const leafTex = ctex(256, 256, (g) => { g.fillStyle = '#ffffff'; g.fillRect(0, 0, 256, 256); const r = rng(21); for (let i = 0; i < 420; i++) { const x = r() * 256, y = r() * 256; g.fillStyle = `rgba(${r() > .5 ? '30,90,20' : '255,255,220'},${.12 + r() * .14})`; g.beginPath(); g.ellipse(x, y, 9 + r() * 7, 4 + r() * 3, r() * 3, 0, 7); g.fill(); } });
+leafTex.wrapS = leafTex.wrapT = THREE.RepeatWrapping; leafTex.repeat.set(3, 2);
+const canopyM = new THREE.MeshStandardMaterial({ vertexColors: true, map: leafTex, bumpMap: leafTex, bumpScale: 2.5, roughness: .82 });
+function clump(r, seed, base) {
+  const geo = lumpy(new THREE.SphereGeometry(r, 30, 22), r * .09, 2.4 / r, seed); const n = geo.attributes.normal, cols = new Float32Array(n.count * 3);
+  const dark = new THREE.Color('#2f8a2c'), light = new THREE.Color('#9be05a'), c = new THREE.Color();
+  for (let i = 0; i < n.count; i++) { const k = Math.pow(n.getY(i) * .5 + .5, 1.3); c.copy(dark).lerp(light, k).multiplyScalar(base); cols.set([c.r, c.g, c.b], i * 3); }
+  geo.setAttribute('color', new THREE.BufferAttribute(cols, 3)); return geo;
+}
 export function tree(parent, x, z, s = 1, seed = 1) {
   const g = grp(parent, x, 0, z); const r = rng(seed * 97 + 3);
-  const trunk = new THREE.CylinderGeometry(.16, .26, 2.4, 14); trunk.translate(0, 1.2, 0); mesh(trunk, std('#8a5a3b', { roughness: .9 }), g);
-  const blobs = [[0, 3.1, 0, 1.25], [-.8, 2.7, .2, .95], [.85, 2.75, -.1, 1.0], [.1, 3.9, .1, .95], [-.3, 2.9, .75, .85], [.4, 2.8, -.7, .85], [-.5, 3.6, -.4, .8]];
-  for (const [bx, by, bz, br] of blobs) mesh(lumpy(new THREE.SphereGeometry(br, 30, 22), .1, 2.2, r() * 50), leafMats[Math.floor(r() * 4)], g, bx, by, bz);
+  const bark = std('#8a5a3b', { roughness: .9 });
+  const trunk = new THREE.CylinderGeometry(.15, .27, 2.5, 14); trunk.translate(0, 1.25, 0); mesh(trunk, bark, g);
+  for (const s2 of [-1, 1]) { const b = new THREE.CylinderGeometry(.05, .09, .9, 8); b.translate(0, .45, 0); const m = mesh(b, bark, g, s2 * .05, 2.0, 0); m.rotation.z = s2 * -.7; }
+  const pts = [[0, 3.2, 0, 1.1]]; for (let i = 0; i < 11; i++) { const a = i / 11 * Math.PI * 2 + r(), el = (r() - .3) * 1.1; pts.push([Math.cos(a) * Math.cos(el) * 1.05, 3.15 + Math.sin(el) * .85, Math.sin(a) * Math.cos(el) * 1.0, .55 + r() * .35]); }
+  pts.push([0, 4.15, 0, .75]);
+  for (const [bx, by, bz, br] of pts) mesh(clump(br, r() * 50, .9 + r() * .2), canopyM, g, bx, by, bz);
   g.scale.setScalar(s); return g;
 }
 export function bush(parent, x, z, s = 1, seed = 1, flowers = null) {
@@ -131,6 +155,47 @@ export function flowerBed(parent, x, z, w, d, seed = 2) {
   return g;
 }
 
+function colored(geo, hex) { const c = new THREE.Color(hex), n = geo.attributes.position.count, a = new Float32Array(n * 3); for (let i = 0; i < n; i++) a.set([c.r, c.g, c.b], i * 3); geo.setAttribute('color', new THREE.BufferAttribute(a, 3)); return geo; }
+function nonIdx(g) { return g.index ? g.toNonIndexed() : g; }
+export function swingSet(parent, x, z, ry = 0) {
+  const g = grp(parent, x, 0, z); g.rotation.y = ry; const red = std('#e8463f', { roughness: .45 }), yel = std('#ffc93c', { roughness: .5 }), rope = std('#e8e2d4', { roughness: .9 });
+  const W2 = 1.35, H = 2.2;
+  for (const s of [-1, 1]) for (const f of [-1, 1]) { const l = mesh(new THREE.CylinderGeometry(.045, .05, H * 1.08, 12), red, g, s * W2, H / 2, f * .42); l.rotation.x = f * -.36; }
+  const top = mesh(new THREE.CylinderGeometry(.055, .055, W2 * 2 + .2, 14), red, g, 0, H, 0); top.rotation.z = Math.PI / 2;
+  for (const sx of [-.55, .55]) { for (const rx of [-.2, .2]) mesh(new THREE.CylinderGeometry(.008, .008, 1.55, 6), rope, g, sx + rx, H - .78, 0, false); mesh(rb(.5, .05, .22, .02), yel, g, sx, H - 1.56, 0); }
+  return g;
+}
+export function sandbox(parent, x, z) {
+  const g = grp(parent, x, 0, z); const wood = std('#d9a066', { roughness: .8 });
+  for (const [px, pz, w, d] of [[0, -.7, 1.6, .12], [0, .7, 1.6, .12], [-.74, 0, .12, 1.52], [.74, 0, .12, 1.52]]) mesh(rb(w, .2, d, .03), wood, g, px, .1, pz);
+  const sandT = ctex(128, 128, (gg) => { gg.fillStyle = '#f3dba0'; gg.fillRect(0, 0, 128, 128); const r = rng(2); for (let i = 0; i < 900; i++) { gg.fillStyle = r() > .5 ? 'rgba(255,250,220,.5)' : 'rgba(190,150,90,.25)'; gg.fillRect(r() * 128, r() * 128, 2, 2); } });
+  const sand = mesh(new THREE.PlaneGeometry(1.4, 1.3), std('#ffffff', { map: sandT, roughness: 1 }), g, 0, .14, 0, false); sand.rotation.x = -Math.PI / 2;
+  const bucket = mesh(new THREE.CylinderGeometry(.12, .09, .18, 24, 1, true), std('#e8463f', { roughness: .35, side: THREE.DoubleSide }), g, .35, .23, .2);
+  mesh(new THREE.TorusGeometry(.11, .008, 8, 20, Math.PI), std('#ffc93c'), g, .35, .3, .2);
+  const sp = grp(g, -.3, .17, .1); sp.rotation.set(0, .6, .2); mesh(rb(.12, .02, .16, .01), std('#4f8fe0', { roughness: .4 }), sp, 0, 0, 0); mesh(new THREE.CylinderGeometry(.012, .012, .25, 8), std('#4f8fe0'), sp, 0, .02, -.18).rotation.x = Math.PI / 2;
+  return g;
+}
+export function scatter(parent, seed) {
+  const r = rng(seed * 55 + 9);
+  // daisies in the lawn
+  const petals = []; for (let k = 0; k < 6; k++) { const a = k / 6 * Math.PI * 2; const p = new THREE.SphereGeometry(.022, 8, 6); p.scale(1, .3, .55); p.rotateY(-a); p.translate(Math.cos(a) * .024, .03, Math.sin(a) * .024); petals.push(colored(nonIdx(p), '#ffffff')); }
+  const ctr = new THREE.SphereGeometry(.014, 8, 6); ctr.translate(0, .034, 0); const stem = new THREE.CylinderGeometry(.003, .003, .03, 4); stem.translate(0, .015, 0);
+  const daisy = mergeGeometries([...petals, colored(nonIdx(ctr), '#ffc928'), colored(nonIdx(stem), '#3c9a2e')]);
+  const dm = new THREE.InstancedMesh(daisy, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .6 }), 420); const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler();
+  for (let i = 0; i < 420; i++) { let px, pz; do { px = (r() - .5) * 17; pz = -6 + r() * 13; } while (Math.hypot(px, pz) < .9 || (Math.abs(px) < .6 && pz < -3)); const s = .8 + r() * .7; m4.compose(new THREE.Vector3(px, 0, pz), q.setFromEuler(e.set(0, r() * 6, 0)), new THREE.Vector3(s, s, s)); dm.setMatrixAt(i, m4); }
+  dm.receiveShadow = true; parent.add(dm);
+  // grass tufts along the fence, beds and tree bases
+  const blades = []; for (let k = 0; k < 6; k++) { const c = new THREE.ConeGeometry(.012, .13 + (k % 3) * .04, 4); c.translate(0, .07, 0); c.rotateZ((k - 2.5) * .12); c.rotateY(k * 1.1); c.translate((k - 2.5) * .012, 0, ((k * 5) % 3 - 1) * .012); blades.push(colored(nonIdx(c), k % 2 ? '#4caa36' : '#6cc548')); }
+  const tuft = mergeGeometries(blades); const tm = new THREE.InstancedMesh(tuft, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .8 }), 600);
+  for (let i = 0; i < 600; i++) {
+    const zone = r(); let px, pz;
+    if (zone < .45) { px = (r() < .5 ? -1 : 1) * (8.75 - r() * .3); pz = -6 + r() * 13; } else if (zone < .7) { px = (r() - .5) * 18; pz = -5.95 - r() * .2; }
+    else if (zone < .85) { const a = r() * 6.28, d = .3 + r() * .6; px = -5.6 + Math.cos(a) * d; pz = -3.4 + Math.sin(a) * d; } else { px = (r() - .5) * 16; pz = -5 + r() * 11; if (Math.hypot(px, pz) < 1.2) px += 2.5; }
+    const s = .9 + r() * .9; m4.compose(new THREE.Vector3(px, 0, pz), q.setFromEuler(e.set(0, r() * 6, 0)), new THREE.Vector3(s, s * (.8 + r() * .6), s)); tm.setMatrixAt(i, m4);
+  }
+  tm.castShadow = false; tm.receiveShadow = true; parent.add(tm);
+}
+
 export function buildWorld(scene) {
   const W = grp(scene);
   const sky = skyDome(); W.add(sky);
@@ -150,6 +215,7 @@ export function buildWorld(scene) {
   house(W, { x: 16, z: -24, w: 7, h: 5.4, wall: '#f8e7a6', line: '#e2cd84', roof: '#7a6aa8', detail: false });
   house(W, { x: -26, z: 10, ry: Math.PI / 2, w: 8, h: 5, wall: '#d7f0cf', line: '#b5d7aa', roof: '#c8584a', detail: false });
   for (let i = 0; i < 26; i++) { const a = r() * Math.PI * 2, d = 32 + r() * 40; tree(W, Math.cos(a) * d, Math.sin(a) * d - 8, 1.2 + r() * .9, 10 + i); }
+  swingSet(W, -7.0, .6, Math.PI / 2); sandbox(W, 3.0, -2.2); scatter(W, 1);
   // toys: red ball, little garden table with the bubble bottle
   mesh(new THREE.SphereGeometry(.22, 32, 24), std('#ef4b4b', { roughness: .35 }), W, 2.7, .22, 1.6);
   const tg = grp(W, 1.55, 0, -.9);
@@ -166,7 +232,8 @@ export function lights(scene) {
   sun.shadow.mapSize.set(2048, 2048); const c = sun.shadow.camera; c.left = -9; c.right = 9; c.top = 9; c.bottom = -9; c.near = 1; c.far = 40; sun.shadow.bias = -.0004; sun.shadow.normalBias = .02; sun.shadow.radius = 3;
   scene.add(sun); scene.add(sun.target);
   const fill = new THREE.DirectionalLight('#d8e8ff', .7); fill.position.set(6, 3, 8); scene.add(fill);
-  return { sun, fill };
+  const rim = new THREE.DirectionalLight('#fff0d6', 1.6); rim.position.set(2.5, 5, -7); scene.add(rim);
+  return { sun, fill, rim };
 }
 
 // soft outdoor environment for reflections (sky gradient + lawn bounce)
