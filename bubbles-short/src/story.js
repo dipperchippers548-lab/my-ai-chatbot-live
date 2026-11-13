@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { poseLulu, poseBiscuit, poseBobble } from './chars.js';
 import { clamp, lerp, ss, sss, rng } from './lib.js';
 
-export function makeStory({ cam, world, lulu, biscuit, bobble, bubbles, TL }) {
+export function makeStory({ cam, world, lulu, biscuit, bobble, bubbles, TL, land = false }) {
   const BEAT = TL.beat, BAR = 4 * BEAT, PRE = TL.pre;
   const tb = (bar, beat = 0) => PRE + ((bar - 1) * 4 + beat) * BEAT;           // song time of bar/beat
   const beatPh = t => ((t - PRE) / BEAT) % 1, beatN = t => Math.floor((t - PRE) / BEAT);
@@ -56,6 +56,14 @@ export function makeStory({ cam, world, lulu, biscuit, bobble, bubbles, TL }) {
     [B(24), TL.dur + .1, { p: [.25, .98, 3.1], l: [.3, .72, .1], fov: 38 }, { p: [.25, .92, 2.65], l: [.3, .72, .1], fov: 38 }, 'lulu', 6],
   ];
   const shotAt = t => SH.find(s => t >= s[0] && t < s[1]) || SH.at(-1);
+  // 16:9 reframes per shot index: fov multiplier, look-target / camera offsets
+  const LANDFIX = {
+    0: { fov: 1.5, l: [0, -.2, 0] },  1: { fov: 1.45, l: [0, -.12, 0] },  2: { fov: 1.15, l: [0, -.02, 0] },
+    3: { fov: 1.5, l: [0, -.4, 0] },    4: { fov: 1.3 },                    5: { fov: 1.25 },
+    7: { fov: 1.35, l: [0, -.55, 0] },  8: { fov: 1.4, l: [-.55, -.04, 0] },   10: { fov: 1.35, l: [0, -.12, 0] },
+    11: { fov: 1.25 },                  12: { fov: 1.3, l: [0, .16, 0] },   13: { fov: 1.45, l: [-.05, .06, 0], p: [-.25, 0, 0] },
+    14: { fov: 1.15 },                  21: { fov: 1.3, l: [0, -.35, 0] },  23: { fov: 1.15 },
+  };
   const KICKS = [...ev('popbig'), ...ev('popall'), ...ev('land')];
 
   // ---------------- staging ----------------
@@ -257,7 +265,12 @@ export function makeStory({ cam, world, lulu, biscuit, bobble, bubbles, TL }) {
       let k = sss(t0, t1, t);
       if (kind === 'whip') k = ss(t0, t0 + .45, t);
       if (kind === 'crane') k = sss(t0, t0 + 1.5, t) * .85 + .15 * ss(t0 + 1.2, t1, t);
-      const pos = V(...A.p).lerp(V(...Bk.p), k), look = V(...A.l).lerp(V(...Bk.l), k); const fov = lerp(A.fov, Bk.fov, k);
+      const pos = V(...A.p).lerp(V(...Bk.p), k), look = V(...A.l).lerp(V(...Bk.l), k); let fov = lerp(A.fov, Bk.fov, k);
+      if (land) {   // 16:9: same subject size on the short side, extra width at the sides; per-shot reframes
+        const fx = LANDFIX[SH.indexOf(s)] || {};
+        fov = 2 * Math.atan(Math.tan(fov * Math.PI / 360) * 9 / 16) * 180 / Math.PI * (fx.fov || 1);
+        if (fx.l) look.add(V(...fx.l)); if (fx.p) pos.add(V(...fx.p));
+      }
       // gentle hand-free drift so nothing is ever frozen
       pos.x += Math.sin(t * .7) * .012; pos.y += Math.sin(t * .9 + 1) * .008;
       for (const kt of KICKS) { const d = t - kt; if (d >= 0 && d < .25) { const a = .02 * (1 - d / .25) * (Math.floor(d * 30) % 2 ? 1 : -1); pos.x += a; pos.y += a * .6; } }

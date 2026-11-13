@@ -30,11 +30,11 @@ function wrap(g, words, maxW) {
 }
 
 function drawLyrics(g, W, H, t, TL) {
-  const k = H / 1920; const segs = lineSegments(TL);
+  const k = Math.min(W, H) / 1080; const segs = lineSegments(TL);
   const seg = segs.find(s => t >= s.show0 && t < s.show1); if (!seg) return;
   const ap = ss(seg.show0, seg.show0 + .14, t), dp = 1 - ss(seg.show1 - .12, seg.show1, t); const a = Math.min(ap, dp); if (a <= 0) return;
   const fs = (seg.spoken ? 64 : 70) * k; g.save(); g.font = `900 ${fs}px Nunito`; g.textBaseline = 'middle'; g.lineJoin = 'round';
-  const lines = wrap(g, seg.words, W - 150 * k); const lh = fs * 1.15; const y0 = H * .772 - (lines.length - 1) * lh / 2;
+  const lines = wrap(g, seg.words, W - 150 * k); const lh = fs * 1.15; const y0 = H * (W > H ? .875 : .772) - (lines.length - 1) * lh / 2;
   const sc = .86 + .14 * ss(0, 1, ap) + .03 * Math.sin(ap * Math.PI);
   g.globalAlpha = a; g.translate(W / 2, y0); g.scale(sc, sc); g.translate(-W / 2, -y0);
   const sp = g.measureText(' ').width;
@@ -70,7 +70,7 @@ function bubbleTitle(g, text, cx, cy, size, t, colors) {
 }
 
 export function drawOverlay(g, W, H, t, TL, { titles = true, lyrics = true } = {}) {
-  const k = H / 1920;
+  const k = Math.min(W, H) / 1080;
   if (titles) {
     const tIn = .25, tOut = TL.bars[1] - .05;
     if (t > tIn && t < tOut + .4) { g.save(); g.globalAlpha = 1 - ss(tOut, tOut + .4, t); bubbleTitle(g, 'The Bubble Song', W / 2, H * .17, 118 * k, t - tIn, ['#2f86e6', '#ff5fa2', '#22b8a8', '#ffb020', '#8a5cf6']); g.restore(); }

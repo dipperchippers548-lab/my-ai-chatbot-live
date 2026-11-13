@@ -218,9 +218,7 @@ export function buildWorld(scene) {
   swingSet(W, -7.0, .6, Math.PI / 2); sandbox(W, 3.0, -2.2); scatter(W, 1);
   // toys: red ball, little garden table with the bubble bottle
   mesh(new THREE.SphereGeometry(.22, 32, 24), std('#ef4b4b', { roughness: .35 }), W, 2.7, .22, 1.6);
-  const tg = grp(W, 1.55, 0, -.9);
-  mesh(new THREE.CylinderGeometry(.42, .42, .05, 32), std('#fbfaf6', { roughness: .4 }), tg, 0, .55, 0);
-  mesh(new THREE.CylinderGeometry(.04, .05, .55, 12), std('#fbfaf6'), tg, 0, .27, 0);
+  const tg = grp(W, 1.55, 0, -.9);   // (garden table removed - read as an odd white disc in wide frames)
   const clouds = grp(W);
   cloud(clouds, -14, 16, -60, 3.2, 1); cloud(clouds, 10, 19, -70, 3.6, 2); cloud(clouds, 30, 13, -45, 2.6, 3); cloud(clouds, -34, 12, -40, 2.8, 4); cloud(clouds, 0, 24, -95, 4.2, 5); cloud(clouds, -20, 20, 40, 3, 6); cloud(clouds, 25, 18, 35, 3, 7);
   return { root: W, clouds, table: tg, sky };

@@ -8,7 +8,8 @@ import { makeStory } from './story.js';
 import { drawOverlay } from './overlay.js';
 
 const QS = new URLSearchParams(location.search); const SCALE = +(QS.get('scale') || 1);
-const W = Math.round(1080 * SCALE), H = Math.round(1920 * SCALE);
+const LAND = QS.get('aspect') === '16x9';   // 16:9 landscape version (same scene, landscape cameras)
+const W = Math.round((LAND ? 1920 : 1080) * SCALE), H = Math.round((LAND ? 1080 : 1920) * SCALE);
 const renderer = new THREE.WebGLRenderer({ antialias: false, preserveDrawingBuffer: true });
 renderer.setPixelRatio(1); renderer.setSize(W, H, false);
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; renderer.toneMapping = THREE.NoToneMapping;
@@ -24,13 +25,13 @@ scene.add(lulu.root, biscuit.root, bobble.root);
 const TL = await (await fetch('/build/timeline.json')).json();
 const bubbles = makeBubbles(scene, TL);
 const post = makePost(renderer, W, H);
-const story = makeStory({ THREE, scene, cam, world, L, lulu, biscuit, bobble, bubbles, TL });
+const story = makeStory({ THREE, scene, cam, world, L, lulu, biscuit, bobble, bubbles, TL, land: LAND });
 await document.fonts.load('900 60px Nunito'); await document.fonts.load('800 60px Nunito');
 
 function render(t, lyrics = false) {
   const look = story.update(t);
   world.sky.material.uniforms.rainbow.value = look.rainbow || 0;
-  post.render(scene, cam, { focus: look.focus, cInf: look.cInf * H / 1920, exposure: look.exposure ?? 1, flash: look.flash || 0 });
+  post.render(scene, cam, { focus: look.focus, cInf: look.cInf * Math.min(W, H) / 1080, exposure: look.exposure ?? 1, flash: look.flash || 0 });
   og.drawImage(renderer.domElement, 0, 0);
   drawOverlay(og, W, H, t, TL, { titles: true, lyrics });
   return out.toDataURL('image/jpeg', .94);
@@ -38,5 +39,6 @@ function render(t, lyrics = false) {
 window.renderTime = (t, lyrics = true) => render(t, lyrics);
 window.renderFrame = i => render(i / TL.fps, false);
 window.renderLyrics = i => { lg.clearRect(0, 0, W, H); drawOverlay(lg, W, H, i / TL.fps, TL, { titles: false, lyrics: true }); return lyr.toDataURL('image/png'); };
+window.camInfo = () => ({ fov: +cam.fov.toFixed(2), aspect: +cam.aspect.toFixed(3), pos: cam.position.toArray().map(v => +v.toFixed(2)), W, H, LAND });
 window.frameCount = Math.ceil(TL.dur * TL.fps);
 window.ready = true;
