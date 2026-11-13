@@ -53,7 +53,7 @@ function drawLyrics(g, W, H, t, TL) {
   g.restore();
 }
 
-function bubbleTitle(g, text, cx, cy, size, t, colors) {
+export function bubbleTitle(g, text, cx, cy, size, t, colors) {
   g.save(); g.font = `900 ${size}px Nunito`; g.textBaseline = 'middle'; g.lineJoin = 'round';
   const chars = [...text]; const widths = chars.map(c => g.measureText(c).width); const tw = widths.reduce((a, b) => a + b, 0); let x = cx - tw / 2;
   chars.forEach((c, i) => {
