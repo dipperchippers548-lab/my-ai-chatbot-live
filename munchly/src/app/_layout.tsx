@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 
+import { DialogHost } from '@/components/dialog-host';
 import { StoreProvider, useStore } from '@/lib/store';
 import { useColors } from '@/lib/theme';
 
@@ -43,6 +44,7 @@ export default function RootLayout() {
       <StoreProvider>
         <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
         <RootStack />
+        <DialogHost />
       </StoreProvider>
     </ThemeProvider>
   );

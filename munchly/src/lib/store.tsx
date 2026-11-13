@@ -132,7 +132,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const resetAll = useCallback(async () => {
-    await AsyncStorage.multiRemove(Object.values(KEYS));
+    try {
+      await AsyncStorage.multiRemove(Object.values(KEYS));
+    } catch (err) {
+      console.warn('Could not erase saved data', err);
+    }
     entriesRef.current = [];
     scansRef.current = 0;
     setProfile(null);

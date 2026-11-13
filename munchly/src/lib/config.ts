@@ -8,6 +8,9 @@ export const FREE_SCANS = 3;
  */
 export const API_BASE_URL = (process.env.EXPO_PUBLIC_API_URL ?? '').replace(/\/$/, '');
 
+/** Preview builds (EXPO_PUBLIC_PREVIEW_MODE=1) run with no server and return sample scan results. */
+export const PREVIEW_MODE = process.env.EXPO_PUBLIC_PREVIEW_MODE === '1';
+
 /** Placeholder prices shown on the paywall until Google Play billing is connected. */
 export const PLANS = [
   { id: 'yearly', label: 'Yearly', price: '$29.99', per: '/year', note: 'Just $0.58/week · 3-day free trial', best: true },

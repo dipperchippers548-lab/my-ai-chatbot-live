@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Button, Ionicons, Row, Screen, T, tap } from '@/components/ui';
-import { PLANS } from '@/lib/config';
+import { PLANS, PREVIEW_MODE } from '@/lib/config';
 import { notify } from '@/lib/confirm';
 import { useStore } from '@/lib/store';
 import { radius, space, useColors } from '@/lib/theme';
@@ -37,9 +37,9 @@ export default function Paywall() {
           <T variant="small" style={styles.center}>
             Auto-renews until canceled. Cancel anytime in Google Play.
           </T>
-          {__DEV__ ? (
+          {__DEV__ || PREVIEW_MODE ? (
             <Button
-              title={isPro ? 'Dev: turn Pro off' : 'Dev: unlock Pro (testing only)'}
+              title={isPro ? 'Test: turn Pro off' : 'Test: unlock Pro (test builds only)'}
               variant="ghost"
               onPress={async () => {
                 await setPro(!isPro);

@@ -7,6 +7,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { betaZodOutputFormat } from '@anthropic-ai/sdk/helpers/beta/zod';
 import { z } from 'zod';
 
+import { demoAnalysis } from '../lib/demo';
 import type { Analysis } from '../lib/types';
 
 const MODEL = process.env.MUNCHLY_MODEL || 'claude-opus-5-5';
@@ -99,7 +100,7 @@ function getClient() {
 }
 
 export async function analyzeFood(input: AnalyzeInput): Promise<Analysis> {
-  if (isDemoMode()) return demoAnalysis(input);
+  if (isDemoMode()) return demoAnalysis(!input.imageBase64);
 
   const content: Anthropic.Beta.BetaContentBlockParam[] = [];
   if (input.imageBase64) {
@@ -171,22 +172,5 @@ function toAnalysis(raw: z.infer<typeof AnalysisSchema>): Analysis {
           fatG: Math.round(clean(it.fat_g, 400) * 10) / 10,
         }))
       : [],
-  };
-}
-
-/** Sample result used when no ANTHROPIC_API_KEY is set, so the app can be tried end to end for free. */
-function demoAnalysis(input: AnalyzeInput): Analysis {
-  return {
-    demo: true,
-    isFood: true,
-    mealName: input.description ? 'Your meal (demo)' : 'Chicken rice bowl',
-    confidence: 'medium',
-    note: 'Demo result: add an ANTHROPIC_API_KEY on the server for real estimates.',
-    items: [
-      { name: 'Grilled chicken', portion: '1 breast (150 g)', calories: 248, proteinG: 46.5, carbsG: 0, fatG: 5.4 },
-      { name: 'White rice', portion: '1 cup (160 g)', calories: 206, proteinG: 4.3, carbsG: 44.5, fatG: 0.4 },
-      { name: 'Avocado', portion: '½ fruit (70 g)', calories: 112, proteinG: 1.4, carbsG: 6, fatG: 10.3 },
-      { name: 'Sesame dressing', portion: '1 tbsp (15 ml)', calories: 70, proteinG: 0.3, carbsG: 2.5, fatG: 6.8 },
-    ],
   };
 }

@@ -31,6 +31,10 @@ Press **w** to open it in your browser, or scan the QR code with the **Expo Go**
 
 With no API key, scans return **demo data** (a sample chicken rice bowl), so you can click through every screen for free.
 
+### Share a playable preview link
+
+`npm run build:preview` packs the whole app into one HTML file, `dist-preview/munchly-preview.html`, that runs with no server: scans return the sample result. Host that file anywhere (or publish it as a Claude artifact) to let people tap through Munchly on their phone.
+
 ## Turn on real AI scans
 
 1. Create an account at [console.anthropic.com](https://console.anthropic.com), add a payment method, and create an API key.

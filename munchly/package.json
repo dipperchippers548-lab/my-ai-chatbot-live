@@ -46,7 +46,8 @@
     "android": "expo start --android",
     "web": "expo start --web",
     "lint": "eslint src",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build:preview": "node scripts/build-preview.js"
   },
   "private": true
 }

@@ -1,4 +1,5 @@
-import { API_BASE_URL } from './config';
+import { API_BASE_URL, PREVIEW_MODE } from './config';
+import { demoAnalysis } from './demo';
 import type { Analysis } from './types';
 
 const TIMEOUT_MS = 90_000;
@@ -8,6 +9,11 @@ export async function requestAnalysis(input: {
   mediaType?: string;
   description?: string;
 }): Promise<Analysis> {
+  if (PREVIEW_MODE) {
+    // Preview builds have no server: pretend to think for a moment, then return sample data.
+    await new Promise((resolve) => setTimeout(resolve, 1600));
+    return demoAnalysis(!input.imageBase64);
+  }
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
   try {
