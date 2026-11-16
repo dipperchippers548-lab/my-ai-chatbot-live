@@ -13,7 +13,8 @@ h = HS.create_human(mask_helpers=False, detailed_helpers=True, extra_vertex_grou
 for tgt, w in CFG.get('shape', {}).items():
     p = TS.target_full_path(tgt)
     if p: TS.load_target(h, p, weight=w, name=tgt.replace('/', '_'))
-TS.bake_targets(h); print('BAKED')   # macro + face shape keys become the real mesh (exporters ignore shape key weights)
+TS.bake_targets(h); print('BAKED')
+rig = HS.add_builtin_rig(h, 'game_engine')   # macro + face shape keys become the real mesh (exporters ignore shape key weights)
 LS = importlib.import_module(M + '.services.locationservice').LocationService
 D = LS.get_user_data()
 skin = os.path.join(D, 'skins', CFG.get('skin', 'middleage_caucasian_male'), CFG.get('skin', 'middleage_caucasian_male') + '.mhmat')
@@ -34,7 +35,6 @@ race = CFG.get('race', 'caucasian')
 for u in ['eyebrows-left-inner-up', 'eyebrows-right-inner-up', 'eyebrows-left-down', 'eyebrows-right-down', 'eyebrows-left-up', 'eyebrows-right-up', 'eye-left-opened-up', 'eye-right-opened-up', 'eye-left-closure', 'eye-right-closure', 'mouth-open', 'mouth-corner-puller', 'mouth-depression', 'mouth-retraction']:
     p = os.path.join(os.path.dirname(TS.target_full_path('mouth-open')).replace('african', race), u + '.target.gz')
     if os.path.exists(p): TS.load_target(h, p, weight=0.0, name='x_' + u)
-rig = HS.add_builtin_rig(h, 'game_engine')
 # drop MakeHuman's helper geometry (tights/skirt/hair helpers, joint cubes) now that clothes are fitted
 import bmesh
 gi = [g.index for g in h.vertex_groups if g.name in ('HelperGeometry', 'JointCubes')]
@@ -67,9 +67,15 @@ for i, (pname, spec) in enumerate(POSES.items()):
     if 'root_drop' in spec: pbs['pelvis'].location = (0, 0, 0)
     for pb in pbs: pb.keyframe_insert('rotation_quaternion', frame=i * 10); pb.keyframe_insert('location', frame=i * 10)
     names.append(pname)
-bpy.ops.object.mode_set(mode='OBJECT'); rig.animation_data.action.name = 'poses'
+bpy.ops.object.mode_set(mode='OBJECT'); pa = rig.animation_data.action; pa.name = 'poses'
+trk = rig.animation_data.nla_tracks.new(); trk.name = 'poses'; trk.strips.new('poses', 0, pa); rig.animation_data.action = None
+for pb in pbs: pb.rotation_quaternion = (1, 0, 0, 0); pb.location = (0, 0, 0)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import retarget
+for clip in CFG.get('clips', []):
+    retarget.retarget(rig, clip['bvh'], clip['name'], clip.get('secs', 6.0), start=clip.get('start', 0.0))
 json.dump(names, open(OUT.replace('.glb', '_poses.json'), 'w')); print('POSES', names)
+#print('OBJS', [(o.name, o.type, o.parent.name if o.parent else None, [(m.type, getattr(m, 'object', None) and m.object.name) for m in o.modifiers]) for o in bpy.data.objects])
 bpy.ops.object.select_all(action='DESELECT')
 for o in bpy.data.objects: o.select_set(True)
-bpy.ops.export_scene.gltf(filepath=OUT, export_format='GLB', use_selection=True, export_animations=True, export_frame_range=False, export_force_sampling=False, export_anim_single_armature=True, export_morph=True, export_skins=True, export_morph_normal=False, export_apply=False)
+bpy.ops.export_scene.gltf(filepath=OUT, export_format='GLB', use_selection=True, export_animations=True, export_animation_mode='ACTIONS', export_frame_range=False, export_force_sampling=False, export_anim_single_armature=True, export_morph=True, export_skins=True, export_morph_normal=False, export_apply=False)
 print('DONE', OUT, os.path.getsize(OUT))
