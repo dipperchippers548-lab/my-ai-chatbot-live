@@ -5,7 +5,8 @@ from scipy.signal import butter, lfilter
 sys.path.insert(0, os.path.dirname(__file__)); from music import make_music
 SR = 44100; CUT = json.load(open('build/cuts.json'))
 def F(t): return (t - sum(min(t, b) - a for a, b in CUT['cuts'] if t > a)) / CUT['speed']
-w = wave.open('build/voice_cut.wav'); voice = np.frombuffer(w.readframes(w.getnframes()), dtype=np.int16).astype(np.float64) / 32768; w.close()
+VOICE = 'build/voice_close.wav' if os.path.exists('build/voice_close.wav') else 'build/voice_cut.wav'  # close-mic treatment: src/voice_close.py
+w = wave.open(VOICE); voice = np.frombuffer(w.readframes(w.getnframes()), dtype=np.int16).astype(np.float64) / 32768; w.close()
 N = int(CUT['duration'] * SR); voice = np.pad(voice, (0, max(0, N - len(voice))))[:N]; voice *= 0.84 / np.abs(voice).max()
 sfx = np.zeros(N); rs = np.random.RandomState(3)
 def put(sig, t, g=1.0):
@@ -105,7 +106,7 @@ for k in (.02, .24, .46): put(knock(1.3, muffled=True), CL + k, .45)
 for k in (.7, .74, .8, .85): put(zap(), CL + k, .1)
 put(creak(.9, 150, 210), CL + .9, .1)
 sfx -= np.mean(sfx)
-music = make_music(CUT['duration'], F); music *= 10 ** (-27 / 20) / np.sqrt(np.mean(music ** 2))
+music = make_music(CUT['duration'], F); music *= 10 ** (-29 / 20) / np.sqrt(np.mean(music ** 2))
 mix = voice + sfx + music
 fade = np.ones(N); fl = int(.35 * SR); fade[-fl:] = np.linspace(1, 0, fl) ** 2; mix *= fade  # the picture fades to black too
 mix = np.tanh(mix * 1.05) / np.tanh(1.05) * .95
