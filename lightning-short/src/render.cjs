@@ -13,6 +13,11 @@ const server = http.createServer((q, r) => { const f = path.join(root, decodeURI
     const dir = path.join(root, 'build/test'); fs.rmSync(dir, { recursive: true, force: true }); fs.mkdirSync(dir, { recursive: true });
     for (const t of process.argv[3].split(',').map(Number)) { const u = await page.evaluate(t => window.renderTime(t), t); fs.writeFileSync(path.join(dir, `t${t.toFixed(2).padStart(5, '0')}.jpg`), Buffer.from(u.split(',')[1], 'base64')); }
     console.log(JSON.stringify(await page.evaluate('window.captionChunks.map(c=>[+c.s.toFixed(2),+c.e.toFixed(2),c.text])')));
+  } else if (mode === 'part') {   // node src/render.cjs part k n  -> build/part_k.mp4 (frames k/n .. (k+1)/n of the video)
+    const total = await page.evaluate('window.frameCount'), k = +process.argv[3], n = +process.argv[4], i0 = Math.floor(total * k / n), i1 = Math.floor(total * (k + 1) / n);
+    const ff = spawn('ffmpeg', ['-v', 'error', '-y', '-f', 'image2pipe', '-framerate', '30', '-c:v', 'mjpeg', '-i', '-', '-c:v', 'libx264', '-preset', 'medium', '-crf', '16', '-pix_fmt', 'yuv420p', path.join(root, `build/part_${k}.mp4`)], { stdio: ['pipe', 'inherit', 'inherit'] });
+    for (let i = i0; i < i1; i++) { const u = await page.evaluate(i => window.renderFrame(i), i); if (!ff.stdin.write(Buffer.from(u.split(',')[1], 'base64'))) await new Promise(r => ff.stdin.once('drain', r)); if ((i - i0) % 100 === 0) console.log('part', k, 'frame', i - i0, '/', i1 - i0); }
+    ff.stdin.end(); await new Promise(r => ff.on('close', r)); console.log('done part', k);
   } else {
     const n = await page.evaluate('window.frameCount');
     const ff = spawn('ffmpeg', ['-v', 'error', '-y', '-f', 'image2pipe', '-framerate', '30', '-c:v', 'mjpeg', '-i', '-', '-c:v', 'libx264', '-preset', 'slow', '-crf', '16', '-pix_fmt', 'yuv420p', '-color_range', 'tv', path.join(root, 'build/video.mp4')], { stdio: ['pipe', 'inherit', 'inherit'] });
