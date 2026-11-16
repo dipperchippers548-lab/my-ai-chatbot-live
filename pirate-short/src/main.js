@@ -33,7 +33,7 @@ const newCam = (fov = 45) => new THREE.PerspectiveCamera(fov, W / H, .05, 400);
 function skyTex(stops) { return ctex(8, 256, g => { const gr = g.createLinearGradient(0, 0, 0, 256); stops.forEach(([k, c]) => gr.addColorStop(k, c)); g.fillStyle = gr; g.fillRect(0, 0, 8, 256); }); }
 
 // ---------- cartoon characters: flat 2D cut-outs (big shaded round head, stick limbs, bean body) standing in 3D ----------
-const CW = 512, CH = 768, INK = '#17110d';
+const CW = 512, CH = 768, INK = '#141826';
 const EXPRS = ['neutral', 'happy', 'shocked', 'sly', 'sad', 'scared', 'laugh', 'proud'];
 function makeToon(p) {
   const c = document.createElement('canvas'); c.width = CW; c.height = CH; const g = c.getContext('2d');
@@ -54,53 +54,52 @@ function limb(g, x0, y0, a1, a2, len, side) {   // shoulder/hip angles: 0 = stra
   const x1 = x0 + Math.sin(a1) * side * len * .5, y1 = y0 + Math.cos(a1) * len * .5, x2 = x1 + Math.sin(a1 + a2) * side * len * .5, y2 = y1 + Math.cos(a1 + a2) * len * .5;
   g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.lineTo(x2, y2); g.stroke(); return [x2, y2];
 }
+function bean(g, cx, top, bot, wt, wb) {   // tall bean-shaped body, a little wider at the bottom
+  g.beginPath(); g.moveTo(cx - wt, top + 30); g.bezierCurveTo(cx - wt, top - 10, cx + wt, top - 10, cx + wt, top + 30);
+  g.bezierCurveTo(cx + wt + 6, top + (bot - top) * .45, cx + wb, bot - 70, cx + wb, bot - 40); g.bezierCurveTo(cx + wb, bot + 12, cx - wb, bot + 12, cx - wb, bot - 40);
+  g.bezierCurveTo(cx - wb, bot - 70, cx - wt - 6, top + (bot - top) * .45, cx - wt, top + 30); g.closePath(); }
 function drawToon(g, p, S) {
-  g.clearRect(0, 0, CW, CH); const cx = CW / 2, lx = S.lightX, skin = p.skin || '#f7efe1', hr = 112, hy = 150 + (S.walk ? Math.abs(Math.sin(S.walk)) * -6 : 0);
+  g.clearRect(0, 0, CW, CH); const cx = CW / 2, lx = S.lightX, skin = p.skin || '#f6f3ec', hr = 122, bob = S.walk ? Math.abs(Math.sin(S.walk)) * -6 : 0, hy = 150 + bob;
   g.lineCap = 'round'; g.lineJoin = 'round'; g.strokeStyle = INK;
-  // legs
-  const hipY = 470, sw = Math.sin(S.walk) * .35; g.lineWidth = 10;
-  for (const s of [-1, 1]) { const [fx, fy] = limb(g, cx + s * 22, hipY, s * sw * (s < 0 ? 1 : -1) + .04, 0, 280, s); g.fillStyle = p.shoes || '#2a1e18'; g.beginPath(); g.ellipse(fx + s * 10, fy + 4, 22, 11, 0, 0, 7); g.fill(); g.lineWidth = 5; g.stroke(); g.lineWidth = 10; }
-  // body: a shaded bean
-  const bw = 132, bh = 200, bx = cx - bw / 2, by = 285;
-  const bg = g.createLinearGradient(bx - lx * 40, 0, bx + bw - lx * 40, 0); bg.addColorStop(lx > 0 ? 1 : 0, shade(p.body, 1.12)); bg.addColorStop(.5, css(p.body)); bg.addColorStop(lx > 0 ? 0 : 1, shade(p.body, .72));
-  roundPath(g, bx, by, bw, bh, 58); g.fillStyle = bg; g.fill(); g.save(); roundPath(g, bx, by, bw, bh, 58); g.clip(); outfit(g, p, bx, by, bw, bh, cx); g.restore(); roundPath(g, bx, by, bw, bh, 58); g.lineWidth = 8; g.stroke();
-  // arms (stick) + round hands
-  for (const [s, a] of [[-1, S.armL], [1, S.armR]]) { g.lineWidth = 10; const [hx, hy2] = limb(g, cx + s * 56, by + 40, a[0], a[1], 210, s); g.fillStyle = skin; g.beginPath(); g.arc(hx, hy2, 16, 0, 7); g.fill(); g.lineWidth = 6; g.stroke(); if (S.hold && s === 1) S.hold(g, hx, hy2); }
-  // head: shaded like a lit ball
-  const hx = cx + S.lookX * 6, hg = g.createRadialGradient(hx + lx * 40, hy - 45, 10, hx, hy, hr * 1.05); hg.addColorStop(0, shade(skin, 1.06)); hg.addColorStop(.62, skin); hg.addColorStop(1, shade(skin, .8));
-  g.beginPath(); g.arc(hx, hy, hr, 0, 7); g.fillStyle = hg; g.fill();
-  g.save(); g.beginPath(); g.arc(hx, hy, hr, 0, 7); g.clip();
-  g.fillStyle = 'rgba(110,70,50,.2)'; g.beginPath(); g.arc(hx, hy, hr + 2, 0, 7); g.arc(hx + lx * 34, hy - 22, hr * 1.04, 0, 7, true); g.fill('evenodd');   // shadow crescent on the far side
-  for (const s of [-1, 1]) { const bl = g.createRadialGradient(hx + s * 58, hy + 34, 0, hx + s * 58, hy + 34, 30); bl.addColorStop(0, `rgba(240,110,100,${.32 + (S.expr === 'laugh' || S.expr === 'happy' ? .12 : 0)})`); bl.addColorStop(1, 'rgba(240,110,100,0)'); g.fillStyle = bl; g.fillRect(hx - hr, hy - hr, hr * 2, hr * 2); }
-  const hl = g.createRadialGradient(hx + lx * 46 - 10, hy - 66, 0, hx + lx * 46 - 10, hy - 66, 34); hl.addColorStop(0, 'rgba(255,255,255,.55)'); hl.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = hl; g.fillRect(hx - hr, hy - hr, hr * 2, hr * 2);
-  g.restore();
+  // long thin legs
+  const hipY = 540 + bob, sw = Math.sin(S.walk) * .32; g.lineWidth = 9;
+  for (const s of [-1, 1]) { const [fx, fy] = limb(g, cx + s * 24, hipY, s * sw * (s < 0 ? 1 : -1) + .03, 0, 214, s); g.fillStyle = p.shoes || '#1e1a22'; g.beginPath(); g.ellipse(fx + s * 12, fy + 3, 24, 10, 0, 0, 7); g.fill(); g.lineWidth = 5; g.stroke(); g.lineWidth = 9; }
+  // tall bean body that tucks up under the head
+  const top = 196 + bob, bot = 560 + bob, wt = 90, wb = 108;
+  const bg = g.createLinearGradient(cx - wb, 0, cx + wb, 0); bg.addColorStop(lx > 0 ? 1 : 0, shade(p.body, 1.08)); bg.addColorStop(.55, css(p.body)); bg.addColorStop(lx > 0 ? 0 : 1, shade(p.body, .78));
+  bean(g, cx, top, bot, wt, wb); g.fillStyle = bg; g.fill(); g.save(); bean(g, cx, top, bot, wt, wb); g.clip(); outfit(g, p, cx - wb, top, wb * 2, bot - top, cx); g.restore(); bean(g, cx, top, bot, wt, wb); g.lineWidth = 9; g.stroke();
+  // thin arms + small round hands
+  for (const [s, a] of [[-1, S.armL], [1, S.armR]]) { g.lineWidth = 9; const [hx, hy2] = limb(g, cx + s * (wt + 2), top + 120, a[0], a[1], 230, s); g.fillStyle = skin; g.beginPath(); g.arc(hx, hy2, 15, 0, 7); g.fill(); g.lineWidth = 6; g.stroke(); if (S.hold && s === 1) S.hold(g, hx, hy2); }
+  // head: near-white, very soft shading, thick dark outline
+  const hx = cx + S.lookX * 6, hg = g.createRadialGradient(hx + lx * 50, hy - 40, 20, hx, hy, hr); hg.addColorStop(0, shade(skin, 1.02)); hg.addColorStop(.75, skin); hg.addColorStop(1, shade(skin, .9));
   hair(g, p, hx, hy, hr, 'back');
-  g.beginPath(); g.arc(hx, hy, hr, 0, 7); g.lineWidth = 9; g.stroke();
-  faceDraw(g, p, S, hx + S.lookX * 14, hy + 8);
+  g.beginPath(); g.arc(hx, hy, hr, 0, 7); g.fillStyle = hg; g.fill();
+  g.save(); g.beginPath(); g.arc(hx, hy, hr, 0, 7); g.clip(); g.fillStyle = 'rgba(60,50,70,.08)'; g.beginPath(); g.arc(hx, hy, hr + 2, 0, 7); g.arc(hx + lx * 22, hy - 14, hr * 1.02, 0, 7, true); g.fill('evenodd');
+  if (S.expr === 'laugh' || S.expr === 'embarrassed') for (const s of [-1, 1]) { const bl = g.createRadialGradient(hx + s * 62, hy + 36, 0, hx + s * 62, hy + 36, 26); bl.addColorStop(0, 'rgba(240,120,110,.35)'); bl.addColorStop(1, 'rgba(240,120,110,0)'); g.fillStyle = bl; g.fillRect(hx - hr, hy - hr, hr * 2, hr * 2); }
+  g.restore();
+  g.beginPath(); g.arc(hx, hy, hr, 0, 7); g.lineWidth = 10; g.stroke();
+  faceDraw(g, p, S, hx + S.lookX * 16, hy + 14);
   hair(g, p, hx, hy, hr, 'front');
-  if (p.earring) { const ex = hx + hr * .9, ey = hy + 40; g.strokeStyle = '#d8a520'; g.lineWidth = 7; g.beginPath(); g.arc(ex, ey + 14, 13, 0, 7); g.stroke(); g.strokeStyle = '#fff2a0'; g.lineWidth = 3; g.beginPath(); g.arc(ex, ey + 14, 13, -2.4, -1.4); g.stroke(); g.strokeStyle = INK;
-    if (S.sparkle > 0) { g.fillStyle = `rgba(255,250,210,${S.sparkle})`; const r = 30 * S.sparkle; g.beginPath(); g.moveTo(ex + 18, ey - r); g.lineTo(ex + 23, ey + 9); g.lineTo(ex + 18 + r, ey + 14); g.lineTo(ex + 23, ey + 19); g.lineTo(ex + 18, ey + 14 + r); g.lineTo(ex + 13, ey + 19); g.lineTo(ex + 18 - r, ey + 14); g.lineTo(ex + 13, ey + 9); g.closePath(); g.fill(); } }
-  if (S.sweat > 0) { g.fillStyle = '#8ad8ff'; g.strokeStyle = INK; g.lineWidth = 4; const sx = hx - 88, sy = hy - 40 + (S.sweat * 30) % 30; g.beginPath(); g.moveTo(sx, sy - 18); g.quadraticCurveTo(sx + 13, sy + 2, sx, sy + 8); g.quadraticCurveTo(sx - 13, sy + 2, sx, sy - 18); g.fill(); g.stroke(); }
+  if (p.earring) { const ex = hx + hr * .9, ey = hy + 40; g.strokeStyle = '#d8a520'; g.lineWidth = 7; g.beginPath(); g.arc(ex, ey + 14, 13, 0, 7); g.stroke(); g.strokeStyle = INK; }
+  if (S.sweat > 0) { g.fillStyle = '#8ad8ff'; g.strokeStyle = INK; g.lineWidth = 4; const sx = hx - 92, sy = hy - 40 + (S.sweat * 30) % 30; g.beginPath(); g.moveTo(sx, sy - 18); g.quadraticCurveTo(sx + 13, sy + 2, sx, sy + 8); g.quadraticCurveTo(sx - 13, sy + 2, sx, sy - 18); g.fill(); g.stroke(); }
 }
 function faceDraw(g, p, S, x, y) {
-  const e = S.expr, ex = 34, ey = y - 8; g.strokeStyle = INK; g.fillStyle = INK; g.lineWidth = 7;
-  const brow = (s, a, dy = 0) => { g.beginPath(); g.moveTo(x + s * (ex - 18), ey - 34 + dy + a * s * 0); g.lineTo(x + s * (ex + 16), ey - 34 + dy - a); g.stroke(); };
-  if (e === 'happy' || e === 'laugh' || e === 'proud') for (const s of [-1, 1]) { g.beginPath(); g.arc(x + s * ex, ey + 6, 13, Math.PI * 1.1, Math.PI * 1.9); g.stroke(); }
-  else if (e === 'shocked' || e === 'scared') for (const s of [-1, 1]) { g.fillStyle = '#fff'; g.beginPath(); g.arc(x + s * ex, ey, 19, 0, 7); g.fill(); g.lineWidth = 6; g.stroke(); g.fillStyle = INK; g.beginPath(); g.arc(x + s * ex + S.lookX * 4, ey + 1, e === 'scared' ? 5 : 8, 0, 7); g.fill(); }
-  else if (e === 'sly') for (const s of [-1, 1]) { g.beginPath(); g.arc(x + s * ex + 3, ey + 2, 8, 0, 7); g.fill(); g.lineWidth = 6; g.beginPath(); g.moveTo(x + s * ex - 14, ey - 5); g.lineTo(x + s * ex + 14, ey - 5); g.stroke(); }
-  else for (const s of [-1, 1]) { g.beginPath(); g.ellipse(x + s * ex + S.lookX * 4, ey, 8, S.blink ? 1.5 : 10, 0, 0, 7); g.fill(); }
-  if (p.glasses) { g.lineWidth = 5; for (const s of [-1, 1]) { g.beginPath(); g.arc(x + s * ex, ey, 24, 0, 7); g.stroke(); } g.beginPath(); g.moveTo(x - 10, ey); g.lineTo(x + 10, ey); g.stroke(); }
-  g.lineWidth = 7;
-  if (e === 'sad' || e === 'scared') { brow(-1, -12); brow(1, -12); } else if (e === 'shocked') { brow(-1, 4, -10); brow(1, 4, -10); } else if (e === 'sly') { brow(-1, 2, -2); brow(1, 12, -6); } else if (e === 'proud') { brow(-1, 6); brow(1, 6); }
-  else if (e !== 'happy' && e !== 'laugh') { brow(-1, 2); brow(1, 2); }
-  if (p.mustache) { g.fillStyle = p.hairC || INK; g.beginPath(); g.moveTo(x - 46, y + 34); g.quadraticCurveTo(x - 26, y + 6, x, y + 22); g.quadraticCurveTo(x + 26, y + 6, x + 46, y + 34); g.quadraticCurveTo(x + 24, y + 28, x, y + 32); g.quadraticCurveTo(x - 24, y + 28, x - 46, y + 34); g.fill(); }
-  const my = y + 46; g.lineWidth = 7;
-  if (e === 'happy' || e === 'laugh' || e === 'proud') { const w = e === 'laugh' ? 42 : 34, h = e === 'laugh' ? 40 : 26; g.beginPath(); g.moveTo(x - w, my - 6); g.quadraticCurveTo(x, my - 12, x + w, my - 6); g.quadraticCurveTo(x + w * .8, my + h, x, my + h); g.quadraticCurveTo(x - w * .8, my + h, x - w, my - 6); g.closePath(); g.fillStyle = '#5a1418'; g.fill(); g.save(); g.clip(); g.fillStyle = '#fff'; g.fillRect(x - w, my - 12, w * 2, 13); g.fillStyle = '#e8606a'; g.beginPath(); g.ellipse(x, my + h, w * .55, h * .45, 0, 0, 7); g.fill(); g.restore(); g.stroke(); }
-  else if (e === 'shocked') { g.fillStyle = '#5a1418'; g.beginPath(); g.ellipse(x, my + 6, 15, 20, 0, 0, 7); g.fill(); g.stroke(); }
-  else if (e === 'scared') { g.beginPath(); for (let i = 0; i <= 6; i++) { const xx = x - 30 + i * 10, yy = my + (i % 2 ? -5 : 5); i ? g.lineTo(xx, yy) : g.moveTo(xx, yy); } g.stroke(); }
-  else if (e === 'sad') { g.beginPath(); g.arc(x, my + 22, 24, Math.PI * 1.2, Math.PI * 1.8); g.stroke(); }
-  else if (e === 'sly') { g.beginPath(); g.moveTo(x - 22, my + 2); g.quadraticCurveTo(x + 6, my + 12, x + 28, my - 6); g.stroke(); }
-  else { g.beginPath(); g.moveTo(x - 16, my + 2); g.quadraticCurveTo(x, my + 8, x + 16, my + 2); g.stroke(); }
+  const e = S.expr, ex = 40, ey = y - 6; g.strokeStyle = INK; g.fillStyle = INK; g.lineCap = 'round';
+  const brow = (s, tilt, dy = 0, w = 26) => { g.lineWidth = 10; g.beginPath(); g.moveTo(x + s * (ex - w / 2 - 2), ey - 34 + dy + tilt); g.lineTo(x + s * (ex + w / 2 + 2), ey - 34 + dy - tilt); g.stroke(); };
+  if (e === 'happy' || e === 'laugh' || e === 'proud') for (const s of [-1, 1]) { g.lineWidth = 8; g.beginPath(); g.arc(x + s * ex, ey + 8, 12, Math.PI * 1.15, Math.PI * 1.85); g.stroke(); }
+  else if (e === 'shocked' || e === 'scared') for (const s of [-1, 1]) { g.fillStyle = '#fff'; g.beginPath(); g.arc(x + s * ex, ey, 18, 0, 7); g.fill(); g.lineWidth = 6; g.stroke(); g.fillStyle = INK; g.beginPath(); g.arc(x + s * ex + S.lookX * 4, ey + 1, e === 'scared' ? 5 : 8, 0, 7); g.fill(); }
+  else for (const s of [-1, 1]) { const lid = e === 'sly' ? 5 : e === 'sad' ? 2 : 3.5; g.beginPath(); g.ellipse(x + s * ex + S.lookX * 4, ey + 2, 11, S.blink ? 1.5 : 7, 0, 0, 7); g.fill(); g.lineWidth = 5; g.beginPath(); g.moveTo(x + s * ex - 14, ey - lid); g.lineTo(x + s * ex + 14, ey - lid); g.stroke(); }
+  if (p.glasses) { g.lineWidth = 5; for (const s of [-1, 1]) { g.beginPath(); g.arc(x + s * ex, ey, 24, 0, 7); g.stroke(); } g.beginPath(); g.moveTo(x - 16, ey); g.lineTo(x + 16, ey); g.stroke(); }
+  if (e === 'sad' || e === 'scared') { brow(-1, -6); brow(1, -6); } else if (e === 'shocked') { brow(-1, 2, -12); brow(1, 2, -12); } else if (e === 'sly') { brow(-1, 0, 0); brow(1, 7, -4); } else if (e === 'angry') { brow(-1, 8, 4); brow(1, 8, 4); }
+  else if (e !== 'happy' && e !== 'laugh') { brow(-1, 1); brow(1, 1); }
+  if (p.mustache) { g.fillStyle = p.hairC || INK; g.beginPath(); g.moveTo(x - 44, y + 38); g.quadraticCurveTo(x - 24, y + 12, x, y + 26); g.quadraticCurveTo(x + 24, y + 12, x + 44, y + 38); g.quadraticCurveTo(x + 22, y + 32, x, y + 36); g.quadraticCurveTo(x - 22, y + 32, x - 44, y + 38); g.fill(); }
+  const my = y + 52; g.lineWidth = 7;
+  if (e === 'happy' || e === 'laugh' || e === 'proud') { const w = e === 'laugh' ? 34 : 24, h = e === 'laugh' ? 32 : 18; g.beginPath(); g.moveTo(x - w, my - 6); g.quadraticCurveTo(x, my - 10, x + w, my - 6); g.quadraticCurveTo(x + w * .8, my + h, x, my + h); g.quadraticCurveTo(x - w * .8, my + h, x - w, my - 6); g.closePath(); g.fillStyle = '#4a1418'; g.fill(); g.save(); g.clip(); g.fillStyle = '#fff'; g.fillRect(x - w, my - 10, w * 2, 9); g.fillStyle = '#e06068'; g.beginPath(); g.ellipse(x, my + h, w * .55, h * .45, 0, 0, 7); g.fill(); g.restore(); g.lineWidth = 6; g.stroke(); }
+  else if (e === 'shocked') { g.fillStyle = '#4a1418'; g.beginPath(); g.ellipse(x, my + 4, 12, 16, 0, 0, 7); g.fill(); g.lineWidth = 6; g.stroke(); }
+  else if (e === 'scared') { g.beginPath(); for (let i = 0; i <= 6; i++) { const xx = x - 24 + i * 8, yy = my + (i % 2 ? -4 : 4); i ? g.lineTo(xx, yy) : g.moveTo(xx, yy); } g.stroke(); }
+  else if (e === 'sad') { g.beginPath(); g.arc(x, my + 20, 18, Math.PI * 1.25, Math.PI * 1.75); g.stroke(); }
+  else if (e === 'sly') { g.beginPath(); g.moveTo(x - 18, my + 2); g.quadraticCurveTo(x + 4, my + 10, x + 22, my - 4); g.stroke(); }
+  else { g.beginPath(); g.moveTo(x - 20, my); g.lineTo(x + 20, my); g.stroke(); }
 }
 function hair(g, p, x, y, r, layer) {
   g.strokeStyle = INK; g.lineWidth = 8; const hc = p.hairC || '#3a2418';
@@ -112,18 +111,24 @@ function hair(g, p, x, y, r, layer) {
   if (H === 'pith') { g.fillStyle = '#d8c08a'; g.beginPath(); g.ellipse(x, y - r * .55, r * 1.3, 22, 0, 0, 7); g.fill(); g.stroke(); g.beginPath(); g.arc(x, y - r * .55, r * .78, Math.PI, 0); g.fill(); g.stroke(); g.strokeStyle = '#8a6a3a'; g.beginPath(); g.moveTo(x - r * .76, y - r * .66); g.lineTo(x + r * .76, y - r * .66); g.stroke(); }
   if (H === 'flatcap') { g.fillStyle = p.hatC || '#5a5a62'; g.beginPath(); g.moveTo(x - r * 1.02, y - r * .3); g.quadraticCurveTo(x - r * .9, y - r * 1.12, x + r * .2, y - r * 1.05); g.quadraticCurveTo(x + r * 1.3, y - r * .9, x + r * 1.35, y - r * .35); g.quadraticCurveTo(x, y - r * .5, x - r * 1.02, y - r * .3); g.fill(); g.stroke(); }
   if (H === 'bald') { }
+  if (H === 'ranger') { g.fillStyle = p.hatC || '#8a6a3a'; g.strokeStyle = INK; g.lineWidth = 8; g.beginPath(); g.ellipse(x, y - r * .62, r * 1.32, 22, 0, 0, 7); g.fill(); g.stroke(); g.beginPath(); g.moveTo(x - r * .62, y - r * .64); g.lineTo(x - r * .5, y - r * 1.22); g.quadraticCurveTo(x - r * .25, y - r * 1.05, x, y - r * 1.28); g.quadraticCurveTo(x + r * .25, y - r * 1.05, x + r * .5, y - r * 1.22); g.lineTo(x + r * .62, y - r * .64); g.closePath(); g.fill(); g.stroke(); g.fillStyle = '#3a2a1a'; g.fillRect(x - r * .6, y - r * .82, r * 1.2, 16); }
+  if (H === 'mop') { g.fillStyle = p.hairC || '#3a2418'; g.strokeStyle = INK; g.lineWidth = 8; g.beginPath(); g.arc(x, y, r + 4, Math.PI * 1.02, Math.PI * 1.98); g.quadraticCurveTo(x + r * .7, y - r * .42, x + r * .1, y - r * .5); g.quadraticCurveTo(x - r * .3, y - r * .3, x - r * .75, y - r * .46); g.quadraticCurveTo(x - r * .95, y - r * .3, x - r - 4, y - r * .1); g.closePath(); g.fill(); g.stroke(); }
   g.strokeStyle = INK; g.lineWidth = 8;
   if (p.beard) { g.fillStyle = p.hairC || '#2a1a12'; g.beginPath(); g.moveTo(x - r * .75, y + r * .35); g.quadraticCurveTo(x, y + r * 1.55, x + r * .75, y + r * .35); g.quadraticCurveTo(x, y + r * .95, x - r * .75, y + r * .35); g.fill(); g.stroke(); }
 }
 function outfit(g, p, x, y, w, h, cx) {
-  const o = p.outfit;
-  if (o === 'coat') { g.fillStyle = shade(p.body, .7); g.fillRect(cx - 4, y, 8, h); g.fillStyle = '#f4ece0'; g.beginPath(); g.moveTo(cx - 26, y); g.lineTo(cx, y + 50); g.lineTo(cx + 26, y); g.fill(); g.fillStyle = '#d8a520'; for (let i = 0; i < 4; i++) { g.beginPath(); g.arc(cx + 18, y + 70 + i * 28, 6, 0, 7); g.fill(); } g.fillStyle = '#3a2418'; g.fillRect(x, y + h * .62, w, 18); g.fillStyle = '#d8a520'; g.fillRect(cx - 12, y + h * .62 - 2, 24, 22); }
-  if (o === 'stripes') { g.fillStyle = '#2a4a9a'; for (let yy = y + 20; yy < y + h; yy += 30) g.fillRect(x, yy, w, 13); }
-  if (o === 'vest') { g.fillStyle = '#f2ece0'; g.fillRect(cx - 22, y, 44, h); g.fillStyle = shade(p.body, .85); g.fillRect(cx - 4, y + 40, 8, h); }
-  if (o === 'suit') { g.fillStyle = '#f2f2f2'; g.beginPath(); g.moveTo(cx - 24, y); g.lineTo(cx, y + 60); g.lineTo(cx + 24, y); g.fill(); g.fillStyle = p.tie || '#c8202a'; g.beginPath(); g.moveTo(cx - 8, y + 8); g.lineTo(cx + 8, y + 8); g.lineTo(cx + 6, y + 70); g.lineTo(cx, y + 80); g.lineTo(cx - 6, y + 70); g.fill(); }
-  if (o === 'robe') { g.fillStyle = '#f2f2f2'; g.fillRect(cx - 14, y, 28, 16); }
-  if (o === 'khaki') { g.fillStyle = shade(p.body, .8); g.fillRect(x + 20, y + 50, 34, 28); g.fillRect(x + w - 54, y + 50, 34, 28); g.fillStyle = '#5a3a1a'; g.fillRect(x, y + h * .6, w, 14); }
-  if (o === 'apron') { g.fillStyle = '#e8e2d2'; roundPath(g, cx - 40, y + 50, 80, h, 16); g.fill(); }
+  const o = p.outfit, dk = shade(p.body, .72), st = (x0, y0, x1, y1) => { g.save(); g.setLineDash([6, 6]); g.strokeStyle = dk; g.lineWidth = 3; g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke(); g.restore(); };
+  const pocket = (px, py) => { g.fillStyle = shade(p.body, .9); g.strokeStyle = INK; g.lineWidth = 4; g.beginPath(); g.roundRect(px, py, 44, 38, 6); g.fill(); g.stroke(); g.beginPath(); g.moveTo(px, py + 12); g.lineTo(px + 44, py + 12); g.stroke(); };
+  if (o === 'uniform') { st(cx, y + 60, cx, y + h); pocket(cx - 70, y + 120); pocket(cx + 26, y + 120); g.fillStyle = '#c8a040'; g.strokeStyle = INK; g.lineWidth = 3; g.beginPath(); g.moveTo(cx + 34, y + 84); g.lineTo(cx + 62, y + 84); g.lineTo(cx + 62, y + 104); g.quadraticCurveTo(cx + 48, y + 120, cx + 34, y + 104); g.closePath(); g.fill(); g.stroke(); g.fillStyle = '#16181e'; g.fillRect(x, y + h * .74, w, 20); g.fillStyle = '#e8c33a'; g.fillRect(cx - 14, y + h * .74 - 2, 28, 24); }
+  if (o === 'tie') { st(cx - 30, y + 80, cx - 30, y + h); g.fillStyle = '#f2f2f2'; g.beginPath(); g.moveTo(cx - 30, y + 30); g.lineTo(cx, y + 70); g.lineTo(cx + 30, y + 30); g.fill(); g.fillStyle = p.tie || '#7a3a2a'; g.beginPath(); g.moveTo(cx - 9, y + 50); g.lineTo(cx + 9, y + 50); g.lineTo(cx + 7, y + 190); g.lineTo(cx, y + 204); g.lineTo(cx - 7, y + 190); g.fill(); g.strokeStyle = INK; g.lineWidth = 4; g.stroke(); pocket(cx + 34, y + 110); }
+  if (o === 'coat') { g.fillStyle = shade(p.body, .7); g.fillRect(cx - 4, y, 8, h); g.fillStyle = '#f4ece0'; g.beginPath(); g.moveTo(cx - 30, y + 20); g.lineTo(cx, y + 80); g.lineTo(cx + 30, y + 20); g.fill(); g.fillStyle = '#d8a520'; for (let i = 0; i < 4; i++) { g.beginPath(); g.arc(cx + 20, y + 110 + i * 34, 7, 0, 7); g.fill(); } g.fillStyle = '#3a2418'; g.fillRect(x, y + h * .7, w, 20); g.fillStyle = '#d8a520'; g.fillRect(cx - 14, y + h * .7 - 2, 28, 24); }
+  if (o === 'overalls') { g.fillStyle = p.shirt || '#f2f2f2'; g.fillRect(x, y, w, 120); g.fillStyle = p.bib || '#3a6ab0'; g.beginPath(); g.roundRect(cx - 52, y + 100, 104, h, 12); g.fill(); g.fillRect(x, y + 190, w, h); g.strokeStyle = INK; g.lineWidth = 4; g.beginPath(); g.moveTo(cx - 44, y + 104); g.lineTo(cx - 64, y + 10); g.moveTo(cx + 44, y + 104); g.lineTo(cx + 64, y + 10); g.stroke(); pocket(cx - 22, y + 130); }
+  if (o === 'stripes') { g.fillStyle = '#2a4a9a'; for (let yy = y + 40; yy < y + h; yy += 32) g.fillRect(x, yy, w, 13); }
+  if (o === 'vest') { g.fillStyle = '#f2ece0'; g.fillRect(cx - 24, y, 48, h); g.fillStyle = shade(p.body, .85); g.fillRect(cx - 4, y + 60, 8, h); }
+  if (o === 'suit') { g.fillStyle = '#f2f2f2'; g.beginPath(); g.moveTo(cx - 28, y + 20); g.lineTo(cx, y + 90); g.lineTo(cx + 28, y + 20); g.fill(); g.fillStyle = p.tie || '#c8202a'; g.beginPath(); g.moveTo(cx - 8, y + 34); g.lineTo(cx + 8, y + 34); g.lineTo(cx + 6, y + 110); g.lineTo(cx, y + 120); g.lineTo(cx - 6, y + 110); g.fill(); }
+  if (o === 'robe') { g.fillStyle = '#f2f2f2'; g.fillRect(cx - 14, y + 20, 28, 18); }
+  if (o === 'khaki') { pocket(cx - 70, y + 110); pocket(cx + 26, y + 110); g.fillStyle = '#5a3a1a'; g.fillRect(x, y + h * .66, w, 16); }
+  if (o === 'apron') { g.fillStyle = '#e8e2d2'; g.beginPath(); g.roundRect(cx - 44, y + 90, 88, h, 16); g.fill(); }
 }
 
 // ---------- sets ----------
@@ -226,92 +231,15 @@ function sparks(scene, n, col = 0xfff4c0) { return [...Array(n)].map((_, i) => {
 const sparksAt = (sp, t, p, rad = .5, on = true) => sp.forEach(s => { const i = s.userData, an = i * 2.4 + t * 1.5; s.visible = on; s.position.set(p.x + Math.cos(an) * rad, p.y + Math.sin(an * 1.3) * rad * .8, p.z + .1); s.scale.setScalar(.3 + Math.max(0, Math.sin(t * 9 + i * 2)) * .9); });
 const SUNSET = 0xffe4cc;
 
-// ---------- shots ----------
+// ---------- shots: style test ----------
+const RANGER2 = { skin: '#f6f3ec', body: 0x6a7a4a, outfit: 'uniform', hat: 'ranger', hatC: '#9a7a44' };
+const CLERK = { skin: '#f6f3ec', body: 0xe0a830, outfit: 'tie', tie: '#6a3a2a', hat: 'mop', hairC: '#2a2420' };
+const FISHER = { skin: '#f6f3ec', body: 0xf2f2f2, outfit: 'overalls', bib: 0x3a6ab0, hat: 'flatcap', hatC: '#5a5a62' };
 const shots = [];
-const shot = (t0, t1, build, extra = {}) => shots.push({ t0, t1, ...build(), ...extra });
-// 1 / loop: "Pirates didn't wear gold earrings to look cool."
-function sCaptain(loop) {
-  return () => { const S = shipDeck(), C = toon(S.scene, CAPTAIN, SUNSET), A = toon(S.scene, SAILOR, SUNSET), B = toon(S.scene, MATE, SUNSET);
-    return { scene: S.scene, cam: S.cam, toons: [C, A, B], update(tl, d, t) {
-      const cool = !loop && tl > 1.85; C.root.position.set(0, 0, 0); C.set({ expr: cool ? 'proud' : 'sly', armL: [.3, .2], armR: cool ? [2.5, .9] : [.35, .2], sparkle: cool ? Math.max(0, Math.sin((tl - 1.85) * 6)) : .3 + .3 * Math.sin(t * 4) });
-      A.root.position.set(-1.5, 0, -2.2); A.set({ expr: cool ? 'shocked' : 'happy', armL: [.3, .2], armR: [.3, .2] }); B.root.position.set(1.6, 0, -2.6); B.set({ expr: cool ? 'shocked' : 'neutral', armL: [.2, .1], armR: [.2, .1] });
-      const k = ss(0, 2.7, loop ? 0 : tl); look(S.cam, lerp(1.3, .45, k), lerp(1.9, 2.0, k), lerp(5.6, 3.0, k), .2, 1.55, -.5); S.sea.position.y = -2 + Math.sin(t) * .05;
-    } }; };
-}
-shot(0, 2.7, sCaptain(false), { dof: { b: 1.2, y: .4, r: .4 } });
-// 2: "Back then, if a sailor died at sea, he was sewn into a sheet and dropped overboard."
-shot(2.7, 7.72, () => {
-  const S = shipDeck({ night: true }), bun = makeBundle(); S.scene.add(bun); const plank = box(.6, .08, 2.4, mat({ color: 0x8a5a2a })); S.scene.add(plank);
-  const A = toon(S.scene, SAILOR, 0xb8c4ff), B = toon(S.scene, MATE, 0xb8c4ff), C = toon(S.scene, CAPTAIN, 0xb8c4ff), spl = sparks(S.scene, 12, 0xdff4ff), DROP = 4.0;
-  return { scene: S.scene, cam: S.cam, toons: [A, B, C], update(tl, d, t) {
-    plank.position.set(3.4, .82, -.8); plank.rotation.set(0, Math.PI / 2, 0); const a = tl - DROP, tip = ss(DROP - .4, DROP, tl);
-    plank.rotation.z = -tip * .35; bun.rotation.set(0, 0, 0);
-    if (a < 0) bun.position.set(lerp(2.4, 3.3, tip), 1.2 - tip * .1, -.8); else bun.position.set(3.3 + a * 1.4, 1.1 - a * a * 6, -.8); bun.rotation.z = a > 0 ? -a * 2 : 0; bun.visible = bun.position.y > -2.2;
-    [A, B, C].forEach((h, i) => { h.root.position.set(.9 - i * 1.1, 0, -.4 - i * .6); h.set({ expr: 'sad', armL: [.15, .1], armR: [.15, .1], lightX: .8 }); });
-    spl.forEach(s => { const q = a - .55; s.visible = q > 0 && q < .8; const an = s.userData * .52; s.position.set(5.2 + Math.cos(an) * q * 1.5, -2 + q * 2.5 - q * q * 4, -.8 + Math.sin(an) * q); s.scale.setScalar(1.5); });
-    if (tl < 3.0) look(S.cam, -.8 + tl * .2, 2.3, 5.4 - tl * .2, 1.6, 1.0, -.8); else look(S.cam, 1.6, 2.6, 3.4, 4.2, -.4, -.8);
-  } };
-});
-// 3: "No grave. No funeral." - sinking in the deep
-shot(7.72, 10.2, () => {
-  const U = underwater(), bun = makeBundle(); U.scene.add(bun);
-  return { scene: U.scene, cam: U.cam, update(tl, d, t) {
-    bun.position.set(0, 1.5 - tl * 1.2, 0); bun.rotation.set(.2, t * .2, Math.sin(t * .6) * .2); U.rays.forEach((r, i) => r.material.opacity = .08 + .05 * Math.sin(t * 1.3 + i));
-    U.bub.forEach(b => { const i = b.userData, q = (t * .5 + i / 16) % 1; b.position.set(bun.position.x + Math.sin(i * 3) * .4, bun.position.y + q * 3, bun.position.z + Math.cos(i * 2) * .3); b.scale.setScalar(1 - q * .5); });
-    look(U.cam, 1.6, bun.position.y + .9, 4.2, 0, bun.position.y - .4, 0);
-  } };
-}, { dof: { b: 1.4, y: .5, r: .38 } });
-// 4: "So some started wearing a gold earring. Not as jewelry. As payment."
-shot(10.2, 14.66, () => {
-  const S = shipDeck(), C = toon(S.scene, CAPTAIN, SUNSET), cs = coins(S.scene, 8), sp = sparks(S.scene, 8);
-  return { scene: S.scene, cam: S.cam, toons: [C], update(tl, d, t) {
-    const PUT = 1.2, NOT = 2.53, PAY = 3.66; C.root.position.set(0, 0, 0);
-    if (tl < PUT + .4) C.set({ expr: 'happy', armR: [2.6, 1.6], hold: tl < PUT ? holdRing : null, sparkle: tl > PUT ? 1 : 0 }); else if (tl < PAY) C.set({ expr: 'sly', armR: [.3, .2], hold: null, sparkle: .4 + .4 * Math.sin(t * 5), lookX: Math.sin((tl - NOT) * 14) * (tl > NOT && tl < NOT + .7 ? 1 : 0) }); else C.set({ expr: 'proud', armR: [.3, .2], sparkle: 1, lookX: 0 });
-    C.set({ armL: [.3, .2] }); cs.forEach(c => { const i = c.userData, k = pop(tl - PAY - i * .06); c.visible = tl > PAY; c.position.set(-.9 + (i % 4) * .6, 2.9 + Math.floor(i / 4) * .45 + Math.sin(t * 3 + i) * .05, .3); c.rotation.set(Math.PI / 2, 0, t * 2 + i); c.scale.setScalar(k); });
-    sparksAt(sp, t, V(.55, 1.95, .2), .25, tl > PUT); look(S.cam, .5, 2.0, lerp(2.6, 2.1, ss(0, 4.4, tl)) * (tl > PAY ? punch(tl - PAY, .08) : 1), .15, 1.9, 0);
-  } };
-}, { dof: { b: 1.3, y: .45, r: .38 } });
-// 5: "If his body ever washed up on a beach, whoever found it could take the gold, and use it to pay for a proper burial."
-shot(14.66, 21.76, () => {
-  const Bc = beach(), V1 = toon(Bc.scene, VILLAGER), sp = sparks(Bc.scene, 8), Gy = graveyard(), V2 = toon(Gy.scene, VILLAGER, 0xffe0d0), P = toon(Gy.scene, PRIEST, 0xffe0d0), cs = coins(Gy.scene, 1), FIND = 2.74, TAKE = 4.02, SW = 4.85;
-  return { scene: Bc.scene, cam: Bc.cam, toons: [V1], update(tl, d, t) {
-    if (tl < SW) { this.scene = Bc.scene; this.cam = Bc.cam; this.toons = [V1]; Bc.foam.position.z = -10 + Math.sin(t * .8) * .6;
-      const walk = tl < FIND; V1.root.position.set(lerp(-4, -.9, ss(0, FIND, tl)), 0, .2); V1.set({ walk: walk ? t * 9 : 0, expr: tl > FIND ? (tl > TAKE ? 'happy' : 'shocked') : 'neutral', armL: [.2, .1], armR: tl > TAKE ? [2.4, .8] : [.25, .15], hold: tl > TAKE ? holdRing : null, lookX: tl > FIND && tl < TAKE ? .8 : 0 });
-      Bc.ring.visible = tl < TAKE; sparksAt(sp, t, V(-.1, .25, -.2), .3, tl > 1.4 && tl < TAKE);
-      const vx = V1.root.position.x; if (tl < FIND) look(Bc.cam, vx + 1.2, 1.7, 4.4, vx + .5, 1.1, -.2); else look(Bc.cam, .4, 1.5 + (tl > TAKE ? .3 : 0), 3.4, -.4, tl > TAKE ? 1.4 : .8, -.2); return; }
-    this.scene = Gy.scene; this.cam = Gy.cam; this.toons = [V2, P]; const a = tl - SW;
-    V2.root.position.set(-.9, 0, 1.1); V2.set({ expr: 'sad', armL: [.2, .1], armR: [1.2, .5] }); P.root.position.set(1.4, 0, .9); P.set({ expr: 'neutral', armL: [1.0, 1.2], armR: [1.0, 1.2] });
-    cs.forEach(c => { c.visible = a > .5; c.position.set(.4, 1.3 + Math.sin(t * 2) * .05, 1.3); c.rotation.set(Math.PI / 2, 0, t * 2); });
-    look(Gy.cam, lerp(-.8, .2, ss(0, 2.4, a)), 2.3, 6.6 - a * .3, .25, 1.0, .5);
-  } };
-}, { dof: { b: 1.2, y: .5, r: .42 } });
-// 6: "Historians aren't sure how common this really was."
-shot(21.76, 25.25, () => {
-  const L = library(), Hs = toon(L.scene, HISTORIAN, 0xffe8c8), qs = [...Array(3)].map((_, i) => { const q = new THREE.Mesh(new THREE.PlaneGeometry(.35, .5), bmat({ map: ctex(64, 96, g => { g.font = 'bold 84px sans-serif'; g.textAlign = 'center'; g.lineWidth = 10; g.strokeStyle = '#17110d'; g.strokeText('?', 32, 80); g.fillStyle = '#ffe21f'; g.fillText('?', 32, 80); }), transparent: true })); q.userData = i; L.scene.add(q); return q; });
-  return { scene: L.scene, cam: L.cam, toons: [Hs], update(tl, d, t) {
-    Hs.root.position.set(-.5, 0, .6); Hs.set({ expr: tl > 1.3 ? 'sad' : 'neutral', armL: [.3, .2], armR: tl > 1.3 ? [2.7, 1.4] : [1.0, 1.0], lookX: -.3 });
-    qs.forEach(q => { const i = q.userData, k = pop(tl - 1.0 - i * .3); q.position.set(-1.0 + i * .5, 2.75 + (i % 2) * .25 + Math.sin(t * 3 + i) * .05, .6); q.rotation.z = Math.sin(t * 4 + i) * .2; q.scale.setScalar(k); q.visible = k > 0; });
-    look(L.cam, .6 - tl * .1, 1.9, 3.8 - tl * .2, -.2, 1.6, .3);
-  } };
-}, { dof: { b: 1.2, y: .45, r: .42 } });
-// 7: "But archaeologists have found plenty of sailors' jewelry made to be spent."
-shot(25.25, 29.95, () => {
-  const Dg = digsite(), Ar = toon(Dg.scene, ARCH, 0xffe4c8), sp = sparks(Dg.scene, 12);
-  return { scene: Dg.scene, cam: Dg.cam, toons: [Ar], update(tl, d, t) {
-    Ar.root.position.set(.35, 0, 1.55); Ar.set({ expr: tl > 2.9 ? 'happy' : 'neutral', armL: [.3, .2], armR: [1.4 + Math.sin(t * 8) * .3 * (tl < 2.9 ? 1 : 0), .4], hold: holdBrush, lookX: -.6 });
-    Dg.items.forEach((it, i) => { it.position.y = .05 + (tl > 2.9 ? pop(tl - 2.9 - i * .05) * .12 : 0); }); sparksAt(sp, t, V(0, .3, 0), .9, tl > 2.0);
-    const k = ss(0, 4.6, tl); look(Dg.cam, lerp(-1.4, -.6, k), lerp(3.2, 2.4, k), lerp(4.6, 3.8, k), .2, .7, .4);
-  } };
-}, { dof: { b: 1.2, y: .55, r: .42 } });
-// 8: "Because for a pirate, that tiny ring was a funeral, already paid for."
-shot(29.95, DUR + .1, () => {
-  const S = shipDeck(), C = toon(S.scene, CAPTAIN, SUNSET), sp = sparks(S.scene, 8);
-  return { scene: S.scene, cam: S.cam, toons: [C], update(tl, d, t) {
-    C.root.position.set(0, 0, 2.6); C.set({ expr: tl > 3.6 ? 'happy' : 'proud', armL: [.3, .2], armR: [.3, .2], sparkle: .5 + .5 * Math.sin(t * 4), lookX: .3 });
-    const k = ss(.8, 4.6, tl); look(S.cam, lerp(.9, 3.4, k), lerp(2.1, 4.6, k), lerp(4.0, 10.5, k), lerp(.4, 0, k), lerp(2.05, 1.2, k), lerp(2.6, -1, k)); sparksAt(sp, t, V(.5, 2.0, 2.8), .2, tl < 2.5);
-  } };
-}, { dof: tl => tl < 1.5 ? { b: 1.2, y: .45, r: .38 } : null });
-shots.forEach(S => { if (!S.cam.parent) S.scene.add(S.cam); });
+shots.push({ t0: 0, t1: 99, ...(() => { const S = beach(), A = toon(S.scene, RANGER2), B = toon(S.scene, CLERK), C = toon(S.scene, FISHER);
+  return { scene: S.scene, cam: S.cam, toons: [A, B, C], update(tl, d, t) { const mode = Math.floor(tl);
+    A.root.position.set(0, 0, .6); A.set({ expr: ['neutral', 'sly', 'shocked', 'happy'][mode % 4], armL: [.3, .2], armR: mode % 2 ? [2.2, 1.2] : [.3, .2] }); B.root.position.set(-1.5, 0, -1.2); B.set({ expr: 'sly', armL: [.3, .2], armR: [.3, .2] }); C.root.position.set(1.5, 0, -1.6); C.set({ expr: 'neutral', armL: [.3, .2], armR: [.3, .2] });
+    look(S.cam, .2, 1.5, 4.6, 0, 1.3, -.6); } }; })() });
 
 // ---------- captions: one word at a time, white with a thick black outline ----------
 let words = [];
