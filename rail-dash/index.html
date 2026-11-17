@@ -337,77 +337,83 @@ button.gloss:focus-visible, .coin-pill:focus-visible { outline: 3px solid var(--
   82% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, -10px); }
 }
 
-/* ---------- crew: Dex on a podium over the sunburst, outfits, profile */
-.crew { position: fixed; inset: 0; z-index: 5; pointer-events: none; color: var(--paper); }
-.crew-head {
-  position: absolute; left: 0; right: 0; top: 0; display: grid; grid-template-columns: 52px 1fr auto; align-items: center; gap: 10px;
-  padding-top: calc(env(safe-area-inset-top, 0px) + 16px);
-  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+/* ---------- crew: character select. Dex big on the left, name + outfits + Selected on the right,
+   the roster row underneath and a tab bar at the bottom, over a light studio backdrop */
+.crew-bg { position: fixed; inset: 0; background: radial-gradient(125% 85% at 50% 34%, #ffffff 0%, #f1f3f8 38%, #d7dde8 78%, #c4cbd9 100%); }
+.crew {
+  position: fixed; inset: 0; z-index: 5; pointer-events: none; color: var(--paper);
+  --top-h: calc(env(safe-area-inset-top, 0px) + 70px); --nav-h: calc(env(safe-area-inset-bottom, 0px) + 102px); --roster-h: clamp(104px, 17vh, 170px);
+  --gut-l: max(16px, env(safe-area-inset-left, 0px)); --gut-r: max(16px, env(safe-area-inset-right, 0px));
 }
-.crew-head > * { pointer-events: auto; }
-.crew-title { margin: 0; text-align: center; font: clamp(34px, 9vw, 46px)/1 var(--font-display); letter-spacing: .05em; text-shadow: var(--outline), 0 6px 0 rgba(27, 16, 48, .4); }
-.crew-hint {
-  grid-column: 1 / -1; justify-self: center; margin: 2px 0 0; padding: 6px 12px; border-radius: 999px; pointer-events: none !important;
-  background: rgba(27, 16, 48, .62); font: 700 12px/1 var(--font-body); letter-spacing: .05em;
+.crew-top { position: absolute; left: 0; right: 0; top: calc(env(safe-area-inset-top, 0px) + 14px); display: flex; align-items: center; gap: 10px; padding: 0 var(--gut-r) 0 var(--gut-l); }
+.crew-top > * { pointer-events: auto; }
+.crew-top .grow { flex: 1; pointer-events: none; }
+.crew-gear { flex: none; width: 46px; height: 46px; padding: 0; border-radius: 14px; display: grid; place-items: center; }
+.crew-gear svg { width: 28px; height: 28px; filter: drop-shadow(0 2px 0 rgba(27, 16, 48, .4)); }
+.crew-stage { position: absolute; left: 2%; width: 47%; top: var(--top-h); bottom: calc(var(--nav-h) + var(--roster-h)); }
+.crew-info {
+  position: absolute; right: 0; width: 50%; top: var(--top-h); bottom: calc(var(--nav-h) + var(--roster-h)); box-sizing: border-box;
+  padding: 0 var(--gut-r) 0 2px; display: grid; align-content: center; justify-items: start; gap: 8px;
 }
-.crew-panel {
-  position: absolute; left: 0; right: 0; bottom: 0; margin: 0 auto; width: min(420px, 100%); box-sizing: border-box; pointer-events: auto;
-  display: grid; gap: 12px; padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 14px);
-  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+.crew-info > * { pointer-events: auto; }
+.crew-name {
+  margin: 0; font: clamp(50px, 15vw, 86px)/.95 var(--font-display); letter-spacing: .02em; color: #1d3c94;
+  text-shadow: 3px 0 0 #fff, -3px 0 0 #fff, 0 3px 0 #fff, 0 -3px 0 #fff, 2.2px 2.2px 0 #fff, -2.2px 2.2px 0 #fff, 2.2px -2.2px 0 #fff, -2.2px -2.2px 0 #fff, 0 7px 0 rgba(27, 16, 48, .16);
 }
-.crew-id { display: grid; justify-items: center; gap: 6px; }
-.crew-name { margin: 0; font: clamp(44px, 11vw, 58px)/1 var(--font-display); letter-spacing: .05em; text-shadow: var(--outline), 0 6px 0 rgba(27, 16, 48, .35); }
-.crew-role { padding: 5px 12px; border-radius: 999px; background: var(--ink); font: 700 11px/1 var(--font-body); letter-spacing: .14em; text-transform: uppercase; }
-.crew-card { display: grid; gap: 12px; padding: 12px 14px 14px; border-radius: 22px; }
-.crew-ohead { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
-.crew-ohead span { font: 21px/1 var(--font-display); letter-spacing: .03em; text-shadow: var(--outline-thin); }
-.crew-ohead b { font: 400 12px/1 var(--font-display); letter-spacing: .12em; color: var(--sun); text-shadow: 0 1px 0 var(--ink); }
-.crew-outfits { display: flex; justify-content: center; gap: 14px; padding: 6px 0 4px; }
-.of-btn { position: relative; flex: 0 1 64px; min-width: 0; aspect-ratio: 1; padding: 0; border-radius: 16px; display: grid; place-items: center; }
-.of-btn > svg { width: 82%; height: 82%; overflow: visible; }
-.of-btn[aria-checked="true"]::after {
-  content: ""; position: absolute; inset: -8px; border-radius: 21px; pointer-events: none;
-  border: 4px solid var(--sun); box-shadow: 0 0 0 2px var(--ink), inset 0 0 0 2px var(--ink);
+.crew-role {
+  margin: -2px 0 4px; font: clamp(17px, 4.8vw, 23px)/1 var(--font-display); letter-spacing: .02em; color: #2f7be0;
+  text-shadow: 2px 0 0 #fff, -2px 0 0 #fff, 0 2px 0 #fff, 0 -2px 0 #fff;
 }
-.of-tag {
-  position: absolute; z-index: 2; left: 50%; bottom: -10px; transform: translateX(-50%); display: flex; align-items: center; gap: 2px;
-  padding: 2px 7px 2px 3px; border-radius: 999px; background: var(--ink); white-space: nowrap;
-  font: 12px/1 var(--font-display); color: var(--sun); font-variant-numeric: tabular-nums;
+.crew-outfits { display: flex; gap: 6px; }
+.cr-of {
+  position: relative; width: clamp(34px, 9.4vw, 54px); aspect-ratio: 1; box-sizing: border-box; padding: 0; border-radius: 11px; display: grid; place-items: center; cursor: pointer;
+  background: linear-gradient(180deg, #ffffff, #e2e7f0); border: 3px solid #9ba7be; box-shadow: 0 3px 0 rgba(27, 16, 48, .22);
 }
-.of-tag svg { width: 14px; height: 14px; }
-.of-worn {
-  position: absolute; z-index: 2; top: -9px; right: -9px; width: 24px; height: 24px; box-sizing: border-box; border-radius: 50%; display: none; place-items: center;
+.cr-of > svg { width: 84%; height: 84%; overflow: visible; }
+.cr-of[aria-checked="true"] { border-color: #1d3c94; background: linear-gradient(180deg, #8ad6ff, #2f86e8); box-shadow: 0 0 0 2px #fff, 0 3px 0 rgba(27, 16, 48, .3); }
+.cr-of:focus-visible { outline: 3px solid #1d3c94; outline-offset: 4px; }
+.cr-lock { position: absolute; z-index: 2; right: -6px; bottom: -6px; width: 15px; height: 15px; filter: drop-shadow(0 1px 0 rgba(27, 16, 48, .5)); }
+.cr-oname { margin: 4px 0 2px; font: 16px/1 var(--font-display); letter-spacing: .02em; color: #1d3c94; text-shadow: 0 1px 0 #fff; }
+.crew-select {
+  width: min(250px, 100%); min-height: 64px; box-sizing: border-box; padding: 6px 14px; border-radius: 18px; margin-top: 4px;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  font: clamp(22px, 6.6vw, 31px)/1 var(--font-display); letter-spacing: .05em; text-transform: uppercase; color: var(--paper);
+  text-shadow: var(--outline-thin), 0 2px 0 rgba(27, 16, 48, .4);
+}
+.crew-select svg { width: 30px; height: 30px; flex: none; }
+.crew-select.gloss.short { background: linear-gradient(180deg, #e3e8f0, #aeb7c8 55%, #8a94a8); }
+.crew-select.nope { animation: nope .32s ease; }
+.crew-roster {
+  position: absolute; left: 0; right: 0; bottom: var(--nav-h); height: var(--roster-h); box-sizing: border-box;
+  display: flex; justify-content: center; align-items: flex-end; gap: clamp(2px, 2.6vw, 30px); padding: 0 var(--gut-r) 10px var(--gut-l);
+}
+.ro-slot { position: relative; flex: 0 1 auto; min-width: 0; height: 84%; aspect-ratio: 2 / 3; padding: 0; border: 0; background: none; pointer-events: auto; cursor: pointer; }
+.ro-slot.on { height: 100%; }
+.ro-slot img { display: block; width: 100%; height: 100%; object-fit: contain; object-position: 50% 100%; }
+.ro-slot:focus-visible { outline: 3px solid #1d3c94; outline-offset: 2px; border-radius: 12px; }
+.ro-check {
+  position: absolute; right: 6%; bottom: 3%; width: 26px; height: 26px; box-sizing: border-box; border-radius: 50%; display: grid; place-items: center;
   background: linear-gradient(180deg, var(--green-hi), var(--green) 55%, var(--green-lo)); border: 2.5px solid var(--ink);
 }
-.of-btn.worn .of-worn { display: grid; }
-.crew-oabout { margin: 0; text-align: center; font: 700 13px/1.3 var(--font-body); text-shadow: 0 1px 2px rgba(27, 16, 48, .75); text-wrap: balance; }
-.crew-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-.crew-stats .pm-stat { background: linear-gradient(180deg, var(--navy-hi), var(--navy) 60%, var(--navy-lo)); border: 3px solid var(--ink); box-shadow: 0 4px 0 var(--ink); }
+.ro-q { position: absolute; left: 50%; top: 40%; transform: translate(-50%, -50%); font: clamp(22px, 6vw, 32px)/1 var(--font-display); color: var(--paper); text-shadow: var(--outline-thin); }
+.crew .navbar { pointer-events: none; }
+.tile[aria-current="page"] { box-shadow: inset 0 3px 0 rgba(255, 255, 255, .5), inset 0 -6px 0 rgba(0, 0, 0, .2), 0 5px 0 var(--ink), 0 0 0 3px var(--paper); }
 .hud-face { display: block; }
-body.in-crew .toast { bottom: auto; top: calc(env(safe-area-inset-top, 0px) + 116px); }
 .hud-face svg { display: block; width: 28px; height: 28px; overflow: visible; }
+body.in-crew #ui { visibility: hidden; }
+body.in-crew .toast { bottom: auto; top: calc(env(safe-area-inset-top, 0px) + 76px); }
 @media (min-aspect-ratio: 1/1) {
-  .crew-panel {
-    top: calc(env(safe-area-inset-top, 0px) + 104px); left: auto; right: 0; margin: 0; width: min(400px, 46vw);
-    align-content: safe center; overflow-y: auto; padding-top: 10px;
-  }
+  .crew-stage { left: 4%; width: 40%; }
+  .crew-info { left: 46%; right: auto; width: min(440px, 50%); }
 }
-@media (max-height: 720px) and (max-aspect-ratio: 1/1) {
-  .crew-oabout { display: none; }
-  .crew-name { font-size: 38px; }
-  .crew-panel, .crew-card { gap: 9px; }
-  .crew-id { gap: 4px; }
-  .of-btn { flex-basis: 56px; }
-  .crew-act { min-height: 46px; }
-  .crew-stats .pm-stat { padding: 6px 4px 5px; gap: 4px; }
-  .crew-stats .pm-stat span { font-size: 18px; }
+@media (max-height: 560px) {
+  .crew { --top-h: calc(env(safe-area-inset-top, 0px) + 62px); --nav-h: calc(env(safe-area-inset-bottom, 0px) + 74px); --roster-h: 78px; }
+  .crew .tile { height: 50px; }
+  .crew .tile span { display: none; }
+  .crew-name { font-size: 42px; }
+  .crew-role, .cr-oname { display: none; }
+  .crew-select { min-height: 48px; font-size: 21px; }
 }
-@media (max-height: 600px) {
-  .crew-oabout, .crew-role, .crew-hint { display: none; }
-  .crew-name { font-size: 36px; }
-  .crew-panel { gap: 8px; }
-}
-@media (min-aspect-ratio: 1/1) and (max-height: 600px) { .crew-panel { top: calc(env(safe-area-inset-top, 0px) + 76px); } }
 
 /* ---------- shop */
 .shop {
@@ -641,6 +647,7 @@ body.in-crew .toast { bottom: auto; top: calc(env(safe-area-inset-top, 0px) + 11
 </head>
 <body>
 <div id="unlock-bg" class="unlock-bg" aria-hidden="true" hidden><div id="burst" class="burst"></div></div>
+<div id="crew-bg" class="crew-bg" aria-hidden="true" hidden></div>
 <canvas id="scene" aria-label="Rail Dash start scene: a kid spray-painting the RAIL DASH logo onto a subway car"></canvas>
 
 <div id="ui" class="is-hidden">
@@ -838,26 +845,27 @@ body.in-crew .toast { bottom: auto; top: calc(env(safe-area-inset-top, 0px) + 11
   </div>
 </div>
 <div id="crew" class="crew" hidden>
-  <div id="crew-head" class="crew-head">
-    <button id="crew-back" class="back-btn gloss gold" type="button" aria-label="Back to the yard"><svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path d="M15 4 L7 12 L15 20" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-    <h2 class="crew-title">CREW</h2>
+  <div class="crew-top">
+    <button id="crew-gear" class="crew-gear gloss blue" type="button" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#eef3fb" stroke="var(--ink)" stroke-width="1.3" fill-rule="evenodd" d="M10.3 1.8h3.4l.55 2.65c.72.2 1.4.48 2.03.85l2.26-1.5 2.4 2.4-1.5 2.27c.37.63.66 1.31.85 2.03l2.66.54v3.4l-2.66.55a8 8 0 0 1-.85 2.03l1.5 2.26-2.4 2.4-2.26-1.5a8 8 0 0 1-2.03.85l-.55 2.66h-3.4l-.54-2.66a8 8 0 0 1-2.03-.85l-2.27 1.5-2.4-2.4 1.5-2.26a8 8 0 0 1-.85-2.03L1.8 13.7v-3.4l2.65-.54c.2-.72.48-1.4.85-2.03L3.8 5.46l2.4-2.4L8.47 4.6c.63-.37 1.31-.66 2.03-.85zM12 8.4a3.6 3.6 0 1 0 0 7.2 3.6 3.6 0 0 0 0-7.2z"/></svg></button>
+    <div class="best-pill" aria-label="Best score"><svg class="pill-ico" viewBox="0 0 32 28" width="46" height="40" aria-hidden="true"><path d="M3 24 L1 7 L9 13 L16 2 L23 13 L31 7 L29 24 Z" fill="var(--sun)" stroke="var(--ink)" stroke-width="2.2" stroke-linejoin="round"/><path d="M4 20h24" stroke="var(--sun-deep)" stroke-width="2"/><circle cx="16" cy="15" r="2.8" fill="var(--hot)" stroke="var(--ink)" stroke-width="1.4"/><circle cx="1.5" cy="6.5" r="2" fill="#ffe36b" stroke="var(--ink)" stroke-width="1.2"/><circle cx="16" cy="2.5" r="2" fill="#ffe36b" stroke="var(--ink)" stroke-width="1.2"/><circle cx="30.5" cy="6.5" r="2" fill="#ffe36b" stroke="var(--ink)" stroke-width="1.2"/></svg><span id="crew-best">0</span></div>
+    <span class="grow"></span>
     <div class="coin-pill static" aria-label="Coins"><svg class="pill-ico" viewBox="0 0 28 28" width="46" height="46" aria-hidden="true"><circle cx="14" cy="14" r="12.2" fill="var(--sun)" stroke="var(--ink)" stroke-width="2.4"/><circle cx="14" cy="14" r="8" fill="#ffe36b" stroke="var(--sun-deep)" stroke-width="1.8"/><path d="M14 9.6v8.8" stroke="var(--sun-deep)" stroke-width="3" stroke-linecap="round"/><ellipse cx="9.4" cy="8.4" rx="2.8" ry="1.4" fill="#ffffff" opacity=".9" transform="rotate(-35 9.4 8.4)"/></svg><span id="crew-coins">0</span></div>
-    <p class="crew-hint">Drag to spin Dex · Tap him to dance</p>
   </div>
-  <div id="crew-panel" class="crew-panel">
-    <div class="crew-id"><h3 id="crew-name" class="crew-name">Dex</h3><span id="crew-role" class="crew-role">Crew founder</span></div>
-    <section class="crew-card gloss blue" aria-label="Outfits">
-      <div class="crew-ohead"><span id="crew-oname">Original</span><b>OUTFITS</b></div>
-      <div id="crew-outfits" class="crew-outfits" role="radiogroup" aria-label="Outfits"></div>
-      <p id="crew-oabout" class="crew-oabout"></p>
-      <button id="crew-act" class="price-btn crew-act gloss navy" type="button">Wearing</button>
-    </section>
-    <div class="crew-stats">
-      <div class="pm-stat"><b>BEST</b><span id="crew-best">0</span></div>
-      <div class="pm-stat"><b>RUNS</b><span id="crew-runs">0</span></div>
-      <div class="pm-stat"><b>TOTAL COINS</b><span id="crew-grab">0</span></div>
-    </div>
+  <div id="crew-stage" class="crew-stage"></div>
+  <div class="crew-info">
+    <h2 id="crew-name" class="crew-name">Dex</h2>
+    <p id="crew-role" class="crew-role">Crew founder</p>
+    <div id="crew-outfits" class="crew-outfits" role="radiogroup" aria-label="Outfits"></div>
+    <p id="crew-oname" class="cr-oname">Original</p>
+    <button id="crew-act" class="crew-select gloss blue" type="button">Selected</button>
   </div>
+  <div id="crew-roster" class="crew-roster" aria-label="Crew members"></div>
+  <nav class="navbar" aria-label="Crew menu">
+    <button id="crew-menu" class="tile gloss blue" type="button"><svg class="ic" viewBox="0 0 40 40" aria-hidden="true"><path d="M31 8v12a5 5 0 0 1-5 5H11 M17 17 L9 25 L17 33" fill="none" stroke="var(--ink)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><path d="M31 8v12a5 5 0 0 1-5 5H11 M17 17 L9 25 L17 33" fill="none" stroke="var(--paper)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Menu</span></button>
+    <button id="crew-tab" class="tile gloss gold" type="button" aria-current="page"><svg class="ic"></svg><span>Crew</span></button>
+    <button class="tile gloss blue locked" type="button" data-soon="Boards"><svg class="ic" viewBox="0 0 40 40" aria-hidden="true"><g transform="rotate(-24 20 20)"><rect x="3" y="15" width="34" height="10" rx="5" fill="#ff4fa3" stroke="var(--ink)" stroke-width="2.6"/><path d="M9 20h22" stroke="#ffd23f" stroke-width="3" stroke-linecap="round"/><circle cx="11" cy="29" r="3.4" fill="#3ee0ff" stroke="var(--ink)" stroke-width="2.2"/><circle cx="29" cy="29" r="3.4" fill="#3ee0ff" stroke="var(--ink)" stroke-width="2.2"/></g></svg><span>Boards</span><svg class="lock" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="12" rx="3" fill="var(--sun)" stroke="var(--ink)" stroke-width="2.2"/><path d="M8 10V7.2a4 4 0 0 1 8 0V10" fill="none" stroke="var(--ink)" stroke-width="2.6"/><circle cx="12" cy="15.6" r="1.9" fill="var(--ink)"/></svg></button>
+    <button class="tile gloss blue locked" type="button" data-soon="Awards"><svg class="ic" viewBox="0 0 40 40" aria-hidden="true"><path d="M13 3h6l3 11h-6zM27 3h-6l-3 11h6z" fill="#3ee0ff" stroke="var(--ink)" stroke-width="2.2" stroke-linejoin="round"/><circle cx="20" cy="25" r="11" fill="var(--sun)" stroke="var(--ink)" stroke-width="2.6"/><path d="M20 18.5l2 4.2 4.6.6-3.4 3.2.9 4.5-4.1-2.3-4.1 2.3.9-4.5-3.4-3.2 4.6-.6z" fill="#fff6b0" stroke="var(--sun-deep)" stroke-width="1.4" stroke-linejoin="round"/></svg><span>Awards</span><svg class="lock" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="12" rx="3" fill="var(--sun)" stroke="var(--ink)" stroke-width="2.2"/><path d="M8 10V7.2a4 4 0 0 1 8 0V10" fill="none" stroke="var(--ink)" stroke-width="2.6"/><circle cx="12" cy="15.6" r="1.9" fill="var(--ink)"/></svg></button>
+  </nav>
 </div>
 <div id="pause-menu" class="pause-menu" role="dialog" aria-modal="true" aria-labelledby="pm-title" hidden>
   <div class="pm-card gloss blue">
@@ -3599,7 +3607,7 @@ function resetProgress() {
     delete memStore[k];
     try { localStorage.removeItem(k); } catch (e) { /* storage blocked */ }
   }
-  tutorialDoneMem = false; applyWorn();
+  tutorialDoneMem = false; applyWorn(); thumbs.dex = null; hideCrew();
   cancelCountdown(); settingsEl.hidden = true; pauseMenu.hidden = true; hud.hidden = true; run.paused = false; music.stop();
   mode = 'title'; tMode = 0; ui.classList.add('is-hidden'); menuEl.hidden = true;
   forceUnlock = true; phase = 'boot'; window.RD.restart();     // straight back to a first launch
@@ -3626,7 +3634,7 @@ $('set-reset').addEventListener('click', () => {
 });
 loadSettings();
 
-// ------------------------------------------------------------------ crew: Dex on a podium, outfits, profile
+// ------------------------------------------------------------------ crew: character select (Dex, outfits, roster)
 // CREW is a list so more members can join later; each lists the outfits they can wear
 const CREW = [{ id: 'dex', name: 'Dex', role: 'Crew founder', outfits: ['original', 'night', 'lime', 'gold'] }];
 const OUTFITS = {
@@ -3669,7 +3677,7 @@ function outfitSvg(id, cls = '') {
 function applyWorn() {
   const id = wornId();
   applyOutfit(id);
-  const tile = $('crew-btn'); if (tile && tile.firstElementChild) tile.firstElementChild.outerHTML = outfitSvg(id, 'ic');
+  for (const t of [$('crew-btn'), $('crew-tab')]) if (t && t.firstElementChild) t.firstElementChild.outerHTML = outfitSvg(id, 'ic');
   $('hud-face').innerHTML = outfitSvg(id);
 }
 // the Buy / Wear / Wearing button, shared by the Crew screen and the shop's Outfits tab
@@ -3678,8 +3686,9 @@ function outfitBtnState(btn, i) {
   const st = i === wornIdx() ? 'worn' : ownsOutfit(id) ? 'own' : w < o.price ? 'short' : 'buy';
   if (btn.dataset.state === st) return;
   btn.dataset.state = st; btn.removeAttribute('aria-label');
-  if (st === 'worn') { btn.className = base + ' gloss navy'; btn.innerHTML = CHECK_BIG + '<span>Wearing</span>'; }
-  else if (st === 'own') { btn.className = base + ' gloss green'; btn.textContent = 'Wear'; }
+  const big = !!btn.dataset.labels, [lWorn, lOwn] = (btn.dataset.labels || 'Wearing|Wear').split('|');
+  if (st === 'worn') { btn.className = base + (big ? ' gloss blue' : ' gloss navy'); btn.innerHTML = (big ? '' : CHECK_BIG) + `<span>${lWorn}</span>`; }
+  else if (st === 'own') { btn.className = base + ' gloss green'; btn.textContent = lOwn; }
   else {
     btn.className = base + ' gloss green' + (st === 'short' ? ' short' : ''); btn.innerHTML = COIN_ICON + `<span>${fmt(o.price)}</span>`;
     btn.setAttribute('aria-label', `Buy ${o.name} for ${fmt(o.price)} coins`);
@@ -3696,7 +3705,7 @@ function outfitAct(i, btn) {
     setNum('railDashCoins', w - o.price); setNum('railDashOwn_' + id, 1);
     SFX.kaching(); SFX.fanfare(); confetti(); bumpCoinPills(); showToast(`${o.name} unlocked!`, false);
   } else { SFX.check(); showToast(`Dex is wearing ${o.name}`, false); }
-  setNum('railDashWear_' + CREW[0].id, i); applyWorn();
+  setNum('railDashWear_' + CREW[0].id, i); applyWorn(); thumbs.dex = null;
   if (phase === 'crew') { crew.sel = i; crew.danceT = 0; renderCrew(); }
   if (!shopEl.hidden) renderShop();
 }
@@ -3715,64 +3724,101 @@ function renderOutfitShop() {
 }
 $('tab-outfits').addEventListener('click', (e) => { e.stopPropagation(); showTab('outfits'); });
 
-// the stage: a podium that only the layer-1 camera sees
-const podium = new THREE.Group(); podium.position.copy(KID_POS); podium.visible = false; scene.add(podium);
-P(new THREE.CylinderGeometry(0.95, 1.03, 0.22, 44), '#2c5bff', podium, [0, -0.11, 0], null, null, 0.02);
-P(new THREE.TorusGeometry(0.95, 0.04, 8, 56), '#ffd23f', podium, [0, -0.005, 0], [Math.PI / 2, 0, 0], null, 0.012);
-P(new THREE.CylinderGeometry(1.03, 1.03, 0.05, 44), '#1f40c2', podium, [0, -0.205, 0], null, null, 0);
-podium.traverse((o) => o.layers.set(1));
+// a hoodie icon in the outfit's colors, for the outfit picker
+function hoodieSvg(id) {
+  const c = Object.assign({}, C, OUTFITS[id].c), k = '#1b1030';
+  return `<svg viewBox="0 0 40 40" aria-hidden="true">`
+    + `<path d="M14 7.5Q20 4 26 7.5L33.5 11.5L38 21L32 23.6L29.6 18.6V35.5H10.4V18.6L8 23.6L2 21L6.5 11.5Z" fill="${c.hoodie}" stroke="${k}" stroke-width="2.2" stroke-linejoin="round"/>`
+    + `<path d="M15 8Q20 15.5 25 8" fill="${c.hoodieDark}" stroke="${k}" stroke-width="1.8" stroke-linejoin="round"/>`
+    + `<path d="M17.8 13v5M22.2 13v5" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>`
+    + `<path d="M14 25h12v5.4H14z" fill="${c.hoodieDark}" stroke="${k}" stroke-width="1.4" stroke-linejoin="round"/>`
+    + `<path d="M10.4 33.3h19.2" stroke="${c.hoodieDark}" stroke-width="2.6"/></svg>`;
+}
 
-const crewEl = $('crew'), crewHead = $('crew-head'), crewPanel = $('crew-panel'), crewAct = $('crew-act');
+const crewEl = $('crew'), crewBg = $('crew-bg'), crewStage = $('crew-stage'), crewAct = $('crew-act');
 const CREW_REST = 0.32;      // the 3/4 turn he settles back to
-const crew = { who: 0, sel: 0, yaw: CREW_REST, vel: 0, drag: null, dragged: false, idle: 0, danceT: -1, hopT: -1, busy: false };
-crewAct.dataset.base = 'price-btn crew-act';
+const crew = { who: 0, sel: 0, yaw: CREW_REST, vel: 0, drag: null, dragged: false, idle: 0, danceT: -1, hopT: -1, spinT: -1, busy: false };
+crewAct.dataset.base = 'crew-select'; crewAct.dataset.labels = 'Selected|Select';
+// roster: the crew so far plus "?" spots for members still to come; Dex stands in the middle
+const ROSTER = ['?', '?', 'dex', '?', '?'];
+const CR_LOCK = '<svg class="cr-lock" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="12" rx="3" fill="var(--sun)" stroke="var(--ink)" stroke-width="2.4"/><path d="M8 10V7.2a4 4 0 0 1 8 0V10" fill="none" stroke="var(--ink)" stroke-width="2.8"/><circle cx="12" cy="15.6" r="1.9" fill="var(--ink)"/></svg>';
+const CREW_FOV = 30;          // a narrow lens so Dex looks like a clean character shot, not a close-up
+const SIL_POSES = [[P_D_GROOVE_A, 0.5], [P_READY, -0.25], [P_D_FINAL, 0.3], [P_D_GROOVE_B, -0.5]];
+const thumbs = { dex: null, sil: [] };
+function renderRoster() {
+  const box = $('crew-roster');
+  if (!box.childElementCount) {
+    let s = 0;
+    ROSTER.forEach((who) => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'ro-slot';
+      const img = document.createElement('img'); img.alt = ''; img.hidden = true; b.append(img);
+      if (who === '?') {
+        b.dataset.sil = String(s++); b.setAttribute('aria-label', 'Locked crew member, coming soon');
+        b.insertAdjacentHTML('beforeend', '<span class="ro-q" aria-hidden="true">?</span>');
+        b.addEventListener('click', (e) => { e.stopPropagation(); showToast('New crew members are coming soon'); SFX.bump(); });
+      } else {
+        const m = CREW.find((c) => c.id === who);
+        b.dataset.who = who; b.setAttribute('aria-label', m.name + ', selected');
+        b.insertAdjacentHTML('beforeend', `<span class="ro-check" aria-hidden="true">${CHECK_ICON}</span>`);
+        b.addEventListener('click', (e) => { e.stopPropagation(); if (crew.danceT < 0) { crew.danceT = 0; SFX.ready(); } });
+      }
+      box.append(b);
+    });
+  }
+  for (const b of box.children) {
+    const img = b.firstElementChild, src = b.dataset.who ? thumbs.dex : thumbs.sil[Number(b.dataset.sil)];
+    b.classList.toggle('on', !!b.dataset.who && CREW[crew.who].id === b.dataset.who);
+    if (src && img.src !== src) img.src = src;
+    img.hidden = !src;
+  }
+}
 function renderCrew() {
-  const m = CREW[crew.who], ids = m.outfits, worn = wornIdx(m), row = $('crew-outfits');
+  const m = CREW[crew.who], ids = m.outfits, row = $('crew-outfits');
   $('crew-name').textContent = m.name; $('crew-role').textContent = m.role;
-  $('crew-coins').textContent = fmt(getNum('railDashCoins'));
+  $('crew-coins').textContent = fmt(getNum('railDashCoins')); $('crew-best').textContent = fmt(getNum('railDashHigh'));
   if (row.dataset.who !== m.id) {
     row.textContent = ''; row.dataset.who = m.id;
     ids.forEach((id, i) => {
       const b = document.createElement('button');
-      b.type = 'button'; b.className = 'of-btn gloss navy'; b.setAttribute('role', 'radio');
-      b.innerHTML = outfitSvg(id) + `<span class="of-tag">${COIN_ICON}<span></span></span><span class="of-worn">${CHECK_ICON}</span>`;
+      b.type = 'button'; b.className = 'cr-of'; b.setAttribute('role', 'radio');
+      b.innerHTML = (i === 0 ? outfitSvg(id) : hoodieSvg(id)) + CR_LOCK;
       b.addEventListener('click', (e) => { e.stopPropagation(); pickOutfit(i); });
       row.append(b);
     });
   }
+  const worn = wornIdx(m);
   ids.forEach((id, i) => {
     const b = row.children[i], o = OUTFITS[id], owned = ownsOutfit(id), on = i === crew.sel;
-    b.setAttribute('aria-checked', String(on)); b.tabIndex = on ? 0 : -1; b.classList.toggle('worn', i === worn);
-    const tag = b.querySelector('.of-tag'); tag.hidden = owned; tag.lastChild.textContent = fmt(o.price);
+    b.setAttribute('aria-checked', String(on)); b.tabIndex = on ? 0 : -1;
+    b.querySelector('.cr-lock').style.display = owned ? 'none' : '';
     b.setAttribute('aria-label', o.name + (i === worn ? ', wearing' : owned ? ', owned' : `, ${fmt(o.price)} coins`));
   });
-  const o = OUTFITS[ids[crew.sel]];
-  $('crew-oname').textContent = o.name; $('crew-oabout').textContent = o.about;
+  $('crew-oname').textContent = OUTFITS[ids[crew.sel]].name;
   outfitBtnState(crewAct, crew.sel);
-  $('crew-best').textContent = fmt(getNum('railDashHigh')); $('crew-runs').textContent = fmt(getNum('railDashRuns')); $('crew-grab').textContent = fmt(getNum('railDashCoinsAll'));
+  renderRoster();
 }
 function pickOutfit(i) {
   if (i === crew.sel) return;
   crew.sel = i; applyOutfit(CREW[crew.who].outfits[i]);
-  J.chest.getWorldPosition(chestW); emit(chestW, tv2.copy(chestW).add(tv.set(0, 0.9, 0.6)), 120, true, 0.9, 0.45);
-  crew.hopT = 0; crew.idle = 0; SFX.pop(); renderCrew();
+  crew.hopT = 0; crew.spinT = 0; crew.idle = 0; SFX.pop(); renderCrew();      // a quick twirl to show off the new fit
 }
 function enterCrew() {
   if (phase !== 'game' || mode !== 'title' || crew.busy) return;
   crew.busy = true; flash.classList.add('on'); SFX.whoosh();
   setTimeout(() => {
     phase = 'crew'; tMode = 0;
-    resetKidProps();
-    Object.assign(crew, { sel: wornIdx(CREW[crew.who]), yaw: CREW_REST, vel: 0, drag: null, dragged: false, idle: 0, danceT: -1, hopT: -1, busy: false });
-    camera.layers.set(1); ui.classList.add('is-hidden'); unlockBg.hidden = false; crewEl.hidden = false; podium.visible = true; document.body.classList.add('in-crew');
-    renderCrew(); flash.classList.remove('on'); $('crew-back').focus();
+    resetKidProps(); pLife.set(pMax);      // clear leftover paint mist from the title
+    Object.assign(crew, { sel: wornIdx(CREW[crew.who]), yaw: CREW_REST, vel: 0, drag: null, dragged: false, idle: 0, danceT: -1, hopT: -1, spinT: -1, busy: false });
+    camera.layers.set(1); ui.classList.add('is-hidden'); crewBg.hidden = false; crewEl.hidden = false; document.body.classList.add('in-crew');
+    renderCrew(); flash.classList.remove('on'); $('crew-menu').focus();
   }, 230);
 }
+function hideCrew() { crewEl.hidden = true; crewBg.hidden = true; document.body.classList.remove('in-crew'); }
 function leaveCrew() {
   if (phase !== 'crew' || crew.busy) return;
   crew.busy = true; flash.classList.add('on'); SFX.whoosh();
   setTimeout(() => {
-    crewEl.hidden = true; podium.visible = false; document.body.classList.remove('in-crew'); applyWorn(); enterTitle(false); flash.classList.remove('on'); crew.busy = false;
+    hideCrew(); applyWorn(); enterTitle(false); flash.classList.remove('on'); crew.busy = false;
     $('crew-btn').focus();
   }, 230);
 }
@@ -3780,32 +3826,64 @@ function crewTap() {
   if (crew.dragged) { crew.dragged = false; return; }
   if (crew.danceT < 0) { crew.danceT = 0; SFX.ready(); }
 }
-// camera: fit Dex + podium into the open space between the header and the panel (left of the panel when wide).
-// It looks down a little, so the podium's front edge drops lower than a flat fit expects: project the real
-// top (his cap mid-jump) and bottom (the podium's front rim) and nudge size + height until they fill the gap.
+// roster pictures: render the kid into a corner of the canvas with a small camera and copy it out
+// (same frame, right before the real render paints over it). Dex in his worn outfit, plus dark "?" silhouettes.
+const thumbCam = new THREE.PerspectiveCamera(28, 2 / 3, 0.1, 60); thumbCam.layers.set(1);
+const silMat = new THREE.MeshBasicMaterial({ color: '#3a4263' });
+const thumbCanvas = document.createElement('canvas'), thumbV = new THREE.Vector2();
+function captureThumbs() {
+  const needSil = thumbs.sil.length < SIL_POSES.length;
+  if (thumbs.dex && !needSil) return;
+  const pr = renderer.getPixelRatio(), TW = 120, TH = 180, ch = renderer.domElement.height;
+  thumbCanvas.width = Math.round(TW * pr); thumbCanvas.height = Math.round(TH * pr);
+  const g = thumbCanvas.getContext('2d');
+  const saveQ = NAMES.map((n) => J[n].quaternion.clone()), saveRot = kid.rotation.y, saveY = kid.position.y, saveOutfit = CREW[crew.who].outfits[crew.sel];
+  const vis = [points.visible, coinGroup.visible, shadowBlob.visible, can.visible];
+  points.visible = false; coinGroup.visible = false;
+  thumbCam.position.set(KID_POS.x, KID_POS.y + 1.62, KID_POS.z + 6.1); thumbCam.lookAt(KID_POS.x, KID_POS.y + 1.26, KID_POS.z); thumbCam.updateMatrixWorld();
+  renderer.setScissorTest(true); renderer.setViewport(0, 0, TW, TH); renderer.setScissor(0, 0, TW, TH);
+  const shoot = (poseP, rot, dark) => {
+    copyPose(work, poseP); for (const n of NAMES) J[n].quaternion.copy(work[n]);
+    kid.rotation.set(0, rot, 0); kid.position.y = KID_POS.y; kid.updateMatrixWorld(true);
+    shadowBlob.visible = !dark; can.visible = !dark; scene.overrideMaterial = dark ? silMat : null;
+    renderer.clear(); renderer.render(scene, thumbCam);
+    g.clearRect(0, 0, thumbCanvas.width, thumbCanvas.height);
+    g.drawImage(renderer.domElement, 0, ch - thumbCanvas.height, thumbCanvas.width, thumbCanvas.height, 0, 0, thumbCanvas.width, thumbCanvas.height);
+    return thumbCanvas.toDataURL('image/png');
+  };
+  setFace('ready');
+  if (!thumbs.dex) { applyOutfit(wornId()); thumbs.dex = shoot(P_U_IDLE, 0.32, false); applyOutfit(saveOutfit); }
+  if (needSil) thumbs.sil = SIL_POSES.map(([q, r]) => shoot(q, r, true));
+  scene.overrideMaterial = null;
+  renderer.setScissorTest(false); renderer.getSize(thumbV); renderer.setViewport(0, 0, thumbV.x, thumbV.y);
+  NAMES.forEach((n, i) => J[n].quaternion.copy(saveQ[i]));
+  kid.rotation.y = saveRot; kid.position.y = saveY; kid.updateMatrixWorld(true);
+  [points.visible, coinGroup.visible, shadowBlob.visible, can.visible] = vis;
+  renderRoster();
+}
+// camera: fit Dex into the stage box on the left (cap mid-jump at the top, his feet at the bottom)
 const fitTop = new THREE.Vector3(), fitBot = new THREE.Vector3();
 function placeCrewCam(ppu, lookY, camX, H) {
   const d = H / ppu / (2 * Math.tan((camera.fov * Math.PI) / 360));
   camLook.set(camX, KID_POS.y + lookY, KID_POS.z);
-  camera.position.set(camX, KID_POS.y + lookY + d * 0.26, KID_POS.z + d);
+  camera.position.set(camX, KID_POS.y + lookY + d * 0.1, KID_POS.z + d);
   camera.lookAt(camLook);
   camera.updateMatrixWorld();
 }
 function updateCrew(dt) {
-  const W = window.innerWidth, H = window.innerHeight, wide = W > H, hb = crewHead.getBoundingClientRect().bottom, pr = crewPanel.getBoundingClientRect();
-  const top = hb + 4, bottom = wide ? H - 10 : pr.top + 6, right = wide ? pr.left - 8 : W;
-  const ppuMax = Math.min(right * 0.9 / 2.3, H / 3.2);
-  let ppu = Math.max(40, Math.min(ppuMax, (bottom - top) / 3.2)), lookY = 1.1 + ((top + bottom) / 2 - H / 2) / ppu, camX = KID_POS.x;
+  setFov(CREW_FOV);
+  const W = window.innerWidth, H = window.innerHeight, r = crewStage.getBoundingClientRect();
+  const top = r.top + 4, bottom = r.bottom, cx = (r.left + r.right) / 2;
+  const ppuMax = Math.min(r.width * 0.94 / 1.3, H / 2.9);
+  let ppu = Math.max(30, Math.min(ppuMax, (bottom - top) / 2.8)), lookY = 1.15 + ((top + bottom) / 2 - H / 2) / ppu;
   for (let it = 0; it < 4; it++) {
-    camX = KID_POS.x - (right / 2 - W / 2) / ppu;
-    placeCrewCam(ppu, lookY, camX, H);
+    placeCrewCam(ppu, lookY, KID_POS.x - (cx - W / 2) / ppu, H);
     const yt = (1 - fitTop.set(KID_POS.x, KID_POS.y + 2.5, KID_POS.z).project(camera).y) * H / 2;
-    const yb = (1 - fitBot.set(KID_POS.x, KID_POS.y - 0.22, KID_POS.z + 1.03).project(camera).y) * H / 2;
-    ppu = Math.max(40, Math.min(ppuMax, ppu * (bottom - top) * 0.94 / Math.max(1, yb - yt)));
+    const yb = (1 - fitBot.set(KID_POS.x, KID_POS.y - 0.04, KID_POS.z + 0.35).project(camera).y) * H / 2;
+    ppu = Math.max(30, Math.min(ppuMax, ppu * (bottom - top) * 0.95 / Math.max(1, yb - yt)));
     lookY -= ((yt + yb) / 2 - (top + bottom) / 2) / ppu;      // too low on screen: look lower so he rises
   }
-  camX = KID_POS.x - (right / 2 - W / 2) / ppu;
-  placeCrewCam(ppu, lookY, camX + (reduceMotion ? 0 : Math.sin(elapsed * 0.5) * 0.06), H);
+  placeCrewCam(ppu, lookY, KID_POS.x - (cx - W / 2) / ppu + (reduceMotion ? 0 : Math.sin(elapsed * 0.5) * 0.04), H);
   // spin: drag with a little throw, then drift back to the 3/4 view
   if (!crew.drag) {
     crew.yaw += crew.vel * dt; crew.vel *= Math.exp(-dt * 3.5); crew.idle += dt;
@@ -3838,6 +3916,7 @@ function updateKidCrew(dt) {
     if (t > end + 0.9) crew.danceT = -1;
   }
   if (crew.hopT >= 0) { crew.hopT += dt; rootY += 0.16 * Math.sin(Math.PI * clamp(crew.hopT / 0.32)); if (crew.hopT > 0.32) crew.hopT = -1; }
+  if (crew.spinT >= 0) { crew.spinT += dt; spin += Math.PI * 2 * inOutCubic(clamp(crew.spinT / 0.5)); if (crew.spinT > 0.5) crew.spinT = -1; }
   for (const n of NAMES) J[n].quaternion.copy(work[n]);
   kid.rotation.set(0, crew.yaw + spin, 0);
   kid.position.set(KID_POS.x, KID_POS.y + rootY, KID_POS.z);
@@ -3846,7 +3925,9 @@ function updateKidCrew(dt) {
   kid.updateMatrixWorld(true);
 }
 $('crew-btn').addEventListener('click', (e) => { e.stopPropagation(); enterCrew(); });
-$('crew-back').addEventListener('click', (e) => { e.stopPropagation(); leaveCrew(); });
+$('crew-menu').addEventListener('click', (e) => { e.stopPropagation(); leaveCrew(); });
+$('crew-tab').addEventListener('click', (e) => { e.stopPropagation(); });
+$('crew-gear').addEventListener('click', (e) => { e.stopPropagation(); openSettings(); });
 crewAct.addEventListener('click', (e) => { e.stopPropagation(); outfitAct(crew.sel, crewAct); });
 crewEl.addEventListener('click', (e) => e.stopPropagation());
 $('crew-outfits').addEventListener('keydown', (e) => {
@@ -3856,7 +3937,7 @@ $('crew-outfits').addEventListener('keydown', (e) => {
   pickOutfit(i); $('crew-outfits').children[i].focus();
 });
 window.addEventListener('pointerdown', (e) => {
-  if (phase !== 'crew' || (e.target.closest && e.target.closest('button, .crew-panel, .coin-pill'))) return;
+  if (phase !== 'crew' || !settingsEl.hidden || (e.target.closest && e.target.closest('button, .coin-pill, .best-pill, .crew-info, .navbar'))) return;
   crew.drag = { x: e.clientX, x0: e.clientX, t: performance.now() }; crew.dragged = false; crew.vel = 0;
 });
 window.addEventListener('pointermove', (e) => {
@@ -4075,6 +4156,7 @@ function frame() {
   sun.target.position.set(kid.position.x - KID_POS.x, 0, 1.5); sun.position.copy(sun.target.position).add(SUN_OFF);
   for (const c of clouds) { c.position.x += c.userData.speed * dt; if (c.position.x > camera.position.x + 170) c.position.x -= 340; }
 
+  if (phase === 'crew' && !noRender) captureThumbs();
   if (!noRender) renderer.render(scene, camera);
   if (firstFrame) { firstFrame = false; window.RD.setProgress(1); }
 }
