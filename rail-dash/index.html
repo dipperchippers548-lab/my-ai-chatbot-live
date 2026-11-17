@@ -2658,7 +2658,7 @@ function updateRunView(dt) {
   }
   if (mode === 'endless' && run.state === 'crash') {
     const w = smooth(clamp(run.crashReal / 0.7));
-    endPos.set(k.x + 5.2, KID_POS.y + 2.5, z + 1.2); endLook.set(k.x, KID_POS.y + 0.7, z);
+    endPos.set(k.x + 5.2, KID_POS.y + 2.5 + run.camAlt, z + 1.2); endLook.set(k.x, KID_POS.y + 0.7 + run.camAlt, z);   // up on a ramp or roof the camera rises with him
     chasePos.lerp(endPos, w); chaseLook.lerp(endLook, w);
   }
   const kIn = inOutCubic(clamp(run.camT / 1.1));
@@ -2868,6 +2868,7 @@ function clearEndless() {
   for (const c of coins) c.on = false;
   for (const d of dizzy) d.visible = false;
   for (const pk of puPool) release(pk);
+  guard.visible = false;
   resetPowers();
   hudScoreShown = hudCoinsShown = -1;
 }
@@ -2891,7 +2892,7 @@ function groundAt(x, lane, alt) {
   }
   return h;
 }
-function placeHurdle(kind, lane, x) { const o = grab(kind === 'jump' ? jumpPool : rollPool); if (!o) return; Object.assign(o, { active: true, x, lane, kind }); o.obj.position.set(x, 0.24, LANES[lane]); o.obj.visible = true; }
+function placeHurdle(kind, lane, x) { const o = grab(kind === 'jump' ? jumpPool : rollPool); if (!o) return; Object.assign(o, { active: true, x, lane, kind, hit: false, fallT: -1 }); o.obj.rotation.z = 0; o.obj.position.set(x, 0.24, LANES[lane]); o.obj.visible = true; }
 function placeCoin(x, h, lane) { const c = coins.find((k) => !k.on); if (!c) return; Object.assign(c, { on: true, x, y: 0.24 + h, z: LANES[lane], mag: false }); }
 function coinLine(lane, x0, n) { for (let k = 0; k < n; k++) placeCoin(x0 - k * 2.4, 1.0, lane); }
 function coinArc(lane, bx) { for (let k = -3; k <= 3; k++) { const dx = k * 1.35; placeCoin(bx - dx, 1.0 + 1.5 * (1 - (dx / 4.6) ** 2), lane); } }
@@ -2970,14 +2971,14 @@ function startEndless() {
     state: 'go', t: 0, v: 0, phase: 0, camT: 0, ts: 1, lane: 0, laneDir: 1, laneFromZ: LANES[0], laneT: -1, laneZ: LANES[0],
     jumpT: -1, jumpY: 0, rollT: -1, slamT: -1, slamFrom: 0, bumpT: -1, bumpDir: 1, runT: 0, dist: 0, score: 0, coins: 0,
     scoreF: 0, alt: 0, vy: 0, air: false, ground: 0, wJ: 0, camAlt: 0, camTarget: 0, hop: 0, jetBase: 0, powers: { magnet: 0, sneakers: 0, mult: 0 }, jetT: -1, jetDur: 0, flyY: 0, invuln: 0, noSpawn: null, jetLanding: false,
-    best, beaten: false, crashT: 0, crashReal: 0, knock: 0, shake: 0, recentered: false, paused: false, counting: false, leaving: false, segN: 0, need: null,
+    best, beaten: false, crashT: 0, crashReal: 0, knock: 0, shake: 0, stumbleT: -1, caught: false, recentered: false, paused: false, counting: false, leaving: false, segN: 0, need: null,
   });
   countdownEl.hidden = true;
   run.camFromPos.copy(camera.position); run.camFromLook.copy(camLook);
   nextX = ENDLESS.firstX; SEED = (Date.now() % 100000) + 7; spawnAhead();
   $('hud-best-num').textContent = fmt(best); $('hud-best-label').textContent = 'HIGH SCORE'; $('hud-best').classList.remove('beaten');
   hud.hidden = false; pauseMenu.hidden = true;
-  shout(goEl); SFX.go();
+  resetChaser(); shout(goEl); SFX.go(); setTimeout(() => { if (mode === 'endless' && run.state !== 'crash') SFX.whistle(); }, 450);
 }
 // ---- pause menu (run stats, power-ups left, quick toggles, end run) and the 3-2-1 resume countdown
 // run.paused stays true through the countdown so the run is frozen until GO!; run.counting marks the countdown
@@ -3039,7 +3040,7 @@ function endRun() {
   clearTimeout(renderEnd.t); endArmed = 0;
   cancelCountdown(); run.leaving = true; pauseMenu.hidden = true; settingsEl.hidden = true; flash.classList.add('on'); SFX.whoosh();
   setTimeout(() => {
-    run.paused = false; hud.hidden = true; for (const d of dizzy) d.visible = false;
+    run.paused = false; hud.hidden = true; guard.visible = false; for (const d of dizzy) d.visible = false;
     enterResults({ kind: 'run', score: run.score, coins: run.coins }); flash.classList.remove('on'); renderEnd();
   }, 230);
 }
@@ -3055,6 +3056,141 @@ endBtn.addEventListener('click', (e) => {
 $('pm-sfx').addEventListener('click', (e) => { e.stopPropagation(); setSfx(!soundOn); });
 $('pm-music').addEventListener('click', (e) => { e.stopPropagation(); setMusic(!musicOn); });
 document.addEventListener('visibilitychange', () => { if (document.hidden) setPaused(true); });
+// ---- the chaser: a train-yard guard (hi-vis vest, hard hat with a beacon, flashlight).
+// Stumbling (swiping into a train's side, tripping on a barrier) brings him right up behind you; stumble again
+// before he drops back and you're caught. He chases you off at the start and comes over after any crash.
+const GC = { skin: '#e3a77e', skinDark: '#c98a64', shirt: '#2f3f6e', vest: '#ff8a1f', reflect: '#eef3f8', pants: '#555c6c', boot: '#2a2420', hat: '#ffd23f', hatDark: '#d9a91e', beard: '#6b3f22', torch: '#3a3f4c' };
+const guard = new THREE.Group(); guard.visible = false; guard.scale.setScalar(1.16); scene.add(guard);
+const GJ = {};
+GJ.hips = joint(guard, [0, 0.965, 0]);
+P(new THREE.SphereGeometry(0.26, 20, 14), GC.pants, GJ.hips, [0, -0.02, 0], null, [1.2, 0.82, 0.98]);
+GJ.spine = joint(GJ.hips, [0, 0.04, 0]);
+P(new THREE.CapsuleGeometry(0.29, 0.24, 6, 18), GC.shirt, GJ.spine, [0, 0.27, 0], null, [1.12, 1, 0.92]);
+P(new THREE.CapsuleGeometry(0.305, 0.2, 6, 18), GC.vest, GJ.spine, [0, 0.3, 0], null, [1.12, 1, 0.92], 0.012);
+P(new THREE.BoxGeometry(0.08, 0.5, 0.05), GC.shirt, GJ.spine, [0, 0.3, 0.27], null, null, 0);
+for (const y of [0.2, 0.4]) P(new THREE.CylinderGeometry(0.346, 0.346, 0.055, 24, 1, true), GC.reflect, GJ.spine, [0, y, 0], null, [1.12, 1, 0.92], 0);
+P(new THREE.CylinderGeometry(0.31, 0.31, 0.07, 22), '#2a2420', GJ.spine, [0, 0.04, 0], null, [1.12, 1, 0.94], 0.01);
+GJ.chest = joint(GJ.spine, [0, 0.4, 0]);
+P(new THREE.SphereGeometry(0.24, 18, 12), GC.vest, GJ.chest, [0, 0.04, -0.02], null, [1.45, 0.7, 0.95]);
+P(new THREE.CylinderGeometry(0.024, 0.024, 0.09, 8), '#cfd6e0', GJ.chest, [0.09, -0.04, 0.24], [0, 0, Math.PI / 2], null, 0.006);
+GJ.neck = joint(GJ.chest, [0, 0.19, 0]);
+P(new THREE.CylinderGeometry(0.1, 0.11, 0.16, 12), GC.skin, GJ.neck, [0, 0.03, 0], null, null, 0);
+GJ.head = joint(GJ.neck, [0, 0.1, 0]);
+P(new THREE.SphereGeometry(0.27, 26, 18), GC.skin, GJ.head, [0, 0.24, 0.01]);
+P(new THREE.SphereGeometry(0.25, 20, 14), GC.beard, GJ.head, [0, 0.13, 0.05], null, [1.04, 0.7, 0.95]);
+P(new THREE.SphereGeometry(0.055, 12, 10), GC.skinDark, GJ.head, [0, 0.23, 0.29], null, null, 0);
+for (const sx of [-1, 1]) {
+  const eg = joint(GJ.head, [sx * 0.095, 0.3, 0.245]);
+  P(new THREE.SphereGeometry(0.058, 14, 10), '#ffffff', eg, [0, 0, 0], null, [0.9, 1, 0.5], 0.008);
+  P(new THREE.SphereGeometry(0.032, 10, 8), INK, eg, [0, -0.004, 0.026], null, [1, 1, 0.6], 0);
+  P(new THREE.BoxGeometry(0.13, 0.04, 0.04), GC.beard, GJ.head, [sx * 0.1, 0.37, 0.25], [0.15, 0, sx * 0.28], null, 0);
+  P(new THREE.SphereGeometry(0.06, 12, 10), GC.skin, GJ.head, [sx * 0.27, 0.22, -0.01], null, [0.55, 1, 0.8], 0.01);
+}
+{
+  const hat = joint(GJ.head, [0, 0.31, 0.0]); hat.rotation.x = -0.06;
+  P(new THREE.SphereGeometry(0.3, 26, 14, 0, Math.PI * 2, 0, Math.PI / 2), GC.hat, hat, [0, 0, 0], null, [1, 0.88, 1.06]);
+  P(new THREE.CylinderGeometry(0.37, 0.37, 0.035, 28), GC.hatDark, hat, [0, 0.01, 0.03], null, [1, 1, 1.08], 0.012);
+  P(new THREE.BoxGeometry(0.07, 0.05, 0.58), GC.hatDark, hat, [0, 0.25, 0], [0, 0, 0], null, 0);
+  var beaconMat = toon('#ff5a1f', { emissive: '#ff3a00', emissiveIntensity: 0.4 });
+  P(new THREE.CylinderGeometry(0.06, 0.07, 0.11, 14), beaconMat, hat, [0, 0.31, -0.02], null, null, 0.008);
+}
+for (const sx of [1, -1]) {
+  const side = sx > 0 ? 'L' : 'R';
+  const sh = joint(GJ.chest, [sx * 0.36, 0.1, 0]);
+  P(new THREE.SphereGeometry(0.125, 14, 10), GC.vest, sh, [0, 0, 0]);
+  P(new THREE.CapsuleGeometry(0.105, 0.2, 5, 14), GC.shirt, sh, [0, -0.15, 0]);
+  const el = joint(sh, [0, -0.31, 0]);
+  P(new THREE.CapsuleGeometry(0.095, 0.17, 5, 14), GC.shirt, el, [0, -0.12, 0]);
+  const wr = joint(el, [0, -0.29, 0]);
+  P(new THREE.SphereGeometry(0.09, 14, 10), GC.skin, wr, [0, -0.04, 0], null, [0.95, 1.1, 0.9]);
+  GJ['sh' + side] = sh; GJ['el' + side] = el; GJ['wr' + side] = wr;
+  const hip = joint(GJ.hips, [sx * 0.15, -0.05, 0]);
+  P(new THREE.CapsuleGeometry(0.135, 0.24, 5, 14), GC.pants, hip, [0, -0.2, 0]);
+  const knee = joint(hip, [0, -0.4, 0]);
+  P(new THREE.CapsuleGeometry(0.12, 0.22, 5, 14), GC.pants, knee, [0, -0.16, 0]);
+  const ank = joint(knee, [0, -0.36, 0]);
+  P(new THREE.CapsuleGeometry(0.105, 0.16, 5, 14), GC.boot, ank, [0, -0.06, 0.06], [Math.PI / 2, 0, 0], [1.15, 1, 1]);
+  P(new THREE.BoxGeometry(0.24, 0.06, 0.4), '#1a1614', ank, [0, -0.13, 0.06], null, null, 0.012);
+  GJ['hip' + side] = hip; GJ['knee' + side] = knee; GJ['ank' + side] = ank;
+}
+{
+  const torch = joint(GJ.wrR, [0, -0.1, 0.03]);
+  P(new THREE.CylinderGeometry(0.045, 0.04, 0.26, 12), GC.torch, torch, [0, 0, 0.06], [Math.PI / 2, 0, 0], null, 0.01);
+  P(new THREE.CylinderGeometry(0.062, 0.045, 0.07, 12), GC.torch, torch, [0, 0, 0.2], [Math.PI / 2, 0, 0], null, 0.01);
+  P(new THREE.CircleGeometry(0.05, 14), toon('#fff3b0', { emissive: '#ffe070', emissiveIntensity: 0.9 }), torch, [0, 0, 0.237], null, null, 0);
+}
+// arm out with the flashlight, other hand on his hip: "what do you think you're doing?"
+const P_SCOLD = pose({
+  spine: [0.06, 0, 0], head: [0.15, 0, 0],
+  shR: [-1.4, 0, -0.25], elR: [-0.45, 0, 0], wrR: [0.3, 0, 0],
+  shL: [0.25, 0, 0.6], elL: [-1.55, 0, 0],
+  hipL: [0, 0, 0.12], ankL: [0, 0, -0.12], hipR: [0, 0, -0.12], ankR: [0, 0, 0.12],
+});
+const gWork = newPose(), gRun = newPose();
+const CHASE = { near: 2.7, far: 16, nearTime: 6, closeV: 10, dropV: 3.2, stand: -0.45 };   // stand < 0: he ends up by the kid's legs, facing the camera
+const chaser = { gap: CHASE.far, nearT: 0, alert: false, offZ: 0.85, phase: 0, standT: 0 };
+const trail = [], trailS = { z: 0, alt: 0, wJ: 0, wR: 0, spin: 0 };
+function resetChaser() {
+  trail.length = 0;
+  // start of a run: he's just behind, chases you off for a few seconds, then drops back
+  Object.assign(chaser, { gap: 10, nearT: 3.2, alert: false, offZ: 0.85, phase: 0, standT: 0 });
+  guard.visible = false;
+}
+// he runs the path the kid ran (a short trail of where the kid was), so he hops the same barriers and climbs the same ramps
+function sampleTrail(d) {
+  const o = trailS;
+  if (!trail.length) { o.z = kid.position.z; o.alt = 0; o.wJ = o.wR = o.spin = 0; return o; }
+  let i = trail.length - 1;
+  while (i > 0 && trail[i].d > d) i--;
+  const a = trail[i], b = trail[Math.min(i + 1, trail.length - 1)], u = b.d > a.d ? clamp((d - a.d) / (b.d - a.d)) : 0;
+  o.z = lerp(a.z, b.z, u); o.alt = lerp(a.alt, b.alt, u); o.wJ = lerp(a.wJ, b.wJ, u); o.wR = lerp(a.wR, b.wR, u); o.spin = lerp(a.spin, b.spin, u);
+  return o;
+}
+function stumble() {
+  const r = run;
+  if ((r.state !== 'run' && r.state !== 'go') || r.invuln > 0 || r.jetT >= 0) return;
+  if (chaser.alert && (chaser.nearT > 0 || chaser.gap < 6)) { caught(); return; }
+  chaser.alert = true; chaser.nearT = CHASE.nearTime;
+  r.stumbleT = 0; r.shake = Math.max(r.shake, 0.35);
+  SFX.stumble(); SFX.whistle();
+}
+function caught() { run.caught = true; crash(0.8); shout(niceEl, 'Caught!'); SFX.whistle(); }
+function updateChaser(g, dt, wJ, wR, spin) {
+  const r = run, crashed = r.state === 'crash';
+  if (!crashed) trail.push({ d: r.dist, z: kid.position.z, alt: r.jetT >= 0 ? r.ground : r.alt, wJ: r.jetT >= 0 ? 0 : wJ, wR, spin });
+  while (trail.length > 2 && trail[0].d < r.dist - 30) trail.shift();
+  if (crashed) {
+    // after a short beat he jogs over and stands next to the kid
+    if (r.crashT > 0.2) chaser.gap = Math.max(CHASE.stand, chaser.gap - Math.max(5, chaser.gap * 2.4) * g);
+    if (chaser.gap <= CHASE.stand + 0.01) chaser.standT += g;
+  } else {
+    if (r.jetT >= 0) chaser.nearT = 0;
+    if (chaser.nearT > 0) { chaser.nearT -= g; chaser.gap = Math.max(CHASE.near, chaser.gap - CHASE.closeV * g); }
+    else { chaser.gap = Math.min(CHASE.far, chaser.gap + CHASE.dropV * g); if (chaser.gap >= CHASE.far) chaser.alert = false; }
+  }
+  guard.visible = chaser.gap < 11.5;
+  if (!guard.visible) return;
+  const t = sampleTrail(r.dist - (crashed ? 0.6 : chaser.gap));
+  const lane = laneOfZ(t.z), side = crashed ? -1.35 : lane === 0 ? -0.85 : 0.85;   // a step to the side so he doesn't hide the kid
+  chaser.offZ += (side - chaser.offZ) * Math.min(1, dt * (crashed ? 3 : 5));
+  guard.position.set(kid.position.x + chaser.gap, KID_POS.y + t.alt, t.z + chaser.offZ);
+  const moving = !crashed || chaser.gap > CHASE.stand + 0.01;
+  if (moving) chaser.phase += g * Math.PI * 2 * 2.05 * Math.max(0.5, (crashed ? 9 : r.v) / ENDLESS.v0);
+  runPose(gRun, chaser.phase); copyPose(gWork, gRun);
+  if (t.wJ > 0) blendPose(gWork, P_RJUMP, t.wJ);
+  if (t.wR > 0) { blendPose(gWork, P_ROLL, t.wR); gWork.hips.multiply(qE(t.spin, 0, 0)); }
+  const wS = smooth(clamp(chaser.standT / 0.3));
+  if (wS > 0) { blendPose(gWork, P_SCOLD, wS); gWork.elR.multiply(qE(Math.sin(elapsed * 11) * 0.3 * wS, 0, 0)); }
+  for (const n of NAMES) GJ[n].quaternion.copy(gWork[n]);
+  const bob = moving ? 0.08 * (1 - Math.abs(Math.cos(chaser.phase))) * (1 - t.wJ) : 0;
+  guard.position.y += bob - 0.7 * t.wR;
+  // facing: down the track while running; turned toward the kid once he's standing over him
+  const face = Math.atan2(kid.position.x - guard.position.x, kid.position.z - guard.position.z);
+  guard.rotation.y = lerp(RUN.heading, face, wS);
+  beaconMat.emissiveIntensity = Math.sin(elapsed * 12) > 0 ? 1.4 : 0.25;
+}
+SFX.whistle = () => { if (!audio()) return; const t = actx.currentTime; for (let i = 0; i < 7; i++) tone(i % 2 ? 2350 : 2700, t + i * 0.045, 0.05, 'square', 0.02); tone(2700, t + 0.33, 0.3, 'square', 0.02, 2450); };
+SFX.stumble = () => { if (!audio()) return; const t = actx.currentTime; burst(t, 0.2, 520, 120, 0.22); tone(190, t, 0.22, 'triangle', 0.12, 85); };
 function bump(dir) { run.bumpT = 0; run.bumpDir = dir; run.shake = Math.max(run.shake, 0.22); SFX.bump(); }
 function endlessMove(dir) {
   const r = run;
@@ -3062,7 +3198,8 @@ function endlessMove(dir) {
   if (dir === 'left' || dir === 'right') {
     const step = dir === 'right' ? 1 : -1, target = r.lane + step;
     const low = r.jetT < 0 && r.alt < ROOF_H - 0.6;            // up on the roofs you can hop across freely
-    if (target < 0 || target > 2 || (low && laneBlocked(target, kid.position.x))) { bump(step); return; }
+    if (target < 0 || target > 2) { bump(step); return; }
+    if (low && laneBlocked(target, kid.position.x)) { bump(step); stumble(); return; }
     r.laneFromZ = kid.position.z; r.lane = target; r.laneDir = step; r.laneT = 0; SFX.whoosh();
   } else if (r.jetT >= 0) {
     return;
@@ -3079,13 +3216,14 @@ function crash(knock) {
   Object.assign(r, { state: 'crash', crashT: 0, crashReal: 0, knock, shake: 0.6, jumpT: -1, rollT: -1, slamT: -1, laneT: -1 });
   SFX.crash();
 }
+let dbgNoHit = false;   // test switch: run without collisions
 function checkHits() {
   const r = run, x = kid.position.x;
-  if (r.jetT >= 0 || r.invuln > 0) return;
+  if (r.jetT >= 0 || r.invuln > 0 || dbgNoHit) return;
   const lane = r.laneT >= 0 && r.laneT / ENDLESS.laneDur < 0.5 ? laneOfZ(r.laneFromZ) : r.lane;
   for (const t of trainPool) if (t.active && t.lane === lane && x < t.x + CAR_L / 2 + 0.3 && x > t.x - CAR_L / 2 - 0.3 && r.alt < ROOF_H + (t.v ? 0.2 : -0.45)) return crash(t.v ? 7 : 3);
   if (!r.recentered) for (const t of YARD_TRAINS) if (t.lane === lane && x < t.x + CAR_L / 2 + 0.3 && x > t.x - CAR_L / 2 - 0.3 && r.alt < ROOF_H - 0.45) return crash(3);
-  for (const b of jumpPool) if (b.active && b.lane === lane && Math.abs(x - b.x) < 0.35 && r.alt < 1.1) return crash(2);
+  for (const b of jumpPool) if (b.active && !b.hit && b.lane === lane && Math.abs(x - b.x) < 0.35 && r.alt < 1.1) { b.hit = true; b.fallT = 0; stumble(); if (r.state === 'crash') return; }
   for (const b of rollPool) if (b.active && b.lane === lane && Math.abs(x - b.x) < 0.35 && r.rollT < 0 && r.alt < 2.5) return crash(2);
 }
 function updateEndlessWorld(g) {
@@ -3095,6 +3233,7 @@ function updateEndlessWorld(g) {
     if (t.x - CAR_L / 2 > kx + 25) release(t);
   }
   for (const b of jumpPool.concat(rollPool)) if (b.active && b.x > kx + 25) release(b);
+  for (const b of jumpPool) if (b.active && b.fallT >= 0) { b.fallT += g; b.obj.rotation.z = 1.45 * smooth(clamp(b.fallT / 0.3)); }   // knocked flat
   for (const rp of rampPool) if (rp.active && rp.x > kx + 25) release(rp);
   if (run.state !== 'crash') spawnAhead();
   coinSpin += g * 4.5;
@@ -3128,6 +3267,12 @@ function updateKidEndless(dt) {
   if (kid.position.x < ENDLESS.recenterAt && r.state !== 'crash') recenter();
   if (r.state === 'go') { r.v = ENDLESS.v0 * smooth(clamp(r.t / 0.75)); if (r.t >= 0.75) r.state = 'run'; }
   else if (r.state === 'run') { r.runT += g; r.v = ENDLESS.v0 + (ENDLESS.vMax - ENDLESS.v0) * (1 - Math.exp(-r.runT / ENDLESS.ramp)); }
+  let wSt = 0;
+  if (r.stumbleT >= 0 && r.state !== 'crash') {
+    r.stumbleT += g; r.v *= 1 - 0.38 * (1 - smooth(clamp(r.stumbleT / 0.9)));
+    wSt = Math.sin(Math.PI * clamp(r.stumbleT / 0.45));
+    if (r.stumbleT > 0.9) r.stumbleT = -1;
+  }
   if (r.state !== 'crash') { kid.position.x -= r.v * g; r.dist += r.v * g; r.scoreF += r.v * g * 10 * (r.powers.mult > 0 ? 2 : 1); r.score = Math.floor(r.scoreF); }
   else { r.crashT += g; r.crashReal += dt; kid.position.x += r.knock * g; r.knock *= Math.exp(-5 * g); }
   updateEndlessWorld(g);
@@ -3191,6 +3336,7 @@ function updateKidEndless(dt) {
   if (lean) work.spine.multiply(qE(0, 0, lean));
   if (wJ > 0) blendPose(work, P_RJUMP, wJ);
   if (wR > 0) { blendPose(work, P_ROLL, wR); work.hips.multiply(qE(spin, 0, 0)); }
+  if (wSt > 0) { blendPose(work, P_STARTLE, wSt * 0.85); work.spine.multiply(qE(0.4 * wSt, 0, 0)); }
   const wC = r.state === 'crash' ? smooth(clamp(r.crashT / 0.3)) : 0;
   if (wF > 0) blendPose(work, P_JET, wF);
   if (wC > 0) { blendPose(work, P_CRASH, wC); work.hips.multiply(qE(-1.25 * wC, 0, 0)); }
@@ -3199,9 +3345,10 @@ function updateKidEndless(dt) {
   if (r.state === 'go' && r.laneT < 0 && r.bumpT < 0) kid.position.z = lerp(KID_POS.z, LANES[r.lane], smooth(clamp(r.t / 0.5)));
   const bob = 0.07 * (1 - Math.abs(Math.cos(r.phase))) * (r.air || wR > 0 || wC > 0 ? 0 : 1) * (1 - wF);
   kid.position.y = KID_POS.y + r.alt + bob + hop - 0.62 * wR - 0.5 * wC + Math.sin(elapsed * 4) * 0.08 * wF;
-  setFace(r.state === 'crash' ? 'surprise' : 'ready');
+  setFace(r.state === 'crash' || wSt > 0.2 ? 'surprise' : 'ready');
   blinkEyes(dt);
   kid.updateMatrixWorld(true);
+  updateChaser(g, dt, wJ, wR, spin);
 
   // jetpack flames + exhaust; blink while landing-safe
   if (jetObj.visible) {
@@ -3233,9 +3380,9 @@ function updateKidEndless(dt) {
   if (r.beaten) $('hud-best-num').textContent = fmt(r.score);
 
   // crash -> score screen
-  if (r.state === 'crash' && r.crashReal > 1.7 && !r.leaving) {
+  if (r.state === 'crash' && r.crashReal > 2.3 && !r.leaving) {
     r.leaving = true; flash.classList.add('on');
-    setTimeout(() => { hud.hidden = true; for (const d of dizzy) d.visible = false; enterResults({ kind: 'run', score: run.score, coins: run.coins }); flash.classList.remove('on'); }, 230);
+    setTimeout(() => { hud.hidden = true; guard.visible = false; for (const d of dizzy) d.visible = false; enterResults({ kind: 'run', score: run.score, coins: run.coins }); flash.classList.remove('on'); }, 230);
   }
 }
 // test/debug: what is coming up in each lane
@@ -4168,12 +4315,12 @@ Promise.race([
   new Promise((r) => setTimeout(r, 3500)),
 ]).catch(() => {}).then(() => { redrawers.forEach((fn) => fn()); });
 
-window.__railDash = { start: startIntro, tap: onTap, get resState() { return res.state; }, get resFlags() { return res.flags; }, get mode() { return mode; }, get phase() { return phase; }, get unlockState() { return unlock.state; }, get unlockT() { return unlock.t; }, move: doMove, get runState() { return run.state; }, enterCrew, leaveCrew, get crew() { return crew; }, get paused() { return !!run.paused; }, get counting() { return !!run.counting; }, get dist() { return run.dist; }, get runNeed() { return run.need; }, get score() { return run.score; }, get coins() { return run.coins; }, peek, get draws() { return renderer.info.render.calls; }, givePower: (t) => activatePower(t),
+window.__railDash = { start: startIntro, tap: onTap, get resState() { return res.state; }, get resFlags() { return res.flags; }, get mode() { return mode; }, get phase() { return phase; }, get unlockState() { return unlock.state; }, get unlockT() { return unlock.t; }, move: doMove, get runState() { return run.state; }, get chaser() { return chaser; }, stumble, get guardOn() { return guard.visible; }, get caught() { return !!run.caught; }, enterCrew, leaveCrew, get crew() { return crew; }, get paused() { return !!run.paused; }, get counting() { return !!run.counting; }, get dist() { return run.dist; }, get runNeed() { return run.need; }, get score() { return run.score; }, get coins() { return run.coins; }, peek, get draws() { return renderer.info.render.calls; }, givePower: (t) => activatePower(t),
   spawnRoof: (cars = 2, lane = run.lane, ramp = true, ahead = 40, clear = true) => {
     const nose = kid.position.x - ahead;
     if (clear) { clearHazards(nose - cars * (CAR_L + 0.5) - 10, kid.position.x + 2); for (const pk of puPool) if (pk.active && pk.x > nose - cars * 18) release(pk); }
     for (let c = 0; c < cars; c++) placeTrain(lane, nose - CAR_L / 2 - c * (CAR_L + 0.5), 0, ramp && c === 0);
-  }, set noRender(v) { noRender = v; } };
+  }, set noRender(v) { noRender = v; }, set noHit(v) { dbgNoHit = v; } };
 </script>
 </body>
 </html>
