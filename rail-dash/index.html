@@ -1209,7 +1209,7 @@ function makeCar(c) {
   }
   // roof
   P(new THREE.CylinderGeometry(CAR_W / 2, CAR_W / 2, CAR_L, 30, 1, false, 0, Math.PI), c.roof, car, [0, CAR_TOP, 0], [0, 0, Math.PI / 2], [0.28, 1, 1], 0.03);
-  for (const x of [-4.6, 4.6]) P(new THREE.BoxGeometry(2.4, 0.36, 1.7), '#e4e9ef', car, [x, CAR_TOP + 0.38, 0], null, null, 0.025);
+  for (const x of [-4.6, 4.6]) P(new THREE.BoxGeometry(2.4, 0.36, 1.7), '#e4e9ef', car, [x, CAR_TOP + 0.38, 0], null, null, 0.025).userData.roofGear = true;
   // undercarriage
   P(new THREE.BoxGeometry(CAR_L - 1.6, 0.42, CAR_W - 0.5), '#2f3440', car, [0, 1.0, 0], null, null, 0);
   const wheelGeo = new THREE.CylinderGeometry(0.36, 0.36, 0.14, 22);
@@ -2413,7 +2413,9 @@ function updateRunView(dt) {
   run.camZ += (kid.position.z - run.camZ) * Math.min(1, dt * 15);
   const f = lerp(1, 0.82, portrait), k = kid.position, z = run.camZ, push = mode === 'run' ? 1 - 0.18 * (1 - run.ts) : 1;
   const back = lerp(RUN_CAM.backL, RUN_CAM.backP, portrait) * push, up = lerp(RUN_CAM.upL, RUN_CAM.upP, portrait) * push;
-  chasePos.set(k.x + back, KID_POS.y + up + run.jumpY * 0.25 + (run.flyY || 0) * 0.92, z);
+  if (mode === 'endless') run.camAlt += ((run.camTarget || 0) - run.camAlt) * Math.min(1, dt * 5);
+  const lift = mode === 'endless' ? run.camAlt + run.hop * 0.4 : run.jumpY * 0.25;
+  chasePos.set(k.x + back, KID_POS.y + up + lift, z);
   chaseLook.set(chasePos.x - Math.cos(RUN_CAM.pitch) * 10, chasePos.y - Math.sin(RUN_CAM.pitch) * 10, z);
   const wE = run.state === 'brake' || run.state === 'end' ? smooth(clamp((run.bt - 0.35) / 0.9)) : 0;
   if (wE > 0) {
@@ -2455,7 +2457,33 @@ const carTemplates = [tutTrain,
   makeCar({ body: '#ffb627', band: '#fff4dc', stripe: '#7c4dff', skirt: '#e08e00', door: '#e9e4da', roof: '#c9ccd2', number: 'RD 1190', route: 'LOC 3', bothSides: true })];
 addCab(carTemplates[1]); addCab(carTemplates[2]);
 const pool = (n, make) => Array.from({ length: n }, (_, i) => { const obj = make(i); obj.visible = false; scene.add(obj); return { obj, active: false, x: 0, lane: 0, v: 0 }; });
-const trainPool = pool(12, (i) => carTemplates[i % 3].clone(true));
+const trainPool = pool(14, (i) => {
+  const c = carTemplates[i % 3].clone(true), gear = [];
+  c.traverse((o) => { if (o.userData.roofGear) gear.push(o); });
+  for (const o of gear) o.parent.remove(o);
+  return c;
+});
+// ---- ramps up onto the roofs, and the numbers for jumping/falling with gravity
+const RAMP_L = 9, ROOF_H = CAR_TOP + (CAR_W / 2) * 0.28 - KID_POS.y, GRAV = 23.4, SNEAKER_H = 5.2;
+const rampDeckMat = (() => {
+  const cv = makeCanvas(128, 128), g = cv.getContext('2d');
+  g.fillStyle = '#ffd23f'; g.fillRect(0, 0, 128, 128);
+  g.fillStyle = '#2b2f39';
+  g.beginPath(); g.moveTo(18, 64); g.lineTo(62, 16); g.lineTo(92, 16); g.lineTo(48, 64); g.lineTo(92, 112); g.lineTo(62, 112); g.closePath(); g.fill();
+  const t = canvasTex(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(Math.hypot(RAMP_L, ROOF_H) / 2.4, 1);
+  return toon('#ffffff', { map: t });
+})();
+const rampSteel = toon('#8a96a6'), rampSide = toon('#6c7686');
+const rampWedge = (() => { const sh = new THREE.Shape(); sh.moveTo(0, 0); sh.lineTo(RAMP_L, 0); sh.lineTo(0, ROOF_H - 0.1); sh.closePath(); return new THREE.ExtrudeGeometry(sh, { depth: 0.16, bevelEnabled: false }); })();
+function makeRamp() {
+  const grp = new THREE.Group(), slope = Math.hypot(RAMP_L, ROOF_H);
+  const deck = new THREE.Mesh(new THREE.BoxGeometry(slope, 0.18, 2.6), [rampSteel, rampSteel, rampDeckMat, rampSteel, rampSteel, rampSteel]);
+  deck.position.set(RAMP_L / 2, ROOF_H / 2 - 0.05, 0); deck.rotation.z = -Math.atan2(ROOF_H, RAMP_L);
+  deck.castShadow = deck.receiveShadow = true; grp.add(deck); boxOutline(deck, slope, 0.18, 2.6, 0.03);
+  for (const z of [1.14, -1.3]) { const m = new THREE.Mesh(rampWedge, rampSide); m.position.z = z; m.castShadow = true; grp.add(m); }
+  return grp;
+}
+const rampPool = pool(8, () => makeRamp());
 const jumpPool = pool(10, () => barrier.clone(true));
 const rollPool = pool(10, () => rollBar.clone(true));
 const COIN_N = 220;
@@ -2550,7 +2578,7 @@ function placePickup(lane, x, type) {
   o.obj.position.set(x, 1.49, LANES[lane]); o.obj.visible = true;
 }
 function clearHazards(x0, x1) {
-  for (const t of trainPool) if (t.active && t.x - CAR_L / 2 < x1 && t.x + CAR_L / 2 > x0) release(t);
+  for (const t of trainPool) if (t.active && t.x - CAR_L / 2 < x1 && t.x + CAR_L / 2 > x0) { release(t); if (t.rampRef) release(t.rampRef); }
   for (const b of jumpPool.concat(rollPool)) if (b.active && b.x > x0 && b.x < x1) release(b);
 }
 function spawnSkyCoins() {
@@ -2562,7 +2590,7 @@ function activatePower(type) {
   const r = run, P = POWERS[type];
   if (type === 'jetpack') {
     if (r.jetT < 0) { r.jetT = 0; r.jetLanding = false; } else r.jetT = Math.min(r.jetT, 0.7);
-    r.jetDur = powerDur(type); r.jumpT = -1; r.rollT = -1; r.slamT = -1; r.jumpY = 0;
+    r.jetDur = powerDur(type); r.jetBase = r.alt; r.air = false; r.vy = 0; r.rollT = -1;
     jetObj.visible = true;
     const landX = kid.position.x - Math.max(r.v, ENDLESS.v0) * r.jetDur;
     r.noSpawn = [landX - 30, landX + 15]; clearHazards(r.noSpawn[0], r.noSpawn[1]);
@@ -2602,14 +2630,33 @@ function hideTutorialProps(hide) { barrier.visible = rollBar.visible = tutTrain.
 function release(o) { o.active = false; o.obj.visible = false; }
 function grab(list) { return list.find((o) => !o.active) || null; }
 function clearEndless() {
-  for (const list of [trainPool, jumpPool, rollPool]) for (const o of list) release(o);
+  for (const list of [trainPool, jumpPool, rollPool, rampPool]) for (const o of list) release(o);
   for (const c of coins) c.on = false;
   for (const d of dizzy) d.visible = false;
   for (const pk of puPool) release(pk);
   resetPowers();
   hudScoreShown = hudCoinsShown = -1;
 }
-function placeTrain(lane, cx, v) { const o = grab(trainPool); if (!o) return; Object.assign(o, { active: true, x: cx, lane, v }); o.obj.position.set(cx, 0, LANES[lane]); o.obj.visible = true; }
+function placeTrain(lane, cx, v, withRamp = false) {
+  const o = grab(trainPool); if (!o) return;
+  Object.assign(o, { active: true, x: cx, lane, v, ramp: false, rampRef: null });
+  o.obj.position.set(cx, 0, LANES[lane]); o.obj.visible = true;
+  if (withRamp) {
+    const rp = grab(rampPool);
+    if (rp) { Object.assign(rp, { active: true, x: cx + CAR_L / 2, lane }); rp.obj.position.set(rp.x, KID_POS.y, LANES[lane]); rp.obj.visible = true; o.ramp = true; o.rampRef = rp; }
+  }
+}
+// height of whatever the kid is standing on: track, a ramp, or a parked train's roof (if he's up there)
+function groundAt(x, lane, alt) {
+  let h = 0;
+  for (const t of trainPool) {
+    if (!t.active || t.v || t.lane !== lane) continue;
+    const nose = t.x + CAR_L / 2;
+    if (x <= nose + 0.25 && x >= nose - CAR_L - 0.25 && alt >= ROOF_H - 0.45) h = ROOF_H;
+    else if (t.ramp && x > nose && x < nose + RAMP_L) h = Math.max(h, ROOF_H * (1 - (x - nose) / RAMP_L));
+  }
+  return h;
+}
 function placeHurdle(kind, lane, x) { const o = grab(kind === 'jump' ? jumpPool : rollPool); if (!o) return; Object.assign(o, { active: true, x, lane, kind }); o.obj.position.set(x, 0.24, LANES[lane]); o.obj.visible = true; }
 function placeCoin(x, h, lane) { const c = coins.find((k) => !k.on); if (!c) return; Object.assign(c, { on: true, x, y: 0.24 + h, z: LANES[lane], mag: false }); }
 function coinLine(lane, x0, n) { for (let k = 0; k < n; k++) placeCoin(x0 - k * 2.4, 1.0, lane); }
@@ -2649,10 +2696,15 @@ function spawnSegment(x) {
     return x - gap;
   }
   if (r < 0.62) {                                            // parked trains in one or two lanes
-    const lanes = shuffled([0, 1, 2]), count = rnd() < 0.5 ? 1 : 2, cars = rnd() < 0.5 ? 1 : 2;
-    for (let k = 0; k < count; k++) for (let c = 0; c < cars; c++) placeTrain(lanes[k], x - CAR_L / 2 - c * (CAR_L + 0.5), 0);
+    const lanes = shuffled([0, 1, 2]), count = rnd() < 0.5 ? 1 : 2, cars = n < 3 ? 1 : 1 + Math.floor(rnd() * 3);
+    const ramp = n >= 2 && rnd() < 0.6;
+    for (let k = 0; k < count; k++) for (let c = 0; c < cars; c++) placeTrain(lanes[k], x - CAR_L / 2 - c * (CAR_L + 0.5), 0, ramp && k === 0 && c === 0);
     const len = cars * (CAR_L + 0.5);
     coinLine(lanes[2], x, Math.floor(len / 2.4));
+    if (ramp) {
+      for (let d = 1; d < RAMP_L; d += 2.2) placeCoin(x + RAMP_L - d, ROOF_H * (d / RAMP_L) + 1.0, lanes[0]);
+      for (let d = 2; d < len - 1; d += 2.6) placeCoin(x - d, ROOF_H + 1.0, lanes[0]);
+    }
     return x - len - gap;
   }
   if (r < 0.8) {                                             // an express coming straight at you
@@ -2670,6 +2722,7 @@ function recenter() {
   for (const list of [trainPool, jumpPool, rollPool]) for (const o of list) if (o.active) { o.x += s; o.obj.position.x += s; }
   for (const c of coins) c.x += s;
   for (const pk of puPool) if (pk.active) { pk.x += s; pk.obj.position.x += s; }
+  for (const rp of rampPool) if (rp.active) { rp.x += s; rp.obj.position.x += s; }
   if (run.noSpawn) { run.noSpawn[0] += s; run.noSpawn[1] += s; }
   for (const c of clouds) c.position.x += s;
   nextX += s; run.recentered = true;
@@ -2682,7 +2735,7 @@ function startEndless() {
   Object.assign(run, {
     state: 'go', t: 0, v: 0, phase: 0, camT: 0, ts: 1, lane: 0, laneDir: 1, laneFromZ: LANES[0], laneT: -1, laneZ: LANES[0],
     jumpT: -1, jumpY: 0, rollT: -1, slamT: -1, slamFrom: 0, bumpT: -1, bumpDir: 1, runT: 0, dist: 0, score: 0, coins: 0,
-    scoreF: 0, jumpH: RUN.jumpH, jumpDur: RUN.jumpDur, powers: { magnet: 0, sneakers: 0, mult: 0 }, jetT: -1, jetDur: 0, flyY: 0, invuln: 0, noSpawn: null, jetLanding: false,
+    scoreF: 0, alt: 0, vy: 0, air: false, ground: 0, wJ: 0, camAlt: 0, camTarget: 0, hop: 0, jetBase: 0, powers: { magnet: 0, sneakers: 0, mult: 0 }, jetT: -1, jetDur: 0, flyY: 0, invuln: 0, noSpawn: null, jetLanding: false,
     best, beaten: false, crashT: 0, crashReal: 0, knock: 0, shake: 0, recentered: false, paused: false, leaving: false, segN: 0, need: null,
   });
   run.camFromPos.copy(camera.position); run.camFromLook.copy(camLook);
@@ -2709,17 +2762,15 @@ function endlessMove(dir) {
   if (r.paused || (r.state !== 'run' && r.state !== 'go')) return;
   if (dir === 'left' || dir === 'right') {
     const step = dir === 'right' ? 1 : -1, target = r.lane + step;
-    if (target < 0 || target > 2 || (r.jetT < 0 && laneBlocked(target, kid.position.x))) { bump(step); return; }
+    const low = r.jetT < 0 && r.alt < ROOF_H - 0.6;            // up on the roofs you can hop across freely
+    if (target < 0 || target > 2 || (low && laneBlocked(target, kid.position.x))) { bump(step); return; }
     r.laneFromZ = kid.position.z; r.lane = target; r.laneDir = step; r.laneT = 0; SFX.whoosh();
   } else if (r.jetT >= 0) {
     return;
   } else if (dir === 'up') {
-    if (r.jumpT < 0 && r.slamT < 0) {
-      const sn = r.powers.sneakers > 0;
-      r.rollT = -1; r.jumpT = 0; r.jumpH = sn ? 2.9 : RUN.jumpH; r.jumpDur = sn ? 1.0 : RUN.jumpDur; SFX.jump();
-    }
+    if (!r.air) { r.vy = Math.sqrt(2 * GRAV * (r.powers.sneakers > 0 ? SNEAKER_H : RUN.jumpH)); r.air = true; r.rollT = -1; SFX.jump(); }
   } else if (dir === 'down') {
-    if (r.jumpT >= 0) { r.slamFrom = r.jumpY; r.slamT = 0; r.jumpT = -1; }
+    if (r.air) r.vy = Math.min(r.vy, -26);                     // slam back down
     if (r.rollT < 0) { r.rollT = 0; SFX.roll(); }
   }
 }
@@ -2733,10 +2784,10 @@ function checkHits() {
   const r = run, x = kid.position.x;
   if (r.jetT >= 0 || r.invuln > 0) return;
   const lane = r.laneT >= 0 && r.laneT / ENDLESS.laneDur < 0.5 ? laneOfZ(r.laneFromZ) : r.lane;
-  for (const t of trainPool) if (t.active && t.lane === lane && x < t.x + CAR_L / 2 + 0.3 && x > t.x - CAR_L / 2 - 0.3) return crash(t.v ? 7 : 3);
-  if (!r.recentered) for (const t of YARD_TRAINS) if (t.lane === lane && x < t.x + CAR_L / 2 + 0.3 && x > t.x - CAR_L / 2 - 0.3) return crash(3);
-  for (const b of jumpPool) if (b.active && b.lane === lane && Math.abs(x - b.x) < 0.35 && r.jumpY < 1.1) return crash(2);
-  for (const b of rollPool) if (b.active && b.lane === lane && Math.abs(x - b.x) < 0.35 && r.rollT < 0 && r.jumpY < 2.5) return crash(2);
+  for (const t of trainPool) if (t.active && t.lane === lane && x < t.x + CAR_L / 2 + 0.3 && x > t.x - CAR_L / 2 - 0.3 && r.alt < ROOF_H + (t.v ? 0.2 : -0.45)) return crash(t.v ? 7 : 3);
+  if (!r.recentered) for (const t of YARD_TRAINS) if (t.lane === lane && x < t.x + CAR_L / 2 + 0.3 && x > t.x - CAR_L / 2 - 0.3 && r.alt < ROOF_H - 0.45) return crash(3);
+  for (const b of jumpPool) if (b.active && b.lane === lane && Math.abs(x - b.x) < 0.35 && r.alt < 1.1) return crash(2);
+  for (const b of rollPool) if (b.active && b.lane === lane && Math.abs(x - b.x) < 0.35 && r.rollT < 0 && r.alt < 2.5) return crash(2);
 }
 function updateEndlessWorld(g) {
   const kx = kid.position.x;
@@ -2745,6 +2796,7 @@ function updateEndlessWorld(g) {
     if (t.x - CAR_L / 2 > kx + 25) release(t);
   }
   for (const b of jumpPool.concat(rollPool)) if (b.active && b.x > kx + 25) release(b);
+  for (const rp of rampPool) if (rp.active && rp.x > kx + 25) release(rp);
   if (run.state !== 'crash') spawnAhead();
   coinSpin += g * 4.5;
   const kz = kid.position.z, ky = kid.position.y + (run.rollT >= 0 ? 0.55 : 1.1), magnet = run.powers.magnet > 0 && run.state !== 'crash';
@@ -2781,17 +2833,18 @@ function updateKidEndless(dt) {
   else { r.crashT += g; r.crashReal += dt; kid.position.x += r.knock * g; r.knock *= Math.exp(-5 * g); }
   updateEndlessWorld(g);
 
-  // jump / slam / roll / lane change / side bump
-  let wJ = 0;
-  r.jumpY = 0;
-  if (r.jumpT >= 0) {
-    r.jumpT += g;
-    const u = clamp(r.jumpT / r.jumpDur);
-    r.jumpY = 4 * r.jumpH * u * (1 - u);
-    wJ = smooth(clamp(u / 0.18)) * (1 - smooth(clamp((u - 0.78) / 0.22)));
-    if (u >= 1) { r.jumpT = -1; r.jumpY = 0; SFX.land(); }
+  // vertical motion with gravity: tracks, ramps and train roofs
+  const footLane = r.laneT >= 0 && r.laneT / ENDLESS.laneDur < 0.5 ? laneOfZ(r.laneFromZ) : r.lane;
+  const gh = groundAt(kid.position.x, footLane, r.alt);
+  if (r.jetT < 0) {
+    if (r.air) {
+      r.vy -= GRAV * g; r.alt += r.vy * g;
+      if (r.alt <= gh) { r.alt = gh; r.vy = 0; r.air = false; SFX.land(); }
+    } else if (gh < r.alt - 0.05) { r.air = true; r.vy = 0; }   // ran off a roof or hopped to an empty track
+    else r.alt = gh;                                             // follow ramps up
   }
-  if (r.slamT >= 0) { r.slamT += g; const u = clamp(r.slamT / 0.12); r.jumpY = r.slamFrom * (1 - u); if (u >= 1) r.slamT = -1; }
+  r.wJ += ((r.air && r.jetT < 0 ? 1 : 0) - r.wJ) * Math.min(1, dt * 14);
+  const wJ = r.wJ;
   let lean = 0, hop = 0, bz = 0;
   if (r.laneT >= 0) {
     r.laneT += g;
@@ -2823,14 +2876,16 @@ function updateKidEndless(dt) {
     const T = r.jetT, D = r.jetDur;
     wF = smooth(clamp(T / 0.7)) * (1 - smooth(clamp((T - (D - 0.9)) / 0.9)));
     if (T > D - 0.9 && !r.jetLanding) { r.jetLanding = true; clearHazards(kid.position.x - 28, kid.position.x + 3); }
-    if (T >= D) { r.jetT = -1; r.jetLanding = false; r.noSpawn = null; jetObj.visible = false; r.invuln = 1.2; SFX.powerEnd(); }
+    r.alt = Math.max(gh, JET_H * wF + (T < 0.7 ? r.jetBase * (1 - wF) : 0));
+    if (T >= D) { r.jetT = -1; r.jetLanding = false; r.noSpawn = null; jetObj.visible = false; r.invuln = 1.2; r.air = r.alt > gh + 0.05; r.vy = 0; SFX.powerEnd(); }
   }
-  r.flyY = JET_H * wF;
+  r.ground = gh; r.jumpY = Math.max(0, r.alt - gh);
+  r.camTarget = r.jetT >= 0 ? r.alt : gh; r.hop = r.jetT >= 0 ? 0 : r.jumpY;
   if (r.invuln > 0) r.invuln -= g;
   if (r.state === 'run' || r.state === 'go') checkHits();
 
   // pose
-  r.phase += g * Math.PI * 2 * 2.4 * Math.max(0.3, r.v / ENDLESS.v0) * (r.jumpT >= 0 ? 0.25 : 1);
+  r.phase += g * Math.PI * 2 * 2.4 * Math.max(0.3, r.v / ENDLESS.v0) * (r.air ? 0.25 : 1);
   runPose(dynRun, r.phase);
   if (r.state === 'go') { copyPose(work, P_READY); blendPose(work, dynRun, smooth(clamp(r.t / 0.4))); }
   else copyPose(work, dynRun);
@@ -2843,8 +2898,8 @@ function updateKidEndless(dt) {
   for (const n of NAMES) J[n].quaternion.copy(work[n]);
   kid.rotation.y = r.state === 'go' ? THETA1 + (RUN.heading - THETA1) * inOutCubic(clamp(r.t / 0.45)) : RUN.heading;
   if (r.state === 'go' && r.laneT < 0 && r.bumpT < 0) kid.position.z = lerp(KID_POS.z, LANES[r.lane], smooth(clamp(r.t / 0.5)));
-  const bob = 0.07 * (1 - Math.abs(Math.cos(r.phase))) * (r.jumpT >= 0 || wR > 0 || wC > 0 ? 0 : 1) * (1 - wF);
-  kid.position.y = KID_POS.y + r.jumpY + bob + hop - 0.62 * wR - 0.5 * wC + r.flyY + Math.sin(elapsed * 4) * 0.08 * wF;
+  const bob = 0.07 * (1 - Math.abs(Math.cos(r.phase))) * (r.air || wR > 0 || wC > 0 ? 0 : 1) * (1 - wF);
+  kid.position.y = KID_POS.y + r.alt + bob + hop - 0.62 * wR - 0.5 * wC + Math.sin(elapsed * 4) * 0.08 * wF;
   setFace(r.state === 'crash' ? 'surprise' : 'ready');
   blinkEyes(dt);
   kid.updateMatrixWorld(true);
@@ -2892,7 +2947,8 @@ function peek() {
   for (const b of jumpPool) if (b.active && b.x < x + 0.3 && b.x > x - 40) out.push({ kind: 'jump', lane: b.lane, dist: x - b.x });
   for (const b of rollPool) if (b.active && b.x < x + 0.3 && b.x > x - 40) out.push({ kind: 'roll', lane: b.lane, dist: x - b.x });
   for (const pk of puPool) if (pk.active && pk.x < x + 0.3 && pk.x > x - 60) out.push({ kind: 'power', type: pk.type, lane: pk.lane, dist: x - pk.x });
-  return { jumpY: run.jumpY, flyY: run.flyY, powers: { ...run.powers }, jetT: run.jetT, invuln: run.invuln, score: run.score, coins: run.coins, dist: run.dist, lane: run.lane, laneT: run.laneT, jumpT: run.jumpT, rollT: run.rollT, state: run.state, v: run.v, x, out, blocked: [0, 1, 2].map((l) => laneBlocked(l, x)) };
+  for (const t of trainPool) if (t.active && t.ramp) { const n = t.x + CAR_L / 2; if (n + RAMP_L > x - 60 && n < x + 1) out.push({ kind: 'ramp', lane: t.lane, dist: x - (n + RAMP_L) }); }
+  return { alt: run.alt, air: run.air, ground: run.ground, jumpY: run.jumpY, powers: { ...run.powers }, jetT: run.jetT, invuln: run.invuln, score: run.score, coins: run.coins, dist: run.dist, lane: run.lane, laneT: run.laneT, jumpT: run.air ? 0 : -1, rollT: run.rollT, state: run.state, v: run.v, x, out, blocked: [0, 1, 2].map((l) => laneBlocked(l, x)) };
 }
 
 // ------------------------------------------------------------------ title menu + shop (daily gift, mystery box)
@@ -3434,7 +3490,12 @@ Promise.race([
   new Promise((r) => setTimeout(r, 3500)),
 ]).catch(() => {}).then(() => { redrawers.forEach((fn) => fn()); });
 
-window.__railDash = { start: startIntro, tap: onTap, get resState() { return res.state; }, get resFlags() { return res.flags; }, get mode() { return mode; }, get phase() { return phase; }, get unlockState() { return unlock.state; }, get unlockT() { return unlock.t; }, move: doMove, get runState() { return run.state; }, get runNeed() { return run.need; }, get score() { return run.score; }, get coins() { return run.coins; }, peek, get draws() { return renderer.info.render.calls; }, givePower: (t) => activatePower(t), set noRender(v) { noRender = v; } };
+window.__railDash = { start: startIntro, tap: onTap, get resState() { return res.state; }, get resFlags() { return res.flags; }, get mode() { return mode; }, get phase() { return phase; }, get unlockState() { return unlock.state; }, get unlockT() { return unlock.t; }, move: doMove, get runState() { return run.state; }, get runNeed() { return run.need; }, get score() { return run.score; }, get coins() { return run.coins; }, peek, get draws() { return renderer.info.render.calls; }, givePower: (t) => activatePower(t),
+  spawnRoof: (cars = 2, lane = run.lane, ramp = true, ahead = 40, clear = true) => {
+    const nose = kid.position.x - ahead;
+    if (clear) { clearHazards(nose - cars * (CAR_L + 0.5) - 10, kid.position.x + 2); for (const pk of puPool) if (pk.active && pk.x > nose - cars * 18) release(pk); }
+    for (let c = 0; c < cars; c++) placeTrain(lane, nose - CAR_L / 2 - c * (CAR_L + 0.5), 0, ramp && c === 0);
+  }, set noRender(v) { noRender = v; } };
 </script>
 </body>
 </html>
