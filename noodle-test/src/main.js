@@ -51,7 +51,7 @@ function noodle(o) {
   for (const s of [-1, 1]) {
     const a = o.arms ? o.arms[s < 0 ? 0 : 1] : [s * .5, -.18, .05]; const from = sh.clone().add(V(s * R * .85, 0, 0)), to = from.clone().add(V(...a).multiplyScalar(.62));
     g.add(limb(from, to, .055)); const hand = inked(new THREE.SphereGeometry(.085, 14, 10), col, .016); hand.position.copy(to); g.add(hand);
-    const hip = V(s * .12, .22, 0), foot = V(s * .16, .06, .02); g.add(limb(hip, foot, .06)); const shoe = inked(new THREE.SphereGeometry(.1, 14, 10), o.shoe || 0x2a2a34, .016); shoe.scale.set(1, .6, 1.4); shoe.position.copy(foot).add(V(0, -.01, .06)); g.add(shoe);
+    const fo = o.feet ? o.feet[s < 0 ? 0 : 1] : [0, 0], hip = V(s * .12, .22, 0), foot = V(s * .16, .06 + fo[1], .02 + fo[0]); g.add(limb(hip, foot, .06)); const shoe = inked(new THREE.SphereGeometry(.1, 14, 10), o.shoe || 0x2a2a34, .016); shoe.scale.set(1, .6, 1.4); shoe.position.copy(foot).add(V(0, -.01, .06)); g.add(shoe);
   }
   return g;
 }
@@ -68,14 +68,20 @@ const house = new THREE.Group(); house.position.set(-3.4, 0, -5.5); house.rotati
 const roof = inked(new THREE.ConeGeometry(1.6, 1.1, 4), 0xff6a4a, .03); roof.position.y = 2.1; roof.rotation.y = Math.PI / 4; house.add(roof); const door = inked(new THREE.BoxGeometry(.5, .8, .05), 0x7a4a2a, .015); door.position.set(0, .4, .92); house.add(door);
 for (const [x, y, z, s] of [[-2, 5.5, -9, 1], [2.5, 6.4, -12, 1.3], [0, 7.5, -16, 1.1]]) { const c = new THREE.Group(); c.position.set(x, y, z); c.scale.setScalar(s); for (const [dx, r] of [[-.5, .45], [0, .6], [.55, .45]]) { const b = inked(new THREE.SphereGeometry(r, 16, 12), 0xffffff, .03); b.position.x = dx; b.children[0].castShadow = false; c.add(b); } scene.add(c); }
 
-// ---- the cast
-const A = noodle({ color: 0xff8a2a, mouth: 'grin', brow: -.15, blush: true, hair: 'tuft', hairColor: 0xff8a2a, arms: [[-.45, .25, .1], [.5, .3, .1]], lean: -.1 });   // happy, arms up
-A.position.set(-.98, 0, .3); A.rotation.y = .3; scene.add(A);
-const B = noodle({ color: 0x38c8c0, mouth: 'o', eyeS: 1.25, browUp: .06, brow: .2, bend: .35, arms: [[-.4, .35, .2], [.45, .4, .2]], hat: 'cap', hatColor: 0xffd23a });   // shocked, bending back
-B.position.set(0, 0, -.2); scene.add(B);
-const C = noodle({ color: 0xff6aa8, mouth: 'frown', brow: .35, arms: [[-.35, -.05, .25], [.4, -.1, .3]], tilt: .15, shoe: 0xffffff });   // grumpy
-C.position.set(1.0, 0, .35); C.rotation.y = -.35; scene.add(C);
-
-const cam = new THREE.PerspectiveCamera(36, W / H, .1, 200); cam.position.set(0, 1.45, 8.6); cam.lookAt(0, 1.2, 0);
-window.renderTime = () => { renderer.render(scene, cam); return out.toDataURL('image/jpeg', .94); };
+// ---- the cast, walking toward us down the path: a wobbly waddle (body sways onto the stepping foot, head bobs, feet patter, arms swing)
+const CAST = [{ color: 0xff8a2a, mouth: 'grin', brow: -.15, blush: true, hair: 'tuft', hairColor: 0xff8a2a, x: -1.0, z: .4, ph: 0, sp: 1 },
+  { color: 0x38c8c0, mouth: 'smile', hat: 'cap', hatColor: 0xffd23a, x: 0, z: -.5, ph: 1.7, sp: 1.08 },
+  { color: 0xff6aa8, mouth: 'frown', brow: .35, shoe: 0xffffff, x: 1.0, z: .1, ph: 3.1, sp: .94 }];
+let built = [];
+function pose(t) {
+  built.forEach(g => { scene.remove(g); g.traverse(o => o.geometry && o.geometry.dispose()); }); built = [];
+  CAST.forEach(c => { const p = t * 7.5 * c.sp + c.ph, sw = Math.sin(p), up = x => Math.max(0, x);
+    const g = noodle({ ...c, bend: sw * .14, tilt: -sw * .1, feet: [[sw * .14, up(Math.cos(p)) * .1], [-sw * .14, up(-Math.cos(p)) * .1]],
+      arms: [[-.45, -.12 + sw * .12, -sw * .35], [.45, -.12 - sw * .12, sw * .35]] });
+    g.position.set(c.x, Math.abs(Math.cos(p)) * .05, c.z - 7 + t * 1.6 * c.sp); g.rotation.y = Math.sin(p * .5) * .06; scene.add(g); built.push(g); });
+}
+const cam = new THREE.PerspectiveCamera(36, W / H, .1, 200);
+const DUR = 4.5, FPS = 30;
+window.renderTime = t => { pose(t); const z = -7 + t * 1.6; cam.position.set(Math.sin(t * .6) * .3, 1.5, z + 8.4); cam.lookAt(0, 1.15, z); renderer.render(scene, cam); return out.toDataURL('image/jpeg', .94); };
+window.renderFrame = i => window.renderTime(i / FPS); window.frameCount = Math.round(DUR * FPS);
 window.captionChunks = []; window.ready = true;
