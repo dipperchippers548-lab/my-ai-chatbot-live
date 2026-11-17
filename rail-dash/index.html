@@ -337,6 +337,78 @@ button.gloss:focus-visible, .coin-pill:focus-visible { outline: 3px solid var(--
   82% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, -10px); }
 }
 
+/* ---------- crew: Dex on a podium over the sunburst, outfits, profile */
+.crew { position: fixed; inset: 0; z-index: 5; pointer-events: none; color: var(--paper); }
+.crew-head {
+  position: absolute; left: 0; right: 0; top: 0; display: grid; grid-template-columns: 52px 1fr auto; align-items: center; gap: 10px;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 16px);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.crew-head > * { pointer-events: auto; }
+.crew-title { margin: 0; text-align: center; font: clamp(34px, 9vw, 46px)/1 var(--font-display); letter-spacing: .05em; text-shadow: var(--outline), 0 6px 0 rgba(27, 16, 48, .4); }
+.crew-hint {
+  grid-column: 1 / -1; justify-self: center; margin: 2px 0 0; padding: 6px 12px; border-radius: 999px; pointer-events: none !important;
+  background: rgba(27, 16, 48, .62); font: 700 12px/1 var(--font-body); letter-spacing: .05em;
+}
+.crew-panel {
+  position: absolute; left: 0; right: 0; bottom: 0; margin: 0 auto; width: min(420px, 100%); box-sizing: border-box; pointer-events: auto;
+  display: grid; gap: 12px; padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 14px);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.crew-id { display: grid; justify-items: center; gap: 6px; }
+.crew-name { margin: 0; font: clamp(44px, 11vw, 58px)/1 var(--font-display); letter-spacing: .05em; text-shadow: var(--outline), 0 6px 0 rgba(27, 16, 48, .35); }
+.crew-role { padding: 5px 12px; border-radius: 999px; background: var(--ink); font: 700 11px/1 var(--font-body); letter-spacing: .14em; text-transform: uppercase; }
+.crew-card { display: grid; gap: 12px; padding: 12px 14px 14px; border-radius: 22px; }
+.crew-ohead { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.crew-ohead span { font: 21px/1 var(--font-display); letter-spacing: .03em; text-shadow: var(--outline-thin); }
+.crew-ohead b { font: 400 12px/1 var(--font-display); letter-spacing: .12em; color: var(--sun); text-shadow: 0 1px 0 var(--ink); }
+.crew-outfits { display: flex; justify-content: center; gap: 14px; padding: 6px 0 4px; }
+.of-btn { position: relative; flex: 0 1 64px; min-width: 0; aspect-ratio: 1; padding: 0; border-radius: 16px; display: grid; place-items: center; }
+.of-btn > svg { width: 82%; height: 82%; overflow: visible; }
+.of-btn[aria-checked="true"]::after {
+  content: ""; position: absolute; inset: -8px; border-radius: 21px; pointer-events: none;
+  border: 4px solid var(--sun); box-shadow: 0 0 0 2px var(--ink), inset 0 0 0 2px var(--ink);
+}
+.of-tag {
+  position: absolute; z-index: 2; left: 50%; bottom: -10px; transform: translateX(-50%); display: flex; align-items: center; gap: 2px;
+  padding: 2px 7px 2px 3px; border-radius: 999px; background: var(--ink); white-space: nowrap;
+  font: 12px/1 var(--font-display); color: var(--sun); font-variant-numeric: tabular-nums;
+}
+.of-tag svg { width: 14px; height: 14px; }
+.of-worn {
+  position: absolute; z-index: 2; top: -9px; right: -9px; width: 24px; height: 24px; box-sizing: border-box; border-radius: 50%; display: none; place-items: center;
+  background: linear-gradient(180deg, var(--green-hi), var(--green) 55%, var(--green-lo)); border: 2.5px solid var(--ink);
+}
+.of-btn.worn .of-worn { display: grid; }
+.crew-oabout { margin: 0; text-align: center; font: 700 13px/1.3 var(--font-body); text-shadow: 0 1px 2px rgba(27, 16, 48, .75); text-wrap: balance; }
+.crew-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.crew-stats .pm-stat { background: linear-gradient(180deg, var(--navy-hi), var(--navy) 60%, var(--navy-lo)); border: 3px solid var(--ink); box-shadow: 0 4px 0 var(--ink); }
+.hud-face { display: block; }
+body.in-crew .toast { bottom: auto; top: calc(env(safe-area-inset-top, 0px) + 116px); }
+.hud-face svg { display: block; width: 28px; height: 28px; overflow: visible; }
+@media (min-aspect-ratio: 1/1) {
+  .crew-panel {
+    top: calc(env(safe-area-inset-top, 0px) + 104px); left: auto; right: 0; margin: 0; width: min(400px, 46vw);
+    align-content: safe center; overflow-y: auto; padding-top: 10px;
+  }
+}
+@media (max-height: 720px) and (max-aspect-ratio: 1/1) {
+  .crew-oabout { display: none; }
+  .crew-name { font-size: 38px; }
+  .crew-panel, .crew-card { gap: 9px; }
+  .crew-id { gap: 4px; }
+  .of-btn { flex-basis: 56px; }
+  .crew-act { min-height: 46px; }
+  .crew-stats .pm-stat { padding: 6px 4px 5px; gap: 4px; }
+  .crew-stats .pm-stat span { font-size: 18px; }
+}
+@media (max-height: 600px) {
+  .crew-oabout, .crew-role, .crew-hint { display: none; }
+  .crew-name { font-size: 36px; }
+  .crew-panel { gap: 8px; }
+}
+@media (min-aspect-ratio: 1/1) and (max-height: 600px) { .crew-panel { top: calc(env(safe-area-inset-top, 0px) + 76px); } }
+
 /* ---------- shop */
 .shop {
   position: fixed; inset: 0; z-index: 12; display: grid; grid-template-rows: auto auto minmax(0, 1fr); color: var(--paper);
@@ -579,7 +651,7 @@ button.gloss:focus-visible, .coin-pill:focus-visible { outline: 3px solid var(--
     </div>
     <nav class="navbar" aria-label="Menu">
       <button id="shop-btn" class="tile gloss gold" type="button"><svg class="ic" viewBox="0 0 200 190" aria-hidden="true" style="--b1:#3ab0f0;--b2:#2386d0;--rib:#ff4fa3"><use href="#box-sym"/></svg><span>Shop</span></button>
-      <button class="tile gloss blue locked" type="button" data-soon="Crew"><svg class="ic" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="15" fill="#ffd9a8" stroke="var(--ink)" stroke-width="2"/><circle cx="16" cy="19.5" r="9" fill="#c98a5e"/><path d="M6.6 16.5a9.4 9 0 0 1 18.8 0z" fill="#2c5bff" stroke="var(--ink)" stroke-width="1.6"/><path d="M21 16.4h6.5" stroke="#ffd23f" stroke-width="3" stroke-linecap="round"/><circle cx="13" cy="20" r="1.4" fill="var(--ink)"/><circle cx="19" cy="20" r="1.4" fill="var(--ink)"/><path d="M13.4 23.6q2.6 2 5.2 0" stroke="var(--ink)" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg><span>Crew</span><svg class="lock" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="12" rx="3" fill="var(--sun)" stroke="var(--ink)" stroke-width="2.2"/><path d="M8 10V7.2a4 4 0 0 1 8 0V10" fill="none" stroke="var(--ink)" stroke-width="2.6"/><circle cx="12" cy="15.6" r="1.9" fill="var(--ink)"/></svg></button>
+      <button id="crew-btn" class="tile gloss blue" type="button"><svg class="ic" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="15" fill="#ffd9a8" stroke="var(--ink)" stroke-width="2"/><circle cx="16" cy="19.5" r="9" fill="#c98a5e"/><path d="M6.6 16.5a9.4 9 0 0 1 18.8 0z" fill="#2c5bff" stroke="var(--ink)" stroke-width="1.6"/><path d="M21 16.4h6.5" stroke="#ffd23f" stroke-width="3" stroke-linecap="round"/><circle cx="13" cy="20" r="1.4" fill="var(--ink)"/><circle cx="19" cy="20" r="1.4" fill="var(--ink)"/><path d="M13.4 23.6q2.6 2 5.2 0" stroke="var(--ink)" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg><span>Crew</span></button>
       <button id="upg-btn" class="tile gloss blue" type="button"><svg class="ic" viewBox="0 0 40 40" aria-hidden="true"><path d="M9 21 L20 10 L31 21 M9 32 L20 21 L31 32" fill="none" stroke="var(--ink)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 21 L20 10 L31 21 M9 32 L20 21 L31 32" fill="none" stroke="var(--sun)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Upgrades</span></button>
       <button id="set-btn" class="tile gloss blue" type="button"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path fill="#eef3fb" stroke="var(--ink)" stroke-width="1.3" fill-rule="evenodd" d="M10.3 1.8h3.4l.55 2.65c.72.2 1.4.48 2.03.85l2.26-1.5 2.4 2.4-1.5 2.27c.37.63.66 1.31.85 2.03l2.66.54v3.4l-2.66.55a8 8 0 0 1-.85 2.03l1.5 2.26-2.4 2.4-2.26-1.5a8 8 0 0 1-2.03.85l-.55 2.66h-3.4l-.54-2.66a8 8 0 0 1-2.03-.85l-2.27 1.5-2.4-2.4 1.5-2.26a8 8 0 0 1-.85-2.03L1.8 13.7v-3.4l2.65-.54c.2-.72.48-1.4.85-2.03L3.8 5.46l2.4-2.4L8.47 4.6c.63-.37 1.31-.66 2.03-.85zM12 8.4a3.6 3.6 0 1 0 0 7.2 3.6 3.6 0 0 0 0-7.2z"/></svg><span>Settings</span></button>
     </nav>
@@ -640,7 +712,7 @@ button.gloss:focus-visible, .coin-pill:focus-visible { outline: 3px solid var(--
     <div id="hud-best" class="hud-best gloss navy">
       <span id="hud-best-label" class="hb-label">HIGH SCORE</span>
       <div class="hb-row">
-        <svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><circle cx="16" cy="16" r="15" fill="#ffd9a8" stroke="var(--ink)" stroke-width="2"/><circle cx="16" cy="19.5" r="9" fill="#c98a5e"/><path d="M6.6 16.5a9.4 9 0 0 1 18.8 0z" fill="#2c5bff" stroke="var(--ink)" stroke-width="1.6"/><path d="M21 16.4h6.5" stroke="#ffd23f" stroke-width="3" stroke-linecap="round"/><circle cx="13" cy="20" r="1.4" fill="var(--ink)"/><circle cx="19" cy="20" r="1.4" fill="var(--ink)"/><path d="M13.4 23.6q2.6 2 5.2 0" stroke="var(--ink)" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>
+        <span id="hud-face" class="hud-face" aria-hidden="true"></span>
         <span id="hud-best-num">0</span>
       </div>
     </div>
@@ -685,7 +757,7 @@ button.gloss:focus-visible, .coin-pill:focus-visible { outline: 3px solid var(--
   <div class="shop-tabs" role="tablist" aria-label="Shop sections">
     <button id="tab-offers" class="tab gloss gold" type="button" role="tab" aria-selected="true" aria-controls="panel-offers">Offers</button>
     <button id="tab-upg" class="tab gloss navy" type="button" role="tab" aria-selected="false" aria-controls="panel-upg">Upgrades</button>
-    <button class="tab gloss navy" type="button" role="tab" aria-selected="false" data-soon="Outfits">Outfits<svg class="lock" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="12" rx="3" fill="var(--sun)" stroke="var(--ink)" stroke-width="2.2"/><path d="M8 10V7.2a4 4 0 0 1 8 0V10" fill="none" stroke="var(--ink)" stroke-width="2.6"/><circle cx="12" cy="15.6" r="1.9" fill="var(--ink)"/></svg></button>
+    <button id="tab-outfits" class="tab gloss navy" type="button" role="tab" aria-selected="false" aria-controls="panel-outfits">Outfits</button>
   </div>
   <div class="shop-body">
     <div id="panel-offers" class="shop-inner" role="tabpanel" aria-labelledby="tab-offers">
@@ -711,6 +783,10 @@ button.gloss:focus-visible, .coin-pill:focus-visible { outline: 3px solid var(--
     <div id="panel-upg" class="shop-inner" role="tabpanel" aria-labelledby="tab-upg" hidden>
       <p class="upg-head">Each level makes a power‑up last longer on every run.</p>
       <div id="upg-list" class="upg-list"></div>
+    </div>
+    <div id="panel-outfits" class="shop-inner" role="tabpanel" aria-labelledby="tab-outfits" hidden>
+      <p class="upg-head">Fresh fits for Dex. Try them on in the Crew screen.</p>
+      <div id="outfit-list" class="upg-list"></div>
     </div>
   </div>
 </div>
@@ -759,6 +835,28 @@ button.gloss:focus-visible, .coin-pill:focus-visible { outline: 3px solid var(--
       <button id="set-reset" class="pm-btn gloss red" type="button">Reset progress</button>
     </div>
     <p class="set-foot">Rail Dash · prototype build</p>
+  </div>
+</div>
+<div id="crew" class="crew" hidden>
+  <div id="crew-head" class="crew-head">
+    <button id="crew-back" class="back-btn gloss gold" type="button" aria-label="Back to the yard"><svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path d="M15 4 L7 12 L15 20" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <h2 class="crew-title">CREW</h2>
+    <div class="coin-pill static" aria-label="Coins"><svg class="pill-ico" viewBox="0 0 28 28" width="46" height="46" aria-hidden="true"><circle cx="14" cy="14" r="12.2" fill="var(--sun)" stroke="var(--ink)" stroke-width="2.4"/><circle cx="14" cy="14" r="8" fill="#ffe36b" stroke="var(--sun-deep)" stroke-width="1.8"/><path d="M14 9.6v8.8" stroke="var(--sun-deep)" stroke-width="3" stroke-linecap="round"/><ellipse cx="9.4" cy="8.4" rx="2.8" ry="1.4" fill="#ffffff" opacity=".9" transform="rotate(-35 9.4 8.4)"/></svg><span id="crew-coins">0</span></div>
+    <p class="crew-hint">Drag to spin Dex · Tap him to dance</p>
+  </div>
+  <div id="crew-panel" class="crew-panel">
+    <div class="crew-id"><h3 id="crew-name" class="crew-name">Dex</h3><span id="crew-role" class="crew-role">Crew founder</span></div>
+    <section class="crew-card gloss blue" aria-label="Outfits">
+      <div class="crew-ohead"><span id="crew-oname">Original</span><b>OUTFITS</b></div>
+      <div id="crew-outfits" class="crew-outfits" role="radiogroup" aria-label="Outfits"></div>
+      <p id="crew-oabout" class="crew-oabout"></p>
+      <button id="crew-act" class="price-btn crew-act gloss navy" type="button">Wearing</button>
+    </section>
+    <div class="crew-stats">
+      <div class="pm-stat"><b>BEST</b><span id="crew-best">0</span></div>
+      <div class="pm-stat"><b>RUNS</b><span id="crew-runs">0</span></div>
+      <div class="pm-stat"><b>TOTAL COINS</b><span id="crew-grab">0</span></div>
+    </div>
   </div>
 </div>
 <div id="pause-menu" class="pause-menu" role="dialog" aria-modal="true" aria-labelledby="pm-title" hidden>
@@ -1676,6 +1774,17 @@ P(new THREE.CylinderGeometry(0.05, 0.05, 0.22, 16), canMat, can, [0, 0, 0], [Mat
 P(new THREE.CylinderGeometry(0.042, 0.05, 0.04, 16), '#e9edf2', can, [0, 0, 0.13], [Math.PI / 2, 0, 0], null, 0.01);
 P(new THREE.CylinderGeometry(0.018, 0.018, 0.03, 10), INK, can, [0, -0.012, 0.162], null, null, 0);
 const NOZZLE = new THREE.Vector3(0, -0.035, 0.162);
+// clothes get their own materials so an outfit can recolor them (shoe white only on the feet, not the eyes)
+const OUTFIT_SLOTS = ['hoodie', 'hoodieDark', 'cap', 'capDark', 'brim', 'pants', 'cuff', 'shoe', 'sole', 'phones'];
+const KM = {};
+for (const sl of OUTFIT_SLOTS) KM[sl] = toon(C[sl], {});
+{
+  const feet = new Set(); for (const a of [J.ankL, J.ankR]) a.traverse((o) => feet.add(o));
+  kid.traverse((o) => {
+    if (!o.isMesh) return;
+    for (const sl of OUTFIT_SLOTS) if (o.material === toon(C[sl]) && (sl !== 'shoe' || feet.has(o))) { o.material = KM[sl]; break; }
+  });
+}
 // the kid also lives on layer 1, which is all the crew-unlock screen renders
 kid.traverse((o) => o.layers.enable(1));
 // power-up gear (only shown while a power-up is active)
@@ -1696,9 +1805,9 @@ for (const sx of [-1, 1]) {
 }
 P(new THREE.BoxGeometry(0.1, 0.12, 0.06), '#3a3f4c', jetObj, [0, 0.02, 0.03], null, null, 0.01);
 const soleMeshes = [];
-kid.traverse((o) => { if (o.isMesh && o.material === toon(C.sole)) soleMeshes.push(o); });
+kid.traverse((o) => { if (o.isMesh && o.material === KM.sole) soleMeshes.push(o); });
 const sneakerMat = toon('#7dff4a', { emissive: '#35ff1a', emissiveIntensity: 0.65 });
-function setSneakers(on) { for (const m of soleMeshes) m.material = on ? sneakerMat : toon(C.sole); }
+function setSneakers(on) { for (const m of soleMeshes) m.material = on ? sneakerMat : KM.sole; }
 
 // backpack + spare cans
 const PACK_POS = new THREE.Vector3(2.5, 0.24, 4.6);
@@ -2309,6 +2418,7 @@ function onTap() {
   if (!shopEl.hidden || !openerEl.hidden || !settingsEl.hidden) return;
   if (phase === 'unlock') unlockTap();
   else if (phase === 'results') resultsTap();
+  else if (phase === 'crew') crewTap();
   else if (phase === 'game') startIntro();
 }
 document.addEventListener('click', () => onTap());
@@ -2321,6 +2431,13 @@ document.addEventListener('keydown', (e) => {
     : k === 'ArrowLeft' || k === 'a' || k === 'A' ? 'left'
     : k === 'ArrowRight' || k === 'd' || k === 'D' ? 'right' : null;
   const space = e.code === 'Space' || k === ' ';
+  if (phase === 'crew') {
+    if (k === 'Escape') { leaveCrew(); return; }
+    if (e.target.closest && e.target.closest('button')) return;
+    if (dir === 'left' || dir === 'right') { e.preventDefault(); crew.vel += dir === 'right' ? 5 : -5; crew.idle = 0; }
+    else if (space || dir === 'up' || k === 'Enter') { e.preventDefault(); crewTap(); }
+    return;
+  }
   if ((k === 'Escape' || k === 'p' || k === 'P') && phase === 'game' && mode === 'endless') { e.preventDefault(); setPaused(!run.paused || run.counting); return; }
   if (!dir && !space && k !== 'Enter') return;
   if (e.target.closest && e.target.closest('button, input, label')) return;
@@ -3151,6 +3268,7 @@ function renderShop() {
   gift.disabled = !ready; gift.textContent = ready ? 'Open free' : 'Next in ' + untilMidnight();
   $('buy-mystery').classList.toggle('short', w < MYSTERY_PRICE);
   document.querySelectorAll('.upg-buy[data-price]').forEach((b) => b.classList.toggle('short', w < Number(b.dataset.price)));
+  if (!$('panel-outfits').hidden) renderOutfitShop();
 }
 function openShop(tab = 'offers') {
   if (phase !== 'game' || mode !== 'title' || menuEl.hidden) return;
@@ -3236,11 +3354,12 @@ const upLevel = (t) => clamp(getNum('railDashUp_' + t), 0, UPG_MAX);
 function powerDur(t) { return POWERS[t].dur + upLevel(t) * UPGRADES[t]; }
 const secs = (v) => (Number.isInteger(v) ? v : v.toFixed(1)) + ' s';
 function showTab(name) {
-  for (const [t, btnId, panelId] of [['offers', 'tab-offers', 'panel-offers'], ['upg', 'tab-upg', 'panel-upg']]) {
+  for (const [t, btnId, panelId] of [['offers', 'tab-offers', 'panel-offers'], ['upg', 'tab-upg', 'panel-upg'], ['outfits', 'tab-outfits', 'panel-outfits']]) {
     const on = t === name, b = $(btnId);
     b.setAttribute('aria-selected', String(on)); b.className = 'tab gloss ' + (on ? 'gold' : 'navy'); $(panelId).hidden = !on;
   }
   if (name === 'upg') renderUpgrades();
+  if (name === 'outfits') renderOutfitShop();
 }
 function renderUpgrades(popType, popLevel) {
   const list = $('upg-list'), w = getNum('railDashCoins');
@@ -3323,6 +3442,7 @@ function enterResults(o) {
   if (isNew) setNum('railDashHigh', o.score);
   setNum('railDashCoins', wallet);
   if (tutorial) { setNum('railDashTutorial', 1); setNum('railDashMenu', 1); }
+  else { setNum('railDashRuns', getNum('railDashRuns') + 1); setNum('railDashCoinsAll', getNum('railDashCoinsAll') + (o.coins || 0)); }
   if (tutorial) tutorialDoneMem = true;
   Object.assign(res, { kind: o.kind, state: tutorial ? 'check' : 'score', t: 0, score: o.score, best: Math.max(best, o.score), isNew, wallet, shown: -1, phase: 0, danceT: -1, flags: {} });
   phase = 'results'; mode = 'title'; tMode = 0;
@@ -3475,11 +3595,11 @@ function renderSettings() {
 function openSettings() { settingsEl.hidden = false; resetArmed = 0; renderSettings(); $('set-close').focus(); SFX.pop(); }
 function closeSettings() { settingsEl.hidden = true; resetArmed = 0; if (phase === 'game' && mode === 'endless' && run.paused) $('resume').focus(); }
 function resetProgress() {
-  for (const k of ['railDashCoins', 'railDashHigh', 'railDashGiftDay', 'railDashTutorial', 'railDashMenu', 'railDashCrew', ...PU_TYPES.map((t) => 'railDashUp_' + t)]) {
+  for (const k of ['railDashCoins', 'railDashHigh', 'railDashGiftDay', 'railDashTutorial', 'railDashMenu', 'railDashCrew', 'railDashRuns', 'railDashCoinsAll', ...PU_TYPES.map((t) => 'railDashUp_' + t), ...CREW.map((c) => 'railDashWear_' + c.id), ...Object.keys(OUTFITS).map((k2) => 'railDashOwn_' + k2)]) {
     delete memStore[k];
     try { localStorage.removeItem(k); } catch (e) { /* storage blocked */ }
   }
-  tutorialDoneMem = false;
+  tutorialDoneMem = false; applyWorn();
   cancelCountdown(); settingsEl.hidden = true; pauseMenu.hidden = true; hud.hidden = true; run.paused = false; music.stop();
   mode = 'title'; tMode = 0; ui.classList.add('is-hidden'); menuEl.hidden = true;
   forceUnlock = true; phase = 'boot'; window.RD.restart();     // straight back to a first launch
@@ -3505,6 +3625,253 @@ $('set-reset').addEventListener('click', () => {
   } else resetProgress();
 });
 loadSettings();
+
+// ------------------------------------------------------------------ crew: Dex on a podium, outfits, profile
+// CREW is a list so more members can join later; each lists the outfits they can wear
+const CREW = [{ id: 'dex', name: 'Dex', role: 'Crew founder', outfits: ['original', 'night', 'lime', 'gold'] }];
+const OUTFITS = {
+  original: { name: 'Original', price: 0, about: 'The orange hoodie he started the crew in.', c: {} },
+  night: {
+    name: 'Night Shift', price: 2500, about: 'Dark fit with neon trim for late-night runs.',
+    c: { hoodie: '#2d3352', hoodieDark: '#1f2440', cap: '#171a2e', capDark: '#0b0d1a', brim: '#3ee0ff', pants: '#1c2033', cuff: '#3ee0ff', shoe: '#2d3352', sole: '#3ee0ff', phones: '#3ee0ff' },
+  },
+  lime: {
+    name: 'Lime Rush', price: 6000, about: "Loud lime and purple. You can't miss him.",
+    c: { hoodie: '#9be23c', hoodieDark: '#6dbb1f', cap: '#7c4dff', capDark: '#5a2fd6', brim: '#ff4fa3', pants: '#3b2f70', cuff: '#7c4dff', sole: '#7c4dff', phones: '#ff4fa3' },
+  },
+  gold: {
+    name: 'Gold Rush', price: 15000, about: "Solid gold, for the crew's top runner.",
+    c: { hoodie: '#ffcf3a', hoodieDark: '#e0a312', cap: '#22163d', capDark: '#140c26', brim: '#ffcf3a', pants: '#22163d', cuff: '#ffcf3a', shoe: '#ffcf3a', sole: '#22163d', phones: '#ffffff' },
+  },
+};
+const COIN_ICON = '<svg viewBox="0 0 28 28" width="26" height="26" aria-hidden="true"><circle cx="14" cy="14" r="12.2" fill="var(--sun)" stroke="var(--ink)" stroke-width="2.6"/><circle cx="14" cy="14" r="7.6" fill="#ffe36b" stroke="var(--sun-deep)" stroke-width="2"/><path d="M14 10v8" stroke="var(--sun-deep)" stroke-width="3" stroke-linecap="round"/></svg>';
+const CHECK_ICON = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const CHECK_BIG = '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="var(--ink)" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const ownsOutfit = (id) => id === 'original' || getNum('railDashOwn_' + id) > 0;
+function wornIdx(m = CREW[0]) { return Math.min(Math.max(0, Math.floor(getNum('railDashWear_' + m.id))), m.outfits.length - 1); }
+const wornId = () => CREW[0].outfits[wornIdx()];
+function applyOutfit(id) { const c = (OUTFITS[id] || OUTFITS.original).c; for (const sl of OUTFIT_SLOTS) KM[sl].color.set(c[sl] || C[sl]); }
+// a little head-and-shoulders portrait in the outfit's colors
+function outfitSvg(id, cls = '') {
+  const c = Object.assign({}, C, OUTFITS[id].c), k = '#1b1030';
+  return `<svg${cls ? ` class="${cls}"` : ''} viewBox="0 0 40 40" aria-hidden="true">`
+    + `<path d="M4.5 40.5v-3.2c0-6.6 6.6-10.3 15.5-10.3s15.5 3.7 15.5 10.3v3.2z" fill="${c.hoodie}" stroke="${k}" stroke-width="2.2" stroke-linejoin="round"/>`
+    + `<path d="M13.5 29q6.5 4.4 13 0" fill="none" stroke="${c.hoodieDark}" stroke-width="2.6" stroke-linecap="round"/>`
+    + `<circle cx="11.6" cy="28.6" r="2.6" fill="${c.phones}" stroke="${k}" stroke-width="1.6"/><circle cx="28.4" cy="28.6" r="2.6" fill="${c.phones}" stroke="${k}" stroke-width="1.6"/>`
+    + `<circle cx="20" cy="17.6" r="9.6" fill="${C.skin}" stroke="${k}" stroke-width="2.2"/>`
+    + `<path d="M10.1 15.8a9.9 9.4 0 0 1 19.8 0z" fill="${c.cap}" stroke="${k}" stroke-width="2" stroke-linejoin="round"/>`
+    + `<path d="M10.6 15.6h18.8" stroke="${c.capDark}" stroke-width="2"/>`
+    + `<path d="M28.2 15.3h6.4" stroke="${k}" stroke-width="5.4" stroke-linecap="round"/><path d="M28.2 15.3h6.4" stroke="${c.brim}" stroke-width="2.7" stroke-linecap="round"/>`
+    + `<circle cx="16.6" cy="19.2" r="1.5" fill="${k}"/><circle cx="23.4" cy="19.2" r="1.5" fill="${k}"/>`
+    + `<path d="M17 22.7q3 2.2 6 0" stroke="${k}" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>`;
+}
+// put the worn outfit on Dex everywhere: the 3D kid, the Crew tile and the in-run high score badge
+function applyWorn() {
+  const id = wornId();
+  applyOutfit(id);
+  const tile = $('crew-btn'); if (tile && tile.firstElementChild) tile.firstElementChild.outerHTML = outfitSvg(id, 'ic');
+  $('hud-face').innerHTML = outfitSvg(id);
+}
+// the Buy / Wear / Wearing button, shared by the Crew screen and the shop's Outfits tab
+function outfitBtnState(btn, i) {
+  const id = CREW[0].outfits[i], o = OUTFITS[id], w = getNum('railDashCoins'), base = btn.dataset.base;
+  const st = i === wornIdx() ? 'worn' : ownsOutfit(id) ? 'own' : w < o.price ? 'short' : 'buy';
+  if (btn.dataset.state === st) return;
+  btn.dataset.state = st; btn.removeAttribute('aria-label');
+  if (st === 'worn') { btn.className = base + ' gloss navy'; btn.innerHTML = CHECK_BIG + '<span>Wearing</span>'; }
+  else if (st === 'own') { btn.className = base + ' gloss green'; btn.textContent = 'Wear'; }
+  else {
+    btn.className = base + ' gloss green' + (st === 'short' ? ' short' : ''); btn.innerHTML = COIN_ICON + `<span>${fmt(o.price)}</span>`;
+    btn.setAttribute('aria-label', `Buy ${o.name} for ${fmt(o.price)} coins`);
+  }
+}
+function bumpCoinPills() {
+  for (const id of ['crew-coins', 'shop-coins']) { const p = $(id).parentElement; p.classList.remove('bump'); void p.offsetWidth; p.classList.add('bump'); }
+}
+function outfitAct(i, btn) {
+  const id = CREW[0].outfits[i], o = OUTFITS[id], w = getNum('railDashCoins');
+  if (i === wornIdx()) { nudge(btn); showToast(`Dex is already wearing ${o.name}`, false); return; }
+  if (!ownsOutfit(id)) {
+    if (w < o.price) { nudge(btn); showToast(`You need ${fmt(o.price - w)} more coins`, false); return; }
+    setNum('railDashCoins', w - o.price); setNum('railDashOwn_' + id, 1);
+    SFX.kaching(); SFX.fanfare(); confetti(); bumpCoinPills(); showToast(`${o.name} unlocked!`, false);
+  } else { SFX.check(); showToast(`Dex is wearing ${o.name}`, false); }
+  setNum('railDashWear_' + CREW[0].id, i); applyWorn();
+  if (phase === 'crew') { crew.sel = i; crew.danceT = 0; renderCrew(); }
+  if (!shopEl.hidden) renderShop();
+}
+function renderOutfitShop() {
+  const list = $('outfit-list'), ids = CREW[0].outfits;
+  if (!list.childElementCount) ids.forEach((id, i) => {
+    const o = OUTFITS[id], card = document.createElement('article');
+    card.className = 'offer gloss blue';
+    card.innerHTML = `<div class="offer-art">${outfitSvg(id)}</div><div class="offer-info"><span class="offer-kicker">Dex outfit</span><h3></h3><p></p><button class="price-btn of-buy" type="button"></button></div>`;
+    card.querySelector('h3').textContent = o.name; card.querySelector('p').textContent = o.about;
+    const b = card.querySelector('button'); b.dataset.base = 'price-btn of-buy';
+    b.addEventListener('click', (e) => { e.stopPropagation(); outfitAct(i, b); });
+    list.append(card);
+  });
+  list.querySelectorAll('.of-buy').forEach((b, i) => outfitBtnState(b, i));
+}
+$('tab-outfits').addEventListener('click', (e) => { e.stopPropagation(); showTab('outfits'); });
+
+// the stage: a podium that only the layer-1 camera sees
+const podium = new THREE.Group(); podium.position.copy(KID_POS); podium.visible = false; scene.add(podium);
+P(new THREE.CylinderGeometry(0.95, 1.03, 0.22, 44), '#2c5bff', podium, [0, -0.11, 0], null, null, 0.02);
+P(new THREE.TorusGeometry(0.95, 0.04, 8, 56), '#ffd23f', podium, [0, -0.005, 0], [Math.PI / 2, 0, 0], null, 0.012);
+P(new THREE.CylinderGeometry(1.03, 1.03, 0.05, 44), '#1f40c2', podium, [0, -0.205, 0], null, null, 0);
+podium.traverse((o) => o.layers.set(1));
+
+const crewEl = $('crew'), crewHead = $('crew-head'), crewPanel = $('crew-panel'), crewAct = $('crew-act');
+const CREW_REST = 0.32;      // the 3/4 turn he settles back to
+const crew = { who: 0, sel: 0, yaw: CREW_REST, vel: 0, drag: null, dragged: false, idle: 0, danceT: -1, hopT: -1, busy: false };
+crewAct.dataset.base = 'price-btn crew-act';
+function renderCrew() {
+  const m = CREW[crew.who], ids = m.outfits, worn = wornIdx(m), row = $('crew-outfits');
+  $('crew-name').textContent = m.name; $('crew-role').textContent = m.role;
+  $('crew-coins').textContent = fmt(getNum('railDashCoins'));
+  if (row.dataset.who !== m.id) {
+    row.textContent = ''; row.dataset.who = m.id;
+    ids.forEach((id, i) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'of-btn gloss navy'; b.setAttribute('role', 'radio');
+      b.innerHTML = outfitSvg(id) + `<span class="of-tag">${COIN_ICON}<span></span></span><span class="of-worn">${CHECK_ICON}</span>`;
+      b.addEventListener('click', (e) => { e.stopPropagation(); pickOutfit(i); });
+      row.append(b);
+    });
+  }
+  ids.forEach((id, i) => {
+    const b = row.children[i], o = OUTFITS[id], owned = ownsOutfit(id), on = i === crew.sel;
+    b.setAttribute('aria-checked', String(on)); b.tabIndex = on ? 0 : -1; b.classList.toggle('worn', i === worn);
+    const tag = b.querySelector('.of-tag'); tag.hidden = owned; tag.lastChild.textContent = fmt(o.price);
+    b.setAttribute('aria-label', o.name + (i === worn ? ', wearing' : owned ? ', owned' : `, ${fmt(o.price)} coins`));
+  });
+  const o = OUTFITS[ids[crew.sel]];
+  $('crew-oname').textContent = o.name; $('crew-oabout').textContent = o.about;
+  outfitBtnState(crewAct, crew.sel);
+  $('crew-best').textContent = fmt(getNum('railDashHigh')); $('crew-runs').textContent = fmt(getNum('railDashRuns')); $('crew-grab').textContent = fmt(getNum('railDashCoinsAll'));
+}
+function pickOutfit(i) {
+  if (i === crew.sel) return;
+  crew.sel = i; applyOutfit(CREW[crew.who].outfits[i]);
+  J.chest.getWorldPosition(chestW); emit(chestW, tv2.copy(chestW).add(tv.set(0, 0.9, 0.6)), 120, true, 0.9, 0.45);
+  crew.hopT = 0; crew.idle = 0; SFX.pop(); renderCrew();
+}
+function enterCrew() {
+  if (phase !== 'game' || mode !== 'title' || crew.busy) return;
+  crew.busy = true; flash.classList.add('on'); SFX.whoosh();
+  setTimeout(() => {
+    phase = 'crew'; tMode = 0;
+    resetKidProps();
+    Object.assign(crew, { sel: wornIdx(CREW[crew.who]), yaw: CREW_REST, vel: 0, drag: null, dragged: false, idle: 0, danceT: -1, hopT: -1, busy: false });
+    camera.layers.set(1); ui.classList.add('is-hidden'); unlockBg.hidden = false; crewEl.hidden = false; podium.visible = true; document.body.classList.add('in-crew');
+    renderCrew(); flash.classList.remove('on'); $('crew-back').focus();
+  }, 230);
+}
+function leaveCrew() {
+  if (phase !== 'crew' || crew.busy) return;
+  crew.busy = true; flash.classList.add('on'); SFX.whoosh();
+  setTimeout(() => {
+    crewEl.hidden = true; podium.visible = false; document.body.classList.remove('in-crew'); applyWorn(); enterTitle(false); flash.classList.remove('on'); crew.busy = false;
+    $('crew-btn').focus();
+  }, 230);
+}
+function crewTap() {
+  if (crew.dragged) { crew.dragged = false; return; }
+  if (crew.danceT < 0) { crew.danceT = 0; SFX.ready(); }
+}
+// camera: fit Dex + podium into the open space between the header and the panel (left of the panel when wide).
+// It looks down a little, so the podium's front edge drops lower than a flat fit expects: project the real
+// top (his cap mid-jump) and bottom (the podium's front rim) and nudge size + height until they fill the gap.
+const fitTop = new THREE.Vector3(), fitBot = new THREE.Vector3();
+function placeCrewCam(ppu, lookY, camX, H) {
+  const d = H / ppu / (2 * Math.tan((camera.fov * Math.PI) / 360));
+  camLook.set(camX, KID_POS.y + lookY, KID_POS.z);
+  camera.position.set(camX, KID_POS.y + lookY + d * 0.26, KID_POS.z + d);
+  camera.lookAt(camLook);
+  camera.updateMatrixWorld();
+}
+function updateCrew(dt) {
+  const W = window.innerWidth, H = window.innerHeight, wide = W > H, hb = crewHead.getBoundingClientRect().bottom, pr = crewPanel.getBoundingClientRect();
+  const top = hb + 4, bottom = wide ? H - 10 : pr.top + 6, right = wide ? pr.left - 8 : W;
+  const ppuMax = Math.min(right * 0.9 / 2.3, H / 3.2);
+  let ppu = Math.max(40, Math.min(ppuMax, (bottom - top) / 3.2)), lookY = 1.1 + ((top + bottom) / 2 - H / 2) / ppu, camX = KID_POS.x;
+  for (let it = 0; it < 4; it++) {
+    camX = KID_POS.x - (right / 2 - W / 2) / ppu;
+    placeCrewCam(ppu, lookY, camX, H);
+    const yt = (1 - fitTop.set(KID_POS.x, KID_POS.y + 2.5, KID_POS.z).project(camera).y) * H / 2;
+    const yb = (1 - fitBot.set(KID_POS.x, KID_POS.y - 0.22, KID_POS.z + 1.03).project(camera).y) * H / 2;
+    ppu = Math.max(40, Math.min(ppuMax, ppu * (bottom - top) * 0.94 / Math.max(1, yb - yt)));
+    lookY -= ((yt + yb) / 2 - (top + bottom) / 2) / ppu;      // too low on screen: look lower so he rises
+  }
+  camX = KID_POS.x - (right / 2 - W / 2) / ppu;
+  placeCrewCam(ppu, lookY, camX + (reduceMotion ? 0 : Math.sin(elapsed * 0.5) * 0.06), H);
+  // spin: drag with a little throw, then drift back to the 3/4 view
+  if (!crew.drag) {
+    crew.yaw += crew.vel * dt; crew.vel *= Math.exp(-dt * 3.5); crew.idle += dt;
+    if (crew.idle > 2.5 && Math.abs(crew.vel) < 0.4) {
+      const off = Math.atan2(Math.sin(CREW_REST - crew.yaw), Math.cos(CREW_REST - crew.yaw));
+      crew.yaw += off * Math.min(1, dt * 2);
+    }
+  }
+}
+function updateKidCrew(dt) {
+  kid.visible = true; shadowBlob.visible = true; kid.scale.setScalar(1);
+  kid.updateMatrixWorld(true);
+  copyPose(work, P_U_IDLE);
+  const br = Math.sin(elapsed * 2.2);
+  work.spine.multiply(qE(br * 0.02, 0, 0)); work.shL.multiply(qE(0, 0, br * 0.03)); work.elR.multiply(qE(br * 0.05, 0, 0));
+  lookQuat(work.head, J.neck, J.head.position, camera.position, 0.7, 0.5);
+  setFace('ready');
+  let rootY = 0, spin = 0;
+  if (crew.danceT >= 0) {
+    crew.danceT += dt;
+    const t = crew.danceT, end = DANCE[DANCE.length - 1][0];
+    let i = 0; while (i < DANCE.length - 2 && t > DANCE[i + 1][0]) i++;
+    const A = DANCE[i], B = DANCE[i + 1], u = smooth(clamp((t - A[0]) / (B[0] - A[0])));
+    copyPose(dynReady, A[1]); blendPose(dynReady, B[1], u);
+    const w = smooth(clamp(t / 0.2)) * (1 - smooth(clamp((t - end - 0.5) / 0.4)));
+    blendPose(work, dynReady, w);
+    rootY = lerp(A[2], B[2], u) * w;
+    spin = Math.PI * 2 * inOutCubic(clamp((t - 1.22) / 0.55));
+    if (t > 0.18 && t < 0.78) setFace('surprise');
+    if (t > end + 0.9) crew.danceT = -1;
+  }
+  if (crew.hopT >= 0) { crew.hopT += dt; rootY += 0.16 * Math.sin(Math.PI * clamp(crew.hopT / 0.32)); if (crew.hopT > 0.32) crew.hopT = -1; }
+  for (const n of NAMES) J[n].quaternion.copy(work[n]);
+  kid.rotation.set(0, crew.yaw + spin, 0);
+  kid.position.set(KID_POS.x, KID_POS.y + rootY, KID_POS.z);
+  shadowBlob.scale.setScalar(clamp(1 - rootY * 0.9, 0.45, 1.1));
+  blinkEyes(dt);
+  kid.updateMatrixWorld(true);
+}
+$('crew-btn').addEventListener('click', (e) => { e.stopPropagation(); enterCrew(); });
+$('crew-back').addEventListener('click', (e) => { e.stopPropagation(); leaveCrew(); });
+crewAct.addEventListener('click', (e) => { e.stopPropagation(); outfitAct(crew.sel, crewAct); });
+crewEl.addEventListener('click', (e) => e.stopPropagation());
+$('crew-outfits').addEventListener('keydown', (e) => {
+  if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+  e.preventDefault();
+  const n = CREW[crew.who].outfits.length, i = (crew.sel + (e.key === 'ArrowRight' ? 1 : -1) + n) % n;
+  pickOutfit(i); $('crew-outfits').children[i].focus();
+});
+window.addEventListener('pointerdown', (e) => {
+  if (phase !== 'crew' || (e.target.closest && e.target.closest('button, .crew-panel, .coin-pill'))) return;
+  crew.drag = { x: e.clientX, x0: e.clientX, t: performance.now() }; crew.dragged = false; crew.vel = 0;
+});
+window.addEventListener('pointermove', (e) => {
+  if (!crew.drag || phase !== 'crew') return;
+  const dx = e.clientX - crew.drag.x, now = performance.now(), sec = Math.max(8, now - crew.drag.t) / 1000;
+  if (Math.abs(e.clientX - crew.drag.x0) > 6) crew.dragged = true;      // a drag, so the click that follows is not a tap
+  if (dx !== 0) {
+    const turn = dx * 0.012; crew.yaw += turn; crew.vel = lerp(crew.vel, turn / sec, 0.5);
+    crew.drag.x = e.clientX; crew.drag.t = now; crew.idle = 0;
+  }
+});
+const endCrewDrag = () => { if (!crew.drag) return; if (performance.now() - crew.drag.t > 90) crew.vel = 0; crew.drag = null; };
+window.addEventListener('pointerup', endCrewDrag);
+window.addEventListener('pointercancel', endCrewDrag);
+applyWorn();
 
 function setFace(kind) {
   if (face.kind === kind) return; face.kind = kind;
@@ -3562,6 +3929,7 @@ function updateKidUnlock(dt) {
 }
 function updateKid(dt) {
   if (phase === 'results') { updateKidResults(dt); return; }
+  if (phase === 'crew') { updateKidCrew(dt); return; }
   if (phase === 'unlock') { updateKidUnlock(dt); return; }
   if (mode === 'endless') { updateKidEndless(dt); return; }
   if (mode === 'run' || mode === 'done') { updateKidRun(dt); return; }
@@ -3664,6 +4032,7 @@ function frame() {
   let camK = 0;
   if (phase === 'results') updateResults(dt);
   else if (phase === 'unlock') updateUnlock(dt);
+  else if (phase === 'crew') updateCrew(dt);
   else if (mode === 'start' || mode === 'ready') {
     const t = tMode;
     camK = inOutCubic(clamp((t - 0.3) / 1.4));
@@ -3717,7 +4086,7 @@ Promise.race([
   new Promise((r) => setTimeout(r, 3500)),
 ]).catch(() => {}).then(() => { redrawers.forEach((fn) => fn()); });
 
-window.__railDash = { start: startIntro, tap: onTap, get resState() { return res.state; }, get resFlags() { return res.flags; }, get mode() { return mode; }, get phase() { return phase; }, get unlockState() { return unlock.state; }, get unlockT() { return unlock.t; }, move: doMove, get runState() { return run.state; }, get paused() { return !!run.paused; }, get counting() { return !!run.counting; }, get dist() { return run.dist; }, get runNeed() { return run.need; }, get score() { return run.score; }, get coins() { return run.coins; }, peek, get draws() { return renderer.info.render.calls; }, givePower: (t) => activatePower(t),
+window.__railDash = { start: startIntro, tap: onTap, get resState() { return res.state; }, get resFlags() { return res.flags; }, get mode() { return mode; }, get phase() { return phase; }, get unlockState() { return unlock.state; }, get unlockT() { return unlock.t; }, move: doMove, get runState() { return run.state; }, enterCrew, leaveCrew, get crew() { return crew; }, get paused() { return !!run.paused; }, get counting() { return !!run.counting; }, get dist() { return run.dist; }, get runNeed() { return run.need; }, get score() { return run.score; }, get coins() { return run.coins; }, peek, get draws() { return renderer.info.render.calls; }, givePower: (t) => activatePower(t),
   spawnRoof: (cars = 2, lane = run.lane, ramp = true, ahead = 40, clear = true) => {
     const nose = kid.position.x - ahead;
     if (clear) { clearHazards(nose - cars * (CAR_L + 0.5) - 10, kid.position.x + 2); for (const pk of puPool) if (pk.active && pk.x > nose - cars * 18) release(pk); }
