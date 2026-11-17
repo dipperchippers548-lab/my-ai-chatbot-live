@@ -175,8 +175,23 @@ const newCam = (fov = 40) => new THREE.PerspectiveCamera(fov, W / H, .05, 300);
 const look = (cam, px, py, pz, tx, ty, tz) => { cam.position.set(px, py, pz); cam.lookAt(tx, ty, tz); };
 const drift = (cam, t, a = .004) => { cam.rotation.x += Math.sin(t * 1.1) * a; cam.rotation.y += Math.sin(t * .9 + 1) * a; };
 let live = [];
-function place(scene, opts, x, y, z, ry = 0) { const g = noodle(opts); g.position.set(x, y, z); g.rotation.y = ry; scene.add(g); live.push(g); return g; }
-function waddle(t, sp = 7.5) { const p = t * sp, sw = Math.sin(p); return { bend: sw * .12, tilt: -sw * .08, feet: [[sw * .14, Math.max(0, Math.cos(p)) * .1], [-sw * .14, Math.max(0, -Math.cos(p)) * .1]], arms: [[-.45, -.12 + sw * .12, -sw * .35], [.45, -.12 - sw * .12, sw * .35]], bob: Math.abs(Math.cos(p)) * .05 }; }
+let NOW = 0;   // render clock, so every noodle stays alive between poses
+// a noodle that is never quite still: arms drift, the body breathes (squash & stretch), the head bobs and tilts
+function place(scene, opts, x, y, z, ry = 0) {
+  const seed = (x * 7.13 + z * 3.71 + (opts.color || 0) % 97) % 6.283; let o = opts;
+  if (!o.hands && !o.still) { const base = o.arms || [[-.5, -.2, .05], [.5, -.2, .05]], w = Math.sin(NOW * 3.1 + seed), w2 = Math.sin(NOW * 2.3 + seed * 2); o = { ...o, arms: base.map((a, i) => [a[0] + (i ? 1 : -1) * w2 * .03, a[1] + (i ? w : -w) * .07, a[2] + w2 * .04]) }; }
+  const g = noodle(o); g.position.set(x, y, z); g.rotation.y = ry;
+  const b = Math.sin(NOW * 4.4 + seed), sq = o.squash || 0; g.scale.set(1 + .03 * b + sq * .6, 1 - .04 * b - sq, 1 + .03 * b + sq * .6);
+  const hd = g.userData.head; hd.rotation.z += Math.sin(NOW * 2.6 + seed) * .07; hd.rotation.x += Math.sin(NOW * 3.9 + seed) * .035; hd.rotation.y += Math.sin(NOW * 1.7 + seed) * .06;
+  scene.add(g); live.push(g); return g;
+}
+// static crowd noodles also bounce (transforms only, no rebuild)
+const statics = [];
+// waddle: phase p in radians (one step every pi). Bigger sway, opposite arm swing, a squash every time a foot lands, a bounce in between
+function stepPose(p) { const sw = Math.sin(p), land = Math.pow(Math.max(0, -Math.cos(2 * p)), 6); return { bend: sw * .17, tilt: -sw * .12, feet: [[sw * .16, Math.max(0, Math.cos(p)) * .14], [-sw * .16, Math.max(0, -Math.cos(p)) * .14]], arms: [[-.48, -.08 + sw * .16, -sw * .45], [.48, -.08 - sw * .16, sw * .45]], bob: Math.abs(Math.cos(p)) * .08, squash: land * .07 }; }
+function waddle(t, sp = 7.5) { return stepPose(t * sp); }
+const STRIDE = .3;   // ground covered per step, so feet don't slide
+const walkPhase = dist => dist / STRIDE * Math.PI;
 // Gary pushing the mower: hands on the grips, sleep-shuffling
 function garyMowing(scene, mower, x, z, ry, t, extra = {}) { const p = t * 6, sw = Math.sin(p); mower.position.set(x + Math.cos(ry) * .95, 0, z - Math.sin(ry) * .95); mower.rotation.y = ry; mower.updateMatrixWorld(true);
   const pos = V(x, Math.abs(Math.cos(p)) * .03, z), gry = ry + Math.PI / 2; const hands = [1, -1].map(s => toLocal(mower.localToWorld(mower.userData.grip(s)), pos, gry));

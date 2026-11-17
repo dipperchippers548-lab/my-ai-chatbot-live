@@ -1,7 +1,7 @@
 // ===================== STEVE: SHOTS =====================
 // helpers for this episode
 const talkIf = (tc, a, b) => tc >= tm(a) - .03 && tc <= tm(b) ? talkShape(tc) : null;
-function walkTo(scene, o, x0, z0, x1, z1, k, t, ry, sp = 7) { const wd = waddle(t, sp), x = lerp(x0, x1, k), z = lerp(z0, z1, k), moving = k > 0 && k < 1; return place(scene, { ...o, ...(moving ? wd : {}), arms: moving ? wd.arms : o.arms }, x, moving ? wd.bob : 0, z, ry); }
+function walkTo(scene, o, x0, z0, x1, z1, k, t, ry, sp = 7) { const x = lerp(x0, x1, k), z = lerp(z0, z1, k), wd = stepPose(walkPhase(Math.hypot(x - x0, z - z0))), moving = k > 0 && k < 1; return place(scene, { ...o, ...(moving ? wd : {}), arms: moving ? wd.arms : o.arms }, x, moving ? wd.bob : 0, z, ry); }
 const MX = HX.gary;   // Mark's new house (purple roof)
 // 1 "When Mark moved to a tiny new town," - the moving truck pulls up; Mark hops out with a box
 shot(0, 2.15, () => { const S = world('day'), cam = newCam(42), tr = makeTruck(); S.scene.add(tr); const bx = cardBox(.45); S.scene.add(bx);
@@ -17,7 +17,7 @@ shot(2.15, 4.2, () => { const S = world('day'), cam = newCam(40), bx = cardBox(.
 shot(4.2, 5.7, () => { const S = world('day'), cam = newCam(36);
   return { scene: S.scene, cam, update(f, fd, t) { setSun(S, MX, -1); const tp = pop(f - at(4.2, 4.85)); const m = talkIf(t, 4.34, 5.4);
     const g = place(S.scene, { ...NEIGH, tagPop: tp, mouth: m || 'grin', eyes: 'open', arms: [[-.45, -.1, .05], [.3, .55, .5]] }, MX - 1.2, 0, -1.0, .5); g.updateMatrixWorld(true); const hp = g.userData.head.localToWorld(V(0, -.3, 0));
-    look(cam, hp.x + 1.4, hp.y + .05, hp.z + 1.9, hp.x, hp.y - .5, hp.z); drift(cam, t); } }; });
+    look(cam, hp.x + 1.7, hp.y + .1, hp.z + 2.5, hp.x, hp.y - .45, hp.z); drift(cam, t); } }; });
 // 3 "Then the mailman showed up." - the mailman waddles in with letters
 shot(5.7, 7.3, () => { const S = world('day'), cam = newCam(40), lt = [0, 1, 2].map(i => { const m = new THREE.Mesh(new THREE.PlaneGeometry(.22, .14), flat(0xf6f2e8)); S.scene.add(m); return m; });
   return { scene: S.scene, cam, update(f, fd, t) { setSun(S, MX, -1); place(S.scene, { ...MARK, mouth: 'smile' }, MX, 0, -1.2, -.9); place(S.scene, { ...NEIGH, mouth: 'smile' }, MX - 1.2, 0, -1.0, .6);
@@ -50,7 +50,7 @@ shot(12.6, 15.5, () => { const S = world('day'), cam = newCam(50), dog = makeDog
 // 8 "Every single person in the town was named Steve." - crane up over a crowd, every tag says STEVE
 shot(15.5, 18.7, () => { const S = world('day'), cam = newCam(45), crowd = []; for (let i = 0; i < 16; i++) { const x = -6 + (i % 8) * 1.6 + (i > 7 ? .8 : 0), z = i > 7 ? .9 : -.6; crowd.push(staticNoodle(S.scene, crowdOpt(i, { arms: [[-.45, .65, .1], [.45, .65, .1]] }), x, z, 0)); }
   return { scene: S.scene, cam, update(f, fd, t) { setSun(S, 0, 0); crowd.forEach((g, i) => { g.position.y = Math.abs(Math.sin(t * 6 + i)) * .12; g.rotation.y = Math.sin(t * 2 + i) * .15; });
-    const k = ss(0, fd, f); look(cam, -.4, lerp(1.6, 7.5, k), lerp(4.2, 8.5, k), -.4, lerp(1.4, .6, k), 0); } }; });
+    const k = ss(0, fd, f); look(cam, -.4, lerp(1.6, 7.5, k), lerp(4.2, 8.5, k), -.4, lerp(1.4, .6, k), 0); } }; }, { noCut: true });
 // 9 "Nobody knew how it started." - Mark in the middle of the Steves, shrugging; ? marks
 shot(18.7, 20.6, () => { const S = world('day'), cam = newCam(40), crowd = []; for (let i = 0; i < 7; i++) { const a = Math.PI / 2 + .95 + i * (Math.PI * 2 - 1.9) / 6; crowd.push(staticNoodle(S.scene, crowdOpt(i + 3, { mouth: 'smile' }), MX - 1 + Math.cos(a) * 2.2, -1 + Math.sin(a) * 1.6, -a + Math.PI / 2 * 0)); }
   const qs = [0, 1].map(() => { const s = sprite('?', '#ffe21f', .7); S.scene.add(s); return s; });
@@ -94,10 +94,10 @@ shot(35.9, 37.9, () => { const R = room(0xfff0f6), cam = newCam(46), crowd = [];
 // 17 "Every cake just said, Happy Birthday, Steve." - close on a cake... then a row of identical ones
 shot(37.9, 40.95, () => { const R = room(0xfff0f6), cam = newCam(40), Z = at(37.9, 39.6), cakes = []; R.scene.add(at3(box(9, .1, 1.4, 0xffffff, .015), 0, .9, 0)); for (let i = 0; i < 7; i++) { const c = makeCake(); c.position.set(-3.6 + i * 1.2, .95, 0); R.scene.add(c); cakes.push(c); }
   return { scene: R.scene, cam, update(f, fd, t) { cakes.forEach((c, i) => c.userData.flames.forEach(fl => fl.scale.y = 1.4 + Math.sin(t * 20 + i) * .3)); const z = clamp(spring((f - Z) * 1.3), 0, 1.05);
-    look(cam, lerp(.4, 0, z), lerp(2.6, 2.4, z), lerp(1.2, 4.6, z), lerp(0, 0, z), lerp(1.1, 1.1, z), 0); drift(cam, t); } }; });
+    look(cam, lerp(.4, 0, z), lerp(2.6, 2.4, z), lerp(1.2, 4.6, z), lerp(0, 0, z), lerp(1.1, 1.1, z), 0); drift(cam, t); } }; }, { noCut: true });
 // 18 "Mark tried to stay himself." - Steves stream past him; he stands firm, sweating
 shot(40.95, 42.9, () => { const S = world('day'), cam = newCam(40), dr = [0, 1, 2].map(() => { const d = inked(new THREE.SphereGeometry(.04, 8, 6), 0x9ad8ff, .006, null, true); S.scene.add(d); return d; });
-  return { scene: S.scene, cam, update(f, fd, t) { setSun(S, MX, 0); for (let i = 0; i < 6; i++) { const x = ((t * 1.6 + i * 1.3) % 8) - 4; const w = waddle(t + i, 8); place(S.scene, { ...crowdOpt(i), ...w }, MX + x, w.bob, i % 2 ? -.2 : .9, Math.PI / 2); }
+  return { scene: S.scene, cam, update(f, fd, t) { setSun(S, MX, 0); for (let i = 0; i < 6; i++) { const x = ((t * 1.6 + i * 1.3) % 8) - 4; const w = stepPose(walkPhase(t * 1.6 + i * 1.3)); place(S.scene, { ...crowdOpt(i), ...w }, MX + x, w.bob, i % 2 ? -.2 : .9, Math.PI / 2); }
     const g = place(S.scene, { ...MARK, mouth: 'flat', eyes: 'open', brow: -.3, hands: [V(-.3, .75, .2), V(.3, .75, .2)] }, MX, 0, .35, 0); g.updateMatrixWorld(true); dr.forEach((d, i) => { const q = (t * 1.5 + i / 3) % 1; d.position.copy(g.userData.head.localToWorld(V(.3 - i * .15, .2 - q * .4, .3))); });
     look(cam, MX, 1.7, 4.2 - f * .4, MX, 1.4, .3); drift(cam, t); } }; }, { xf: true });
 // 19 "He lasted six months." - a calendar shedding pages JAN -> JUN; Mark looking more and more tired
@@ -108,7 +108,7 @@ shot(42.9, 44.9, () => { const R = room(0xf6f0e0), cam = newCam(40), pages = ['J
 // 20 "Then one day, a new family moved in next door." - a new moving truck, a family with boxes
 shot(44.9, 48.0, () => { const S = world('day'), cam = newCam(42), tr = makeTruck(); S.scene.add(tr); const boxes = [0, 1].map(() => { const b = cardBox(.35); S.scene.add(b); return b; });
   return { scene: S.scene, cam, update(f, fd, t) { const FX = HX.orange; setSun(S, FX, 0); const k = ss(0, .9, f); tr.position.set(lerp(FX + 12, FX + .8, k), 0, 2.3); tr.rotation.y = Math.PI;
-    if (f > 1.0) { const a = ss(1.0, fd, f); [[{ color: 0x5ac85a, mouth: 'grin' }, -.7], [{ color: 0xff8ab8, mouth: 'smile', curlers: false, glasses: true }, .4], [{ color: 0xffd23a, mouth: 'grin', eyes: 'happy', tuft: true }, 1.2]].forEach(([o, dx], i) => { const w = waddle(t + i, 8); const g = place(S.scene, { ...o, ...w, hands: i < 2 ? [V(-.3, 1.0, .35), V(.3, 1.0, .35)] : undefined }, FX + dx, w.bob, lerp(1.2, -.6, a), Math.PI); if (i === 2) g.scale.setScalar(.7); if (i < 2) { boxes[i].position.set(FX + dx, 1.1, lerp(1.2, -.6, a) - .35); boxes[i].visible = true; } }); } else boxes.forEach(b => b.visible = false);
+    if (f > 1.0) { const a = ss(1.0, fd, f); [[{ color: 0x5ac85a, mouth: 'grin' }, -.7], [{ color: 0xff8ab8, mouth: 'smile', curlers: false, glasses: true }, .4], [{ color: 0xffd23a, mouth: 'grin', eyes: 'happy', tuft: true }, 1.2]].forEach(([o, dx], i) => { const w = stepPose(walkPhase(1.8 * a) + i); const g = place(S.scene, { ...o, ...w, hands: i < 2 ? [V(-.3, 1.0, .35), V(.3, 1.0, .35)] : undefined }, FX + dx, w.bob, lerp(1.2, -.6, a), Math.PI); if (i === 2) g.scale.setScalar(.7); if (i < 2) { boxes[i].position.set(FX + dx, 1.1, lerp(1.2, -.6, a) - .35); boxes[i].visible = true; } }); } else boxes.forEach(b => b.visible = false);
     look(cam, FX + .3, 1.9, -3.9, FX + .3, 1.0, .5); drift(cam, t); } }; }, { xf: true });
 // 21 "Mark walked over, smiled, and said," - Mark waddles over to them (tag hidden from camera)
 shot(48.0, 50.6, () => { const S = world('day'), cam = newCam(40);
@@ -121,4 +121,4 @@ shot(50.6, 99, () => { const S = world('day'), cam = newCam(36), Z = at(50.6, 51
     [[{ color: 0x5ac85a }, -.2], [{ color: 0xff8ab8, glasses: true }, .7], [{ color: 0xffd23a, tuft: true }, 1.4]].forEach(([o, dx], i) => { const g = place(S.scene, { ...o, mouth: f > Z + .3 ? 'o' : 'smile', eyes: f > Z + .3 ? 'wide' : 'open' }, FX + dx, 0, -.6, -Math.PI / 2 + .3); if (i === 2) g.scale.setScalar(.7); });
     const g = place(S.scene, { ...MARK, tag: 'STEVE', tagPop: f > Z ? 1 + .25 * Math.exp(-(f - Z) * 8) : 1, mouth: m || 'grin', eyes: 'happy', blush: true, arms: [[-.45, -.1, .05], [.45, .55, .2]] }, FX - 1.5, 0, -.6, .45);
     g.updateMatrixWorld(true); const c = g.localToWorld(V(0, 1.1, 0)), z = clamp(spring((f - Z) * 1.4), 0, 1.05), dir = V(Math.sin(.2), 0, Math.cos(.2)), d = lerp(4.6, 2.4, z);
-    if (f < Z + .9) look(cam, c.x + dir.x * d - .4, c.y + .25, c.z + dir.z * d, c.x, c.y + .1, c.z); else look(cam, FX - .5, 1.6, 2.6, FX + .6, 1.35, -.6); this.fade = ss(fd - .5, fd - .05, f); } }; });
+    if (f < Z + .9) look(cam, c.x + dir.x * d - .4, c.y + .25, c.z + dir.z * d, c.x, c.y + .1, c.z); else look(cam, FX - .5, 1.6, 2.6, FX + .6, 1.35, -.6); this.fade = ss(fd - .5, fd - .05, f); } }; }, { noCut: true });

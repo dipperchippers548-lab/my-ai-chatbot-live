@@ -175,8 +175,23 @@ const newCam = (fov = 40) => new THREE.PerspectiveCamera(fov, W / H, .05, 300);
 const look = (cam, px, py, pz, tx, ty, tz) => { cam.position.set(px, py, pz); cam.lookAt(tx, ty, tz); };
 const drift = (cam, t, a = .004) => { cam.rotation.x += Math.sin(t * 1.1) * a; cam.rotation.y += Math.sin(t * .9 + 1) * a; };
 let live = [];
-function place(scene, opts, x, y, z, ry = 0) { const g = noodle(opts); g.position.set(x, y, z); g.rotation.y = ry; scene.add(g); live.push(g); return g; }
-function waddle(t, sp = 7.5) { const p = t * sp, sw = Math.sin(p); return { bend: sw * .12, tilt: -sw * .08, feet: [[sw * .14, Math.max(0, Math.cos(p)) * .1], [-sw * .14, Math.max(0, -Math.cos(p)) * .1]], arms: [[-.45, -.12 + sw * .12, -sw * .35], [.45, -.12 - sw * .12, sw * .35]], bob: Math.abs(Math.cos(p)) * .05 }; }
+let NOW = 0;   // render clock, so every noodle stays alive between poses
+// a noodle that is never quite still: arms drift, the body breathes (squash & stretch), the head bobs and tilts
+function place(scene, opts, x, y, z, ry = 0) {
+  const seed = (x * 7.13 + z * 3.71 + (opts.color || 0) % 97) % 6.283; let o = opts;
+  if (!o.hands && !o.still) { const base = o.arms || [[-.5, -.2, .05], [.5, -.2, .05]], w = Math.sin(NOW * 3.1 + seed), w2 = Math.sin(NOW * 2.3 + seed * 2); o = { ...o, arms: base.map((a, i) => [a[0] + (i ? 1 : -1) * w2 * .03, a[1] + (i ? w : -w) * .07, a[2] + w2 * .04]) }; }
+  const g = noodle(o); g.position.set(x, y, z); g.rotation.y = ry;
+  const b = Math.sin(NOW * 4.4 + seed), sq = o.squash || 0; g.scale.set(1 + .03 * b + sq * .6, 1 - .04 * b - sq, 1 + .03 * b + sq * .6);
+  const hd = g.userData.head; hd.rotation.z += Math.sin(NOW * 2.6 + seed) * .07; hd.rotation.x += Math.sin(NOW * 3.9 + seed) * .035; hd.rotation.y += Math.sin(NOW * 1.7 + seed) * .06;
+  scene.add(g); live.push(g); return g;
+}
+// static crowd noodles also bounce (transforms only, no rebuild)
+const statics = [];
+// waddle: phase p in radians (one step every pi). Bigger sway, opposite arm swing, a squash every time a foot lands, a bounce in between
+function stepPose(p) { const sw = Math.sin(p), land = Math.pow(Math.max(0, -Math.cos(2 * p)), 6); return { bend: sw * .17, tilt: -sw * .12, feet: [[sw * .16, Math.max(0, Math.cos(p)) * .14], [-sw * .16, Math.max(0, -Math.cos(p)) * .14]], arms: [[-.48, -.08 + sw * .16, -sw * .45], [.48, -.08 - sw * .16, sw * .45]], bob: Math.abs(Math.cos(p)) * .08, squash: land * .07 }; }
+function waddle(t, sp = 7.5) { return stepPose(t * sp); }
+const STRIDE = .3;   // ground covered per step, so feet don't slide
+const walkPhase = dist => dist / STRIDE * Math.PI;
 // Gary pushing the mower: hands on the grips, sleep-shuffling
 function garyMowing(scene, mower, x, z, ry, t, extra = {}) { const p = t * 6, sw = Math.sin(p); mower.position.set(x + Math.cos(ry) * .95, 0, z - Math.sin(ry) * .95); mower.rotation.y = ry; mower.updateMatrixWorld(true);
   const pos = V(x, Math.abs(Math.cos(p)) * .03, z), gry = ry + Math.PI / 2; const hands = [1, -1].map(s => toLocal(mower.localToWorld(mower.userData.grip(s)), pos, gry));
@@ -206,7 +221,7 @@ const BARBER = { color: 0xffc8a0, tag: 'STEVE', mustache: true, shoe: 0x16121a }
 const MAYOR = { color: 0xffd23a, tag: 'STEVE', hat: 'top', sash: true, shoe: 0x16121a };
 const PAL = [0xff6aa8, 0x38c8c0, 0xffd23a, 0x5aa8ff, 0xa87ae8, 0x7ad85a, 0xff8a6a, 0xc8a0ff, 0x6ae0c8, 0xffb04a];
 const crowdOpt = (i, extra = {}) => ({ color: PAL[i % PAL.length], tag: 'STEVE', hat: [null, 'cap', null, 'party', null, 'top'][i % 6], hatColor: PAL[(i + 3) % PAL.length], glasses: i % 4 === 1, mustache: i % 5 === 2, tuft: i % 3 === 0, mouth: ['smile', 'grin', 'smile', 'smirk'][i % 4], ...extra });
-function staticNoodle(scene, o, x, z, ry = 0, s = 1) { const g = noodle(o); g.position.set(x, 0, z); g.rotation.y = ry; g.scale.setScalar(s); scene.add(g); return g; }
+function staticNoodle(scene, o, x, z, ry = 0, s = 1) { const g = noodle(o); g.position.set(x, 0, z); g.rotation.y = ry; g.scale.setScalar(s); g.userData.s0 = s; g.userData.seed = (x * 5.3 + z * 2.1) % 6.28; scene.add(g); statics.push(g); return g; }
 function makeDog() { const g = new THREE.Group(), c = 0xc8864a; const b = inked(new THREE.CapsuleGeometry(.16, .42, 6, 12), c, .02); b.rotation.z = Math.PI / 2; b.position.y = .32; g.add(b);
   for (const [x, z] of [[-.2, -.09], [-.2, .09], [.2, -.09], [.2, .09]]) g.add(at3(inked(new THREE.CapsuleGeometry(.045, .14, 4, 8), c, .012), x, .13, z));
   const hd = new THREE.Group(); hd.position.set(.36, .52, 0); g.add(hd); hd.add(inked(new THREE.SphereGeometry(.17, 16, 12), c, .018)); hd.add(at3(inked(new THREE.SphereGeometry(.07, 10, 8), 0x16121a, .008), .16, -.02, 0));
@@ -235,7 +250,7 @@ function room(col = 0xfff0d8) { const scene = new THREE.Scene(); scene.backgroun
 // ===================== STEVE: SHOTS =====================
 // helpers for this episode
 const talkIf = (tc, a, b) => tc >= tm(a) - .03 && tc <= tm(b) ? talkShape(tc) : null;
-function walkTo(scene, o, x0, z0, x1, z1, k, t, ry, sp = 7) { const wd = waddle(t, sp), x = lerp(x0, x1, k), z = lerp(z0, z1, k), moving = k > 0 && k < 1; return place(scene, { ...o, ...(moving ? wd : {}), arms: moving ? wd.arms : o.arms }, x, moving ? wd.bob : 0, z, ry); }
+function walkTo(scene, o, x0, z0, x1, z1, k, t, ry, sp = 7) { const x = lerp(x0, x1, k), z = lerp(z0, z1, k), wd = stepPose(walkPhase(Math.hypot(x - x0, z - z0))), moving = k > 0 && k < 1; return place(scene, { ...o, ...(moving ? wd : {}), arms: moving ? wd.arms : o.arms }, x, moving ? wd.bob : 0, z, ry); }
 const MX = HX.gary;   // Mark's new house (purple roof)
 // 1 "When Mark moved to a tiny new town," - the moving truck pulls up; Mark hops out with a box
 shot(0, 2.15, () => { const S = world('day'), cam = newCam(42), tr = makeTruck(); S.scene.add(tr); const bx = cardBox(.45); S.scene.add(bx);
@@ -251,7 +266,7 @@ shot(2.15, 4.2, () => { const S = world('day'), cam = newCam(40), bx = cardBox(.
 shot(4.2, 5.7, () => { const S = world('day'), cam = newCam(36);
   return { scene: S.scene, cam, update(f, fd, t) { setSun(S, MX, -1); const tp = pop(f - at(4.2, 4.85)); const m = talkIf(t, 4.34, 5.4);
     const g = place(S.scene, { ...NEIGH, tagPop: tp, mouth: m || 'grin', eyes: 'open', arms: [[-.45, -.1, .05], [.3, .55, .5]] }, MX - 1.2, 0, -1.0, .5); g.updateMatrixWorld(true); const hp = g.userData.head.localToWorld(V(0, -.3, 0));
-    look(cam, hp.x + 1.4, hp.y + .05, hp.z + 1.9, hp.x, hp.y - .5, hp.z); drift(cam, t); } }; });
+    look(cam, hp.x + 1.7, hp.y + .1, hp.z + 2.5, hp.x, hp.y - .45, hp.z); drift(cam, t); } }; });
 // 3 "Then the mailman showed up." - the mailman waddles in with letters
 shot(5.7, 7.3, () => { const S = world('day'), cam = newCam(40), lt = [0, 1, 2].map(i => { const m = new THREE.Mesh(new THREE.PlaneGeometry(.22, .14), flat(0xf6f2e8)); S.scene.add(m); return m; });
   return { scene: S.scene, cam, update(f, fd, t) { setSun(S, MX, -1); place(S.scene, { ...MARK, mouth: 'smile' }, MX, 0, -1.2, -.9); place(S.scene, { ...NEIGH, mouth: 'smile' }, MX - 1.2, 0, -1.0, .6);
@@ -284,7 +299,7 @@ shot(12.6, 15.5, () => { const S = world('day'), cam = newCam(50), dog = makeDog
 // 8 "Every single person in the town was named Steve." - crane up over a crowd, every tag says STEVE
 shot(15.5, 18.7, () => { const S = world('day'), cam = newCam(45), crowd = []; for (let i = 0; i < 16; i++) { const x = -6 + (i % 8) * 1.6 + (i > 7 ? .8 : 0), z = i > 7 ? .9 : -.6; crowd.push(staticNoodle(S.scene, crowdOpt(i, { arms: [[-.45, .65, .1], [.45, .65, .1]] }), x, z, 0)); }
   return { scene: S.scene, cam, update(f, fd, t) { setSun(S, 0, 0); crowd.forEach((g, i) => { g.position.y = Math.abs(Math.sin(t * 6 + i)) * .12; g.rotation.y = Math.sin(t * 2 + i) * .15; });
-    const k = ss(0, fd, f); look(cam, -.4, lerp(1.6, 7.5, k), lerp(4.2, 8.5, k), -.4, lerp(1.4, .6, k), 0); } }; });
+    const k = ss(0, fd, f); look(cam, -.4, lerp(1.6, 7.5, k), lerp(4.2, 8.5, k), -.4, lerp(1.4, .6, k), 0); } }; }, { noCut: true });
 // 9 "Nobody knew how it started." - Mark in the middle of the Steves, shrugging; ? marks
 shot(18.7, 20.6, () => { const S = world('day'), cam = newCam(40), crowd = []; for (let i = 0; i < 7; i++) { const a = Math.PI / 2 + .95 + i * (Math.PI * 2 - 1.9) / 6; crowd.push(staticNoodle(S.scene, crowdOpt(i + 3, { mouth: 'smile' }), MX - 1 + Math.cos(a) * 2.2, -1 + Math.sin(a) * 1.6, -a + Math.PI / 2 * 0)); }
   const qs = [0, 1].map(() => { const s = sprite('?', '#ffe21f', .7); S.scene.add(s); return s; });
@@ -328,10 +343,10 @@ shot(35.9, 37.9, () => { const R = room(0xfff0f6), cam = newCam(46), crowd = [];
 // 17 "Every cake just said, Happy Birthday, Steve." - close on a cake... then a row of identical ones
 shot(37.9, 40.95, () => { const R = room(0xfff0f6), cam = newCam(40), Z = at(37.9, 39.6), cakes = []; R.scene.add(at3(box(9, .1, 1.4, 0xffffff, .015), 0, .9, 0)); for (let i = 0; i < 7; i++) { const c = makeCake(); c.position.set(-3.6 + i * 1.2, .95, 0); R.scene.add(c); cakes.push(c); }
   return { scene: R.scene, cam, update(f, fd, t) { cakes.forEach((c, i) => c.userData.flames.forEach(fl => fl.scale.y = 1.4 + Math.sin(t * 20 + i) * .3)); const z = clamp(spring((f - Z) * 1.3), 0, 1.05);
-    look(cam, lerp(.4, 0, z), lerp(2.6, 2.4, z), lerp(1.2, 4.6, z), lerp(0, 0, z), lerp(1.1, 1.1, z), 0); drift(cam, t); } }; });
+    look(cam, lerp(.4, 0, z), lerp(2.6, 2.4, z), lerp(1.2, 4.6, z), lerp(0, 0, z), lerp(1.1, 1.1, z), 0); drift(cam, t); } }; }, { noCut: true });
 // 18 "Mark tried to stay himself." - Steves stream past him; he stands firm, sweating
 shot(40.95, 42.9, () => { const S = world('day'), cam = newCam(40), dr = [0, 1, 2].map(() => { const d = inked(new THREE.SphereGeometry(.04, 8, 6), 0x9ad8ff, .006, null, true); S.scene.add(d); return d; });
-  return { scene: S.scene, cam, update(f, fd, t) { setSun(S, MX, 0); for (let i = 0; i < 6; i++) { const x = ((t * 1.6 + i * 1.3) % 8) - 4; const w = waddle(t + i, 8); place(S.scene, { ...crowdOpt(i), ...w }, MX + x, w.bob, i % 2 ? -.2 : .9, Math.PI / 2); }
+  return { scene: S.scene, cam, update(f, fd, t) { setSun(S, MX, 0); for (let i = 0; i < 6; i++) { const x = ((t * 1.6 + i * 1.3) % 8) - 4; const w = stepPose(walkPhase(t * 1.6 + i * 1.3)); place(S.scene, { ...crowdOpt(i), ...w }, MX + x, w.bob, i % 2 ? -.2 : .9, Math.PI / 2); }
     const g = place(S.scene, { ...MARK, mouth: 'flat', eyes: 'open', brow: -.3, hands: [V(-.3, .75, .2), V(.3, .75, .2)] }, MX, 0, .35, 0); g.updateMatrixWorld(true); dr.forEach((d, i) => { const q = (t * 1.5 + i / 3) % 1; d.position.copy(g.userData.head.localToWorld(V(.3 - i * .15, .2 - q * .4, .3))); });
     look(cam, MX, 1.7, 4.2 - f * .4, MX, 1.4, .3); drift(cam, t); } }; }, { xf: true });
 // 19 "He lasted six months." - a calendar shedding pages JAN -> JUN; Mark looking more and more tired
@@ -342,7 +357,7 @@ shot(42.9, 44.9, () => { const R = room(0xf6f0e0), cam = newCam(40), pages = ['J
 // 20 "Then one day, a new family moved in next door." - a new moving truck, a family with boxes
 shot(44.9, 48.0, () => { const S = world('day'), cam = newCam(42), tr = makeTruck(); S.scene.add(tr); const boxes = [0, 1].map(() => { const b = cardBox(.35); S.scene.add(b); return b; });
   return { scene: S.scene, cam, update(f, fd, t) { const FX = HX.orange; setSun(S, FX, 0); const k = ss(0, .9, f); tr.position.set(lerp(FX + 12, FX + .8, k), 0, 2.3); tr.rotation.y = Math.PI;
-    if (f > 1.0) { const a = ss(1.0, fd, f); [[{ color: 0x5ac85a, mouth: 'grin' }, -.7], [{ color: 0xff8ab8, mouth: 'smile', curlers: false, glasses: true }, .4], [{ color: 0xffd23a, mouth: 'grin', eyes: 'happy', tuft: true }, 1.2]].forEach(([o, dx], i) => { const w = waddle(t + i, 8); const g = place(S.scene, { ...o, ...w, hands: i < 2 ? [V(-.3, 1.0, .35), V(.3, 1.0, .35)] : undefined }, FX + dx, w.bob, lerp(1.2, -.6, a), Math.PI); if (i === 2) g.scale.setScalar(.7); if (i < 2) { boxes[i].position.set(FX + dx, 1.1, lerp(1.2, -.6, a) - .35); boxes[i].visible = true; } }); } else boxes.forEach(b => b.visible = false);
+    if (f > 1.0) { const a = ss(1.0, fd, f); [[{ color: 0x5ac85a, mouth: 'grin' }, -.7], [{ color: 0xff8ab8, mouth: 'smile', curlers: false, glasses: true }, .4], [{ color: 0xffd23a, mouth: 'grin', eyes: 'happy', tuft: true }, 1.2]].forEach(([o, dx], i) => { const w = stepPose(walkPhase(1.8 * a) + i); const g = place(S.scene, { ...o, ...w, hands: i < 2 ? [V(-.3, 1.0, .35), V(.3, 1.0, .35)] : undefined }, FX + dx, w.bob, lerp(1.2, -.6, a), Math.PI); if (i === 2) g.scale.setScalar(.7); if (i < 2) { boxes[i].position.set(FX + dx, 1.1, lerp(1.2, -.6, a) - .35); boxes[i].visible = true; } }); } else boxes.forEach(b => b.visible = false);
     look(cam, FX + .3, 1.9, -3.9, FX + .3, 1.0, .5); drift(cam, t); } }; }, { xf: true });
 // 21 "Mark walked over, smiled, and said," - Mark waddles over to them (tag hidden from camera)
 shot(48.0, 50.6, () => { const S = world('day'), cam = newCam(40);
@@ -355,9 +370,9 @@ shot(50.6, 99, () => { const S = world('day'), cam = newCam(36), Z = at(50.6, 51
     [[{ color: 0x5ac85a }, -.2], [{ color: 0xff8ab8, glasses: true }, .7], [{ color: 0xffd23a, tuft: true }, 1.4]].forEach(([o, dx], i) => { const g = place(S.scene, { ...o, mouth: f > Z + .3 ? 'o' : 'smile', eyes: f > Z + .3 ? 'wide' : 'open' }, FX + dx, 0, -.6, -Math.PI / 2 + .3); if (i === 2) g.scale.setScalar(.7); });
     const g = place(S.scene, { ...MARK, tag: 'STEVE', tagPop: f > Z ? 1 + .25 * Math.exp(-(f - Z) * 8) : 1, mouth: m || 'grin', eyes: 'happy', blush: true, arms: [[-.45, -.1, .05], [.45, .55, .2]] }, FX - 1.5, 0, -.6, .45);
     g.updateMatrixWorld(true); const c = g.localToWorld(V(0, 1.1, 0)), z = clamp(spring((f - Z) * 1.4), 0, 1.05), dir = V(Math.sin(.2), 0, Math.cos(.2)), d = lerp(4.6, 2.4, z);
-    if (f < Z + .9) look(cam, c.x + dir.x * d - .4, c.y + .25, c.z + dir.z * d, c.x, c.y + .1, c.z); else look(cam, FX - .5, 1.6, 2.6, FX + .6, 1.35, -.6); this.fade = ss(fd - .5, fd - .05, f); } }; });
+    if (f < Z + .9) look(cam, c.x + dir.x * d - .4, c.y + .25, c.z + dir.z * d, c.x, c.y + .1, c.z); else look(cam, FX - .5, 1.6, 2.6, FX + .6, 1.35, -.6); this.fade = ss(fd - .5, fd - .05, f); } }; }, { noCut: true });
 // ---------- captions: one word at a time, white with a thick black outline, pop-in ----------
-const words = (await (await fetch('/build/words.json')).json()).map(w => ({ w: w.w.replace(/[.,?!]+$/, ''), s: tm(w.s), e: tm(w.e) }));
+const words = (await (await fetch('/build/words.json')).json()).map(w => ({ w: w.w.replace(/[.,?!]+$/, ''), raw: w.w, s: tm(w.s), e: tm(w.e) }));
 words.forEach((w, i) => { const n = words[i + 1]; w.s -= .04; w.e = n ? Math.max(w.e, n.s - .04) : w.e + .5; });
 function drawCaption(tc) {
   const c = words.find(w => tc >= w.s && tc < w.e); if (!c) return; const k = 1 + .12 * Math.exp(-(tc - c.s) * 18);
@@ -366,7 +381,24 @@ function drawCaption(tc) {
 }
 // ---------- frame: render, cross-fades between shots, dream frames, viewfinder, emotion flash, fades ----------
 const tmp = document.createElement('canvas'); tmp.width = W; tmp.height = H; const tg = tmp.getContext('2d');
-function renderShot(s, tc) { for (const g of live) { if (g.parent) g.parent.remove(g); g.traverse(o => { if (o.geometry) o.geometry.dispose(); }); } live = []; const f = tc - s.f0; s.update(f, s.f1 - s.f0, tc); s.cam.updateMatrixWorld(); renderer.render(s.scene, s.cam); }
+// ---- camera energy layer, applied on top of every shot ----
+const KEY = /steve|gary|mark|mayor|barber|dog|forty|six|prank|tradition|chaos|nightmare|cake|ghosts|pool|lot/i;
+const kicks = () => words.filter((w, i) => KEY.test(w.w) || /[?!]$/.test(w.raw || '') || (i > 0 && /[?]$/.test(words[i - 1].raw || ''))).map(w => w.s + .04);
+let KICKS = null;
+function renderShot(s, tc) {
+  for (const g of live) { if (g.parent) g.parent.remove(g); g.traverse(o => { if (o.geometry) o.geometry.dispose(); }); } live = [];
+  NOW = tc; const f = tc - s.f0, fd = s.f1 - s.f0; s.update(f, fd, tc);
+  statics.forEach(g => { if (g.parent !== s.scene) return; const b = Math.sin(tc * 4.4 + g.userData.seed), s0 = g.userData.s0; g.scale.set(s0 * (1 + .03 * b), s0 * (1 - .04 * b), s0 * (1 + .03 * b)); });
+  const cam = s.cam, fov0 = cam.fov; KICKS = KICKS || kicks();
+  let fov = fov0 * (1.13 - .13 * (1 - Math.exp(-f * 5)));                                   // punchy push-in at the top of every shot
+  const kz = KICKS.reduce((a, k) => a + (tc >= k ? Math.exp(-(tc - k) * 9) * (1 - Math.exp(-(tc - k) * 60)) : 0), 0); fov *= 1 - .06 * Math.min(1.3, kz);   // kick-zooms on key words
+  if (!s.noCut && fd > 2.4) { const mid = words.find(w => w.s > s.f0 + fd * .45 && w.s < s.f0 + fd * .78); if (mid && tc >= mid.s) { fov *= .74; cam.rotation.z += .02; } }   // punch-in cut: a second, tighter angle
+  cam.rotation.x += (Math.sin(tc * 2.3) * .6 + Math.sin(tc * 5.3 + 1) * .35) * .007; cam.rotation.y += (Math.sin(tc * 1.9 + 2) * .6 + Math.sin(tc * 4.9) * .35) * .007;   // hand-held
+  const wo = s.f1 - tc, wi = tc - s.f0; if (wo < .1) cam.rotation.y -= (1 - wo / .1) ** 2 * .35; if (wi < .1 && !s.xf) cam.rotation.y += (1 - wi / .1) ** 2 * .35;   // whip pan out / in
+  cam.fov = fov; cam.updateProjectionMatrix(); cam.updateMatrixWorld(); renderer.render(s.scene, cam); cam.fov = fov0; cam.updateProjectionMatrix();
+}
+// motion-blur smear across hard cuts (whip pans)
+function whipBlur(tc) { let w = 0; for (const s of shots) { if (s.f0 > 0 && !s.xf) w = Math.max(w, 1 - Math.abs(tc - s.f0) / .1); } if (w <= .02) return; tg.drawImage(out, 0, 0); og.save(); og.globalAlpha = .22; for (let k = -4; k <= 4; k++) og.drawImage(tmp, k * 26 * w, 0); og.restore(); }
 function post(s, tc) {
   if (s.dream) { og.save(); og.globalCompositeOperation = 'soft-light'; og.globalAlpha = .55; og.fillStyle = s.dream; og.fillRect(0, 0, W, H); og.restore();
     og.save(); og.fillStyle = 'rgba(255,255,255,.92)'; const r = rng(7); for (let i = 0; i < 44; i++) { const side = i % 4, u = r(); const x = side < 2 ? (side ? W : 0) : u * W, y = side < 2 ? u * H : (side === 2 ? 0 : H); og.beginPath(); og.arc(x, y, 70 + r() * 70 + Math.sin(tc * 2 + i) * 6, 0, 7); og.fill(); } og.restore(); }
@@ -382,7 +414,7 @@ function renderAt(tc) {
   const i = shots.findIndex(s => tc >= s.f0 && tc < s.f1), s = shots[i < 0 ? shots.length - 1 : i], nx = shots[i + 1];
   renderShot(s, tc); og.drawImage(renderer.domElement, 0, 0); post(s, tc);
   if (nx && nx.xf && tc > s.f1 - XF) { tg.drawImage(out, 0, 0); renderShot(nx, nx.f0 + .001); og.drawImage(renderer.domElement, 0, 0); post(nx, nx.f0); const a = (tc - (s.f1 - XF)) / XF; og.save(); og.globalAlpha = 1 - a; og.drawImage(tmp, 0, 0); og.restore(); }
-  drawCaption(tc);
+  whipBlur(tc); drawCaption(tc);
 }
 window.renderTime = tc => { renderAt(tc); return out.toDataURL('image/jpeg', .92); };
 window.renderFrame = i => window.renderTime((i + .5) / FPS);
