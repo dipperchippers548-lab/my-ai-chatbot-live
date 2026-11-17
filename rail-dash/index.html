@@ -36,8 +36,8 @@
 }
 [hidden] { display: none !important; }
 html, body { height: 100%; margin: 0; overflow: hidden; background: var(--sky); color: var(--paper); }
-body { font-family: var(--font-body); -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
-#scene { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: manipulation; cursor: pointer; }
+body { font-family: var(--font-body); -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; touch-action: none; }
+#scene { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: pointer; }
 
 #ui { position: fixed; inset: 0; pointer-events: none; transition: opacity .45s ease; }
 #ui.is-hidden { opacity: 0; }
@@ -104,6 +104,43 @@ body { font-family: var(--font-body); -webkit-tap-highlight-color: transparent; 
 
 .badge-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
 .btn.alt { background: var(--paper); }
+
+/* ---------- tutorial run: GO!, freeze-frame swipe prompt, Nice jump! */
+.go, .nice {
+  position: fixed; left: 50%; z-index: 6; pointer-events: none; white-space: nowrap;
+  font-family: var(--font-display); letter-spacing: .04em; transform: translate(-50%, -50%) rotate(-4deg);
+  text-shadow: var(--outline), 0 9px 0 rgba(27, 16, 48, .35);
+}
+.go { top: 40%; font-size: clamp(64px, 14vw, 140px); line-height: 1; color: var(--sun); }
+.nice { top: calc(env(safe-area-inset-top, 0px) + 20%); font-size: clamp(40px, 8vw, 72px); line-height: 1; color: var(--paper); }
+.go.show, .nice.show { animation: shout 1.1s cubic-bezier(.2, 1.4, .4, 1) both; }
+@keyframes shout {
+  0% { transform: translate(-50%, -50%) scale(.3) rotate(-12deg); opacity: 0; }
+  25% { transform: translate(-50%, -50%) scale(1.1) rotate(-4deg); opacity: 1; }
+  70% { transform: translate(-50%, -50%) scale(1) rotate(-4deg); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1.3) rotate(-4deg); opacity: 0; }
+}
+.dim {
+  position: fixed; inset: 0; z-index: 5; pointer-events: none; opacity: 0; transition: opacity .25s ease;
+  background: radial-gradient(ellipse at 50% 42%, rgba(27, 16, 48, 0) 32%, rgba(27, 16, 48, .55) 100%);
+}
+.dim.on { opacity: 1; }
+.prompt {
+  position: fixed; left: 50%; top: 30%; z-index: 6; pointer-events: none;
+  display: grid; justify-items: center; gap: 8px; transform: translate(-50%, -100%);
+  animation: prompt-in .32s cubic-bezier(.2, 1.5, .4, 1) both;
+}
+.prompt.gone { animation: prompt-out .22s ease-in both; }
+.prompt .arrows { position: relative; width: clamp(92px, 9vw, 120px); aspect-ratio: 92 / 124; }
+.prompt svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.prompt .a1 { animation: arrow-up .9s ease-in-out infinite; }
+.prompt .a2 { opacity: .5; animation: arrow-up .9s .16s ease-in-out infinite; }
+@keyframes arrow-up { 0%, 100% { transform: translateY(14px); } 50% { transform: translateY(-16px); } }
+.prompt .label { font: clamp(30px, 6vw, 42px)/1 var(--font-display); color: var(--paper); letter-spacing: .05em; text-shadow: var(--outline), 0 6px 0 rgba(27, 16, 48, .35); white-space: nowrap; }
+.prompt .keys { font: 700 13px/1.2 var(--font-body); letter-spacing: .12em; text-transform: uppercase; color: var(--paper); text-shadow: 0 1px 3px rgba(27, 16, 48, .85); white-space: nowrap; }
+.prompt .keys kbd { font: inherit; padding: 2px 8px; border-radius: 6px; border: 2px solid var(--paper); background: var(--glass); }
+@keyframes prompt-in { from { transform: translate(-50%, -100%) scale(.4); opacity: 0; } to { transform: translate(-50%, -100%) scale(1); opacity: 1; } }
+@keyframes prompt-out { to { transform: translate(-50%, -135%) scale(1.15); opacity: 0; } }
 
 /* ---------- loading screen: the side of a train car, front-on */
 .boot { position: fixed; inset: 0; z-index: 20; overflow: hidden; background: var(--teal); transition: opacity .5s ease; }
@@ -225,6 +262,7 @@ body { font-family: var(--font-body); -webkit-tap-highlight-color: transparent; 
 @media (prefers-reduced-motion: reduce) {
   .tap-text { animation-duration: 2.4s; }
   .burst, .st { animation: none; }
+  .prompt .a1, .prompt .a2 { animation-duration: 1.8s; }
   .big-check { animation: check-in .01s both; }
   .badge { animation: none; }
 }
@@ -268,12 +306,27 @@ body { font-family: var(--font-body); -webkit-tap-highlight-color: transparent; 
   </div>
   <div id="confetti" class="confetti" aria-hidden="true"></div>
 </div>
+<div id="dim" class="dim" aria-hidden="true"></div>
+<div id="prompt" class="prompt" role="status" hidden>
+  <div class="arrows" aria-hidden="true">
+    <svg class="a2" viewBox="0 0 92 124"><polygon points="46,4 88,54 62,54 62,118 30,118 30,54 4,54" fill="#ffffff" stroke="#1b1030" stroke-width="7" stroke-linejoin="round"/></svg>
+    <svg class="a1" viewBox="0 0 92 124">
+      <defs><linearGradient id="arw" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff59a"/><stop offset=".5" stop-color="#ffd23f"/><stop offset="1" stop-color="#ff9a1f"/></linearGradient></defs>
+      <polygon points="46,4 88,54 62,54 62,118 30,118 30,54 4,54" fill="url(#arw)" stroke="#1b1030" stroke-width="7" stroke-linejoin="round"/>
+      <path d="M18 46 L44 16 M40 60 L40 104" fill="none" stroke="#ffffff" stroke-opacity=".8" stroke-width="5" stroke-linecap="round"/>
+    </svg>
+  </div>
+  <div class="label">SWIPE UP</div>
+  <div class="keys">to jump<span id="prompt-keys"> · or press <kbd>↑</kbd></span></div>
+</div>
+<div id="go" class="go" aria-hidden="true" hidden>GO!</div>
+<div id="nice" class="nice" aria-hidden="true" hidden>Nice jump!</div>
 <div id="flash" class="flash" aria-hidden="true"></div>
 
 <div id="badge" class="badge" role="status" hidden>
   <span class="tape">PROTOTYPE</span>
-  <h1>Ready to build gameplay next!</h1>
-  <p>Loading screen, crew unlock, start screen and the ready stance are done. Lanes, running, coins and obstacles come next.</p>
+  <h1>Jump tutorial done!</h1>
+  <p>Next tutorial steps to build: switching tracks, rolling under signs and grabbing coins.</p>
   <div class="badge-actions">
     <button id="replay" class="btn" type="button">Replay intro</button>
     <button id="replay-first" class="btn alt" type="button">Replay first launch</button>
@@ -1109,6 +1162,26 @@ spareCan(pack, [0.0, 0.58, 0.08], [0.38, 0, -0.04], '#a6ff3d');
 spareCan(scene, [3.0, 0.29, 4.15], [0, 0.5, Math.PI / 2], '#ff8a2a');
 spareCan(scene, [2.1, 0.34, 4.95], [0, 0, 0.0], '#3ee0ff');
 
+// ------------------------------------------------------------------ tutorial run: lane, barrier
+const RUN = { v: 10.5, laneZ: TRACK_Z[2], barrierX: KID_POS.x - 30, jumpH: 1.6, jumpDur: 0.74, heading: -Math.PI / 2, freezeAt: 6.0 };
+const barrier = new THREE.Group(); barrier.position.set(RUN.barrierX, 0.24, RUN.laneZ); scene.add(barrier);
+{
+  const cv = makeCanvas(256, 64), g = cv.getContext('2d');
+  g.fillStyle = '#ffffff'; g.fillRect(0, 0, 256, 64);
+  g.fillStyle = '#ff3b3b';
+  for (let x = -64; x < 320; x += 64) { g.beginPath(); g.moveTo(x, 64); g.lineTo(x + 32, 64); g.lineTo(x + 64, 0); g.lineTo(x + 32, 0); g.fill(); }
+  const boardMat = toon('#ffffff', { map: canvasTex(cv) });
+  for (const [y, hgt] of [[1.0, 0.36], [0.52, 0.26]]) {
+    const b = P(new THREE.BoxGeometry(0.12, hgt, 2.2), boardMat, barrier, [0, y, 0], null, null, 0); boxOutline(b, 0.12, hgt, 2.2, 0.03);
+  }
+  for (const z of [-1.02, 1.02]) {
+    const post = P(new THREE.BoxGeometry(0.16, 1.3, 0.16), '#f2f4f7', barrier, [0, 0.65, z], null, null, 0); boxOutline(post, 0.16, 1.3, 0.16, 0.025);
+    for (const y of [0.32, 0.86]) P(new THREE.BoxGeometry(0.18, 0.12, 0.18), '#ff3b3b', barrier, [0, y, z], null, null, 0);
+    P(new THREE.BoxGeometry(0.5, 0.08, 0.32), '#3a3f4c', barrier, [0, 0.04, z], null, null, 0.015);
+    P(new THREE.SphereGeometry(0.09, 12, 8), toon('#ffcc33', { emissive: '#ffb000', emissiveIntensity: 0.8 }), barrier, [0, 1.38, z], null, null, 0.012);
+  }
+}
+
 // ------------------------------------------------------------------ poses
 const NAMES = ['hips', 'spine', 'chest', 'neck', 'head', 'shL', 'elL', 'wrL', 'shR', 'elR', 'wrR', 'hipL', 'kneeL', 'ankL', 'hipR', 'kneeR', 'ankR'];
 const tmpE = new THREE.Euler(), tmpQ = new THREE.Quaternion();
@@ -1173,7 +1246,13 @@ const DANCE = [
   [0, P_U_IDLE, 0], [0.22, P_D_CROUCH, -0.09], [0.48, P_D_JUMP, 0.55], [0.72, P_D_LAND, -0.09],
   [0.95, P_D_GROOVE_A, -0.05], [1.2, P_D_GROOVE_B, -0.02], [1.45, P_D_GROOVE_A, -0.05], [1.7, P_D_GROOVE_B, -0.02], [1.98, P_D_FINAL, 0],
 ];
-const work = newPose(), dynShake = newPose(), dynReady = newPose();
+// tucked jump while running
+const P_RJUMP = pose({
+  spine: [0.12, 0, 0], neck: [-0.1, 0, 0], head: [-0.25, 0, 0],
+  shL: [-0.7, 0, 1.0], elL: [-0.9, 0, 0], shR: [-0.7, 0, -1.0], elR: [-0.9, 0, 0],
+  hipL: [-1.15, 0, 0.08], kneeL: [1.75, 0, 0], ankL: [0.25, 0, 0], hipR: [-0.6, 0, -0.08], kneeR: [1.4, 0, 0], ankR: [0.2, 0, 0],
+});
+const work = newPose(), dynShake = newPose(), dynReady = newPose(), dynRun = newPose();
 const DOWN = new THREE.Vector3(0, -1, 0);
 const tv = new THREE.Vector3(), tv2 = new THREE.Vector3();
 
@@ -1433,6 +1512,10 @@ const SFX = {
   },
   pop() { if (!audio()) return; const t = actx.currentTime; tone(520, t, 0.16, 'sine', 0.12, 1500); burst(t, 0.25, 1800, 600, 0.12); },
   check() { if (!audio()) return; const t = actx.currentTime; tone(1046.5, t, 0.2, 'sine', 0.1); tone(1568, t + 0.1, 0.4, 'sine', 0.09); },
+  go() { if (!audio()) return; const t = actx.currentTime; tone(880, t, 0.12, 'square', 0.05); tone(1320, t + 0.14, 0.28, 'square', 0.05); },
+  freeze() { if (!audio()) return; const t = actx.currentTime; tone(700, t, 0.35, 'sine', 0.07, 280); },
+  jump() { if (!audio()) return; const t = actx.currentTime; tone(330, t, 0.22, 'triangle', 0.1, 990); burst(t, 0.2, 600, 2400, 0.08); },
+  land() { if (!audio()) return; burst(actx.currentTime, 0.12, 320, 120, 0.16); },
   rattle() { if (!actx || !soundOn) return; burst(actx.currentTime, 0.05, 2400, 3600, 0.08); },
 };
 function setHiss(on) {
@@ -1467,6 +1550,9 @@ function resetKidProps() {
   can.position.copy(CAN_HOME.pos); can.rotation.copy(CAN_HOME.rot); can.visible = true;
   toss = null; pack.scale.set(1, 1, 1); bang.visible = false;
   kid.visible = true; kid.scale.setScalar(1); shadowBlob.visible = true;
+  kid.position.copy(KID_POS); kid.rotation.set(0, THETA0, 0); titleTheta = THETA0;
+  Object.assign(run, { state: 'idle', ts: 1, jumpT: -1, jumpY: 0 });
+  promptEl.hidden = true; dimEl.classList.remove('on'); goEl.hidden = true; niceEl.hidden = true;
 }
 function endBoot() {
   window.RD.hide();
@@ -1550,13 +1636,12 @@ function startIntro() {
   SFX.startle();
 }
 function replay() {
-  if (mode !== 'ready') return;
-  badge.hidden = true; mode = 'rewind'; tMode = 0;
-  J.wrR.add(can); can.position.copy(CAN_HOME.pos); can.rotation.copy(CAN_HOME.rot); can.visible = true; toss = null;
-  setTimeout(() => ui.classList.remove('is-hidden'), 350);
+  if (mode !== 'done') return;
+  badge.hidden = true; flash.classList.add('on'); SFX.whoosh();
+  setTimeout(() => { enterTitle(false); flash.classList.remove('on'); }, 240);
 }
 function replayFirst() {
-  if (mode !== 'ready') return;
+  if (mode !== 'done') return;
   badge.hidden = true; forceUnlock = true; phase = 'boot';
   window.RD.restart();
 }
@@ -1571,11 +1656,143 @@ document.addEventListener('click', (e) => {
   onTap();
 });
 document.addEventListener('keydown', (e) => {
-  if (e.code === 'Space' || e.key === ' ' || e.key === 'Enter') {
-    if (e.target.closest && e.target.closest('button, input, label')) return;
-    e.preventDefault(); onTap();
-  }
+  const up = e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W';
+  const space = e.code === 'Space' || e.key === ' ';
+  if (!up && !space && e.key !== 'Enter') return;
+  if (e.target.closest && e.target.closest('button, input, label')) return;
+  e.preventDefault();
+  if (phase === 'game' && mode === 'run') { if (up || space) doJump(); return; }
+  if (!up) onTap();
 });
+// swipe up (touch, or a mouse drag) to jump
+let swipe = null;
+window.addEventListener('pointerdown', (e) => { swipe = { x: e.clientX, y: e.clientY }; });
+window.addEventListener('pointermove', (e) => {
+  if (!swipe) return;
+  const dx = e.clientX - swipe.x, dy = e.clientY - swipe.y;
+  if (dy < -34 && Math.abs(dy) > Math.abs(dx)) { swipe = null; doJump(); }
+});
+window.addEventListener('pointerup', () => { swipe = null; });
+window.addEventListener('pointercancel', () => { swipe = null; });
+
+// ------------------------------------------------------------------ tutorial run
+const promptEl = $('prompt'), dimEl = $('dim'), goEl = $('go'), niceEl = $('nice');
+if (!(window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches)) $('prompt-keys').hidden = true;
+const run = {
+  state: 'idle', t: 0, v: 0, phase: 0, ts: 1, jumpT: -1, jumpY: 0, after: 0, bt: 0, camT: 0,
+  camFromPos: new THREE.Vector3(), camFromLook: new THREE.Vector3(),
+};
+const chasePos = new THREE.Vector3(), chaseLook = new THREE.Vector3(), endPos = new THREE.Vector3(), endLook = new THREE.Vector3();
+function shout(el) { el.hidden = false; el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); clearTimeout(el.timer); el.timer = setTimeout(() => { el.hidden = true; }, 1150); }
+function startRun() {
+  mode = 'run'; tMode = 0;
+  Object.assign(run, { state: 'go', t: 0, v: 0, phase: 0, ts: 1, jumpT: -1, jumpY: 0, after: 0, bt: 0, camT: 0 });
+  run.camFromPos.copy(camera.position); run.camFromLook.copy(camLook);
+  shout(goEl); SFX.go();
+}
+function doJump() {
+  if (phase !== 'game' || mode !== 'run') return;
+  if (run.state === 'prompt') {
+    run.state = 'jumped'; run.jumpT = 0; run.ts = Math.max(run.ts, 0.35);
+    promptEl.classList.add('gone'); dimEl.classList.remove('on');
+    setTimeout(() => { promptEl.hidden = true; promptEl.classList.remove('gone'); }, 230);
+    SFX.jump();
+  } else if (run.state === 'run2' && run.jumpT < 0) { run.jumpT = 0; SFX.jump(); }
+}
+function runPose(out, p) {
+  const sL = Math.sin(p), sR = -sL, cL = Math.cos(p), cR = -cL;
+  const E = (x, y, z) => tmpE.set(x, y, z, 'XYZ');
+  out.hips.setFromEuler(E(0, 0.1 * sL, 0));
+  out.spine.setFromEuler(E(0.3, -0.16 * sL, 0));
+  out.chest.setFromEuler(E(0.04, 0, 0));
+  out.neck.setFromEuler(E(-0.14, 0, 0));
+  out.head.setFromEuler(E(-0.2, 0.06 * sL, 0));
+  out.hipL.setFromEuler(E(-0.85 * sL - 0.12, 0, 0.05));
+  out.kneeL.setFromEuler(E(0.25 + 1.3 * Math.pow(Math.max(0, cL), 1.4), 0, 0));
+  out.ankL.setFromEuler(E(0.25 * sL - 0.05, 0, -0.05));
+  out.hipR.setFromEuler(E(-0.85 * sR - 0.12, 0, -0.05));
+  out.kneeR.setFromEuler(E(0.25 + 1.3 * Math.pow(Math.max(0, cR), 1.4), 0, 0));
+  out.ankR.setFromEuler(E(0.25 * sR - 0.05, 0, 0.05));
+  out.shL.setFromEuler(E(0.8 * sL, 0, 0.2)); out.elL.setFromEuler(E(-1.45 + 0.3 * sL, 0, 0)); out.wrL.identity();
+  out.shR.setFromEuler(E(0.8 * sR, 0, -0.2)); out.elR.setFromEuler(E(-1.45 + 0.3 * sR, 0, 0)); out.wrR.identity();
+}
+function updateKidRun(dt) {
+  const r = run;
+  const tsTarget = r.state === 'prompt' ? 0 : 1;
+  r.ts += (tsTarget - r.ts) * Math.min(1, dt * (tsTarget < r.ts ? 5 : 12));
+  if (r.state === 'prompt' && r.ts < 0.015) r.ts = 0;
+  const g = dt * r.ts;
+  r.t += g;
+  if (r.state === 'go') { r.v = RUN.v * smooth(clamp(r.t / 0.75)); if (r.t >= 0.75) r.state = 'run'; }
+  else if (r.state === 'brake' || r.state === 'end') {
+    r.bt += g; r.v = RUN.v * (1 - smooth(clamp(r.bt / 0.9)));
+    if (r.state === 'brake' && r.bt >= 1.15) { r.state = 'end'; mode = 'done'; badge.hidden = false; }
+  } else r.v = RUN.v;
+  kid.position.x -= r.v * g;
+  if (r.state === 'run' && kid.position.x - RUN.barrierX <= RUN.freezeAt) {
+    r.state = 'prompt'; promptEl.hidden = false; promptEl.classList.remove('gone'); dimEl.classList.add('on'); SFX.freeze();
+  }
+  let wJ = 0;
+  r.jumpY = 0;
+  if (r.jumpT >= 0) {
+    r.jumpT += g;
+    const u = clamp(r.jumpT / RUN.jumpDur);
+    r.jumpY = 4 * RUN.jumpH * u * (1 - u);
+    wJ = smooth(clamp(u / 0.18)) * (1 - smooth(clamp((u - 0.78) / 0.22)));
+    if (u >= 1) {
+      r.jumpT = -1; r.jumpY = 0; SFX.land();
+      if (r.state === 'jumped') { r.state = 'run2'; r.after = 0; shout(niceEl); SFX.check(); }
+    }
+  }
+  if (r.state === 'run2') { r.after += g; if (r.after > 1.6 && r.jumpT < 0) { r.state = 'brake'; r.bt = 0; } }
+
+  // pose: ready -> run cycle -> tuck jump -> end pose
+  r.phase += g * Math.PI * 2 * 2.4 * Math.max(0.3, r.v / RUN.v) * (r.jumpT >= 0 ? 0.25 : 1);
+  runPose(dynRun, r.phase);
+  if (r.state === 'go') { copyPose(work, P_READY); blendPose(work, dynRun, smooth(clamp(r.t / 0.4))); }
+  else copyPose(work, dynRun);
+  if (wJ > 0) blendPose(work, P_RJUMP, wJ);
+  let wE = 0;
+  if (r.state === 'brake' || r.state === 'end') {
+    wE = smooth(clamp((r.bt - 0.3) / 0.6));
+    blendPose(work, P_D_FINAL, wE);
+  }
+  for (const n of NAMES) J[n].quaternion.copy(work[n]);
+
+  let theta = RUN.heading;
+  if (r.state === 'go') theta = THETA1 + (RUN.heading - THETA1) * inOutCubic(clamp(r.t / 0.45));
+  if (r.state === 'brake' || r.state === 'end') theta = RUN.heading + (Math.PI - 0.35) * smooth(clamp((r.bt - 0.15) / 0.75));
+  kid.rotation.y = theta;
+  kid.position.z = r.state === 'go' ? lerp(KID_POS.z, RUN.laneZ, smooth(clamp(r.t / 0.5))) : RUN.laneZ;
+  const bob = 0.07 * (1 - Math.abs(Math.cos(r.phase))) * (r.jumpT >= 0 ? 0 : 1) * (1 - wE);
+  const idle = r.state === 'end' ? Math.abs(Math.sin(elapsed * 5)) * 0.03 : 0;
+  kid.position.y = KID_POS.y + r.jumpY + bob + idle;
+  setFace(r.state === 'prompt' ? 'surprise' : 'ready');
+  blinkEyes(dt);
+  kid.updateMatrixWorld(true);
+}
+function updateRunView(dt) {
+  run.camT += dt;
+  const f = lerp(1, 0.82, portrait), k = kid.position, push = 1 - 0.14 * (1 - run.ts);
+  chasePos.set(k.x + 6.3 * f * push, KID_POS.y + 2.8 * f * push + run.jumpY * 0.3, RUN.laneZ + 0.9 * f);
+  chaseLook.set(k.x - 6, KID_POS.y + 1.2 + run.jumpY * 0.45, RUN.laneZ - 0.2);
+  const wE = run.state === 'brake' || run.state === 'end' ? smooth(clamp((run.bt - 0.35) / 0.9)) : 0;
+  if (wE > 0) {
+    endPos.set(k.x + 4.4 * f, KID_POS.y + 1.7, RUN.laneZ + 2.0 * f); endLook.set(k.x, KID_POS.y + 1.25, RUN.laneZ);
+    chasePos.lerp(endPos, wE); chaseLook.lerp(endLook, wE);
+  }
+  const kIn = inOutCubic(clamp(run.camT / 1.1));
+  camera.position.lerpVectors(run.camFromPos, chasePos, kIn);
+  camLook.lerpVectors(run.camFromLook, chaseLook, kIn);
+  camera.lookAt(camLook);
+  if (!promptEl.hidden) {
+    camera.updateMatrixWorld();
+    tv.set(RUN.barrierX, 0.24 + 2.0, RUN.laneZ).project(camera);
+    const x = (tv.x * 0.5 + 0.5) * window.innerWidth, y = (-tv.y * 0.5 + 0.5) * window.innerHeight;
+    promptEl.style.left = clamp(x, 90, window.innerWidth - 90) + 'px';
+    promptEl.style.top = clamp(y, 210, window.innerHeight - 40) + 'px';
+  }
+}
 
 function setFace(kind) {
   if (face.kind === kind) return; face.kind = kind;
@@ -1633,6 +1850,7 @@ function updateKidUnlock(dt) {
 }
 function updateKid(dt) {
   if (phase === 'unlock') { updateKidUnlock(dt); return; }
+  if (mode === 'run' || mode === 'done') { updateKidRun(dt); return; }
   kid.updateMatrixWorld(true);
   copyPose(work, P_SPRAY);
   const T = spray.target;
@@ -1761,13 +1979,14 @@ function frame() {
     else pack.scale.set(1, 1, 1);
     if (t > 0.45 && !sfxFlags.whoosh) { sfxFlags.whoosh = true; SFX.whoosh(); }
     if (t > 1.2 && !sfxFlags.ready) { sfxFlags.ready = true; SFX.ready(); }
-    if (t > 1.65 && !badgeShown) { badgeShown = true; badge.hidden = false; mode = 'ready'; }
+    if (t > 1.65) startRun();
   } else if (mode === 'rewind') {
     camK = 1 - inOutCubic(clamp(tMode / 0.9));
     bang.visible = false; pack.scale.set(1, 1, 1);
     if (tMode > 0.95) { mode = 'title'; tMode = 0; spray.phase = 'move'; spray.t = 0; spray.from.copy(spray.target); }
   }
-  if (phase !== 'unlock') placeCamera(camK, elapsed);
+  if (phase === 'game' && (mode === 'run' || mode === 'done')) updateRunView(dt);
+  else if (phase !== 'unlock') placeCamera(camK, elapsed);
 
   for (const c of clouds) { c.position.x += c.userData.speed * dt; if (c.position.x > 170) c.position.x = -170; }
 
@@ -1782,7 +2001,7 @@ Promise.race([
   new Promise((r) => setTimeout(r, 3500)),
 ]).catch(() => {}).then(() => { redrawers.forEach((fn) => fn()); });
 
-window.__railDash = { start: startIntro, replay, tap: onTap, get mode() { return mode; }, get phase() { return phase; }, get unlockState() { return unlock.state; }, get unlockT() { return unlock.t; } };
+window.__railDash = { start: startIntro, replay, tap: onTap, get mode() { return mode; }, get phase() { return phase; }, get unlockState() { return unlock.state; }, get unlockT() { return unlock.t; }, jump: doJump, get runState() { return run.state; } };
 </script>
 </body>
 </html>
