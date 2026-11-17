@@ -897,6 +897,7 @@ const $ = (id) => document.getElementById(id);
 const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
 const lerp = (a, b, t) => a + (b - a) * t;
 const smooth = (t) => t * t * (3 - 2 * t);
+const snap = (t) => 1 - Math.pow(1 - t, 3);   // fast start, soft landing: used for lane changes so they react instantly
 const inOutCubic = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 let SEED = 1234567;
 const rnd = () => (SEED = (SEED * 16807) % 2147483647) / 2147483647;
@@ -1562,7 +1563,7 @@ spareCan(scene, [2.1, 0.34, 4.95], [0, 0, 0.0], '#3ee0ff');
 const RUN = {
   v: 10.5, laneZ: TRACK_Z[2], heading: -Math.PI / 2, freezeAt: 6.0,
   barrierX: KID_POS.x - 36, jumpH: 1.6, jumpDur: 0.74,                 // lesson 1: jump the barrier
-  trainStartX: KID_POS.x - 105.1, trainV: 8, trainFreezeGap: 14, laneDur: 0.3, // lesson 2: dodge the express
+  trainStartX: KID_POS.x - 105.1, trainV: 8, trainFreezeGap: 14, laneDur: 0.2, // lesson 2: dodge the express
   rollX: KID_POS.x - 99, rollDur: 0.78,                                 // lesson 3: roll under the bar
 };
 const barrier = new THREE.Group(); barrier.position.set(RUN.barrierX, 0.24, RUN.laneZ); scene.add(barrier);
@@ -2171,7 +2172,7 @@ window.addEventListener('pointerdown', (e) => { swipe = { x: e.clientX, y: e.cli
 window.addEventListener('pointermove', (e) => {
   if (!swipe) return;
   const dx = e.clientX - swipe.x, dy = e.clientY - swipe.y;
-  if (Math.max(Math.abs(dx), Math.abs(dy)) < 34) return;
+  if (Math.max(Math.abs(dx), Math.abs(dy)) < 22) return;
   swipe = null;
   doMove(Math.abs(dy) > Math.abs(dx) ? (dy < 0 ? 'up' : 'down') : (dx > 0 ? 'right' : 'left'));
 });
@@ -2302,7 +2303,7 @@ function updateKidRun(dt) {
   if (r.laneT >= 0) {
     r.laneT += g;
     const u = clamp(r.laneT / RUN.laneDur);
-    kid.position.z = lerp(r.laneFrom, TRACK_Z[1], smooth(u));
+    kid.position.z = lerp(r.laneFrom, TRACK_Z[1], snap(u));
     lean = Math.sin(Math.PI * u) * 0.32; hop = Math.sin(Math.PI * u) * 0.28;
     if (u >= 1) { r.laneT = -1; r.laneZ = TRACK_Z[1]; if (r.state === 'dodging') { r.state = 'run3'; shout(niceEl, 'Great dodge!'); } }
   }
@@ -2356,7 +2357,7 @@ function promptAnchor(out) {
 function updateRunView(dt) {
   run.camT += dt;
   // runner camera: straight behind and above the kid, following his lane, tilted down the track
-  run.camZ += (kid.position.z - run.camZ) * Math.min(1, dt * 7);
+  run.camZ += (kid.position.z - run.camZ) * Math.min(1, dt * 15);
   const f = lerp(1, 0.82, portrait), k = kid.position, z = run.camZ, push = mode === 'run' ? 1 - 0.18 * (1 - run.ts) : 1;
   const back = lerp(RUN_CAM.backL, RUN_CAM.backP, portrait) * push, up = lerp(RUN_CAM.upL, RUN_CAM.upP, portrait) * push;
   chasePos.set(k.x + back, KID_POS.y + up + run.jumpY * 0.25, z);
@@ -2389,7 +2390,7 @@ function updateRunView(dt) {
 
 // ------------------------------------------------------------------ endless run: random trains, barriers, roll bars and coins on all three tracks
 const LANES = [TRACK_Z[2], TRACK_Z[1], TRACK_Z[0]];   // screen left -> right while running
-const ENDLESS = { v0: 11, vMax: 21, ramp: 110, ahead: 170, firstX: -50, recenterAt: -230, shift: LINE_PERIOD, trainV: 9, laneDur: 0.24, rollDur: 0.72 };
+const ENDLESS = { v0: 11, vMax: 21, ramp: 110, ahead: 170, firstX: -50, recenterAt: -230, shift: LINE_PERIOD, trainV: 9, laneDur: 0.15, rollDur: 0.72 };
 const hud = $('hud'), pauseMenu = $('pause-menu');
 const laneOfZ = (z) => { let b = 0; for (let i = 1; i < 3; i++) if (Math.abs(LANES[i] - z) < Math.abs(LANES[b] - z)) b = i; return b; };
 const shuffled = (a) => { const r = a.slice(); for (let i = r.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [r[i], r[j]] = [r[j], r[i]]; } return r; };
@@ -2593,8 +2594,8 @@ function updateKidEndless(dt) {
   if (r.laneT >= 0) {
     r.laneT += g;
     const u = clamp(r.laneT / ENDLESS.laneDur);
-    kid.position.z = lerp(r.laneFromZ, LANES[r.lane], smooth(u));
-    lean = Math.sin(Math.PI * u) * 0.3 * r.laneDir; hop = Math.sin(Math.PI * u) * 0.16;
+    kid.position.z = lerp(r.laneFromZ, LANES[r.lane], snap(u));
+    lean = Math.sin(Math.PI * Math.sqrt(u)) * 0.3 * r.laneDir; hop = Math.sin(Math.PI * u) * 0.1;
     if (u >= 1) r.laneT = -1;
   }
   if (r.bumpT >= 0) {
