@@ -398,6 +398,19 @@ button.gloss:focus-visible, .coin-pill:focus-visible { outline: 3px solid var(--
   width: 50px; height: 50px; padding: 0; border-radius: 16px; display: grid; place-items: center; pointer-events: auto; color: var(--paper);
 }
 .pause-btn svg { filter: drop-shadow(0 2px 0 var(--ink)); }
+.hud-powers { position: absolute; left: max(16px, env(safe-area-inset-left, 0px)); top: calc(env(safe-area-inset-top, 0px) + 78px); display: grid; gap: 8px; }
+.pw-pill { display: flex; align-items: center; gap: 6px; width: 132px; box-sizing: border-box; padding: 4px 10px 4px 4px; border-radius: 999px; }
+.pw-pill img { flex: none; width: 34px; height: 34px; border-radius: 50%; }
+.pw-bar { flex: 1; height: 11px; border-radius: 999px; background: rgba(0, 0, 0, .4); border: 2px solid var(--ink); overflow: hidden; }
+.pw-bar span { display: block; height: 100%; background: linear-gradient(var(--gold-hi), var(--gold) 60%, var(--gold-lo)); transform-origin: left center; }
+.pw-pill.low { animation: blink .5s steps(2) infinite; }
+@keyframes blink { 50% { opacity: .45; } }
+.hud-score.x2 { color: var(--sun); }
+.hud-score.x2::after {
+  content: "x2"; position: absolute; right: calc(100% + 8px); top: 50%; transform: translateY(-50%); padding: 7px 9px 6px;
+  border-radius: 12px; border: 3px solid var(--ink); background: linear-gradient(var(--gold-hi), var(--gold) 55%, var(--gold-lo));
+  box-shadow: 0 3px 0 var(--ink); font: 21px/1 var(--font-display); letter-spacing: 0; color: var(--paper); text-shadow: var(--outline-thin);
+}
 .hud-right {
   position: absolute; top: calc(env(safe-area-inset-top, 0px) + 14px); right: max(16px, env(safe-area-inset-right, 0px));
   display: grid; justify-items: end; gap: 8px;
@@ -526,6 +539,7 @@ button.gloss:focus-visible, .coin-pill:focus-visible { outline: 3px solid var(--
 <div id="go" class="go" aria-hidden="true" hidden>GO!</div>
 <div id="nice" class="nice" aria-hidden="true" hidden>Nice jump!</div>
 <div id="hud" class="hud" hidden>
+  <div id="hud-powers" class="hud-powers" aria-label="Active power-ups"></div>
   <button id="pause" class="pause-btn gloss blue" type="button" aria-label="Pause"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><rect x="5.5" y="4" width="4.6" height="16" rx="1.6" fill="currentColor"/><rect x="13.9" y="4" width="4.6" height="16" rx="1.6" fill="currentColor"/></svg></button>
   <div class="hud-right">
     <div class="hud-score gloss navy" aria-label="Score"><span id="hud-score">000000</span></div>
@@ -1538,6 +1552,27 @@ P(new THREE.CylinderGeometry(0.018, 0.018, 0.03, 10), INK, can, [0, -0.012, 0.16
 const NOZZLE = new THREE.Vector3(0, -0.035, 0.162);
 // the kid also lives on layer 1, which is all the crew-unlock screen renders
 kid.traverse((o) => o.layers.enable(1));
+// power-up gear (only shown while a power-up is active)
+const magnetObj = new THREE.Group(); magnetObj.position.set(0, -0.13, 0.05); magnetObj.rotation.set(-Math.PI / 2, 0, 0); magnetObj.visible = false; J.wrL.add(magnetObj);
+P(new THREE.TorusGeometry(0.12, 0.045, 8, 18, Math.PI), '#ff4057', magnetObj, [0, 0, 0], [0, 0, Math.PI], null, 0.012);
+for (const sx of [-1, 1]) P(new THREE.BoxGeometry(0.095, 0.08, 0.095), '#d7dee8', magnetObj, [sx * 0.12, 0.04, 0], null, null, 0.01);
+const jetObj = new THREE.Group(); jetObj.position.set(0, 0.1, -0.3); jetObj.visible = false; J.chest.add(jetObj);
+const jetFlames = [];
+for (const sx of [-1, 1]) {
+  P(new THREE.CapsuleGeometry(0.085, 0.3, 6, 12), '#dfe6ee', jetObj, [sx * 0.11, 0, 0], null, null, 0.012);
+  P(new THREE.CylinderGeometry(0.092, 0.092, 0.08, 12), '#ff9a1f', jetObj, [sx * 0.11, 0.12, 0], null, null, 0.01);
+  P(new THREE.ConeGeometry(0.075, 0.1, 10), '#3a3f4c', jetObj, [sx * 0.11, -0.27, 0], [Math.PI, 0, 0], null, 0.01);
+  const flame = new THREE.Mesh(new THREE.ConeGeometry(0.075, 0.42, 10), new THREE.MeshBasicMaterial({ color: '#ffb02e' }));
+  flame.geometry.translate(0, -0.21, 0); flame.rotation.x = Math.PI; flame.position.set(sx * 0.11, -0.32, 0);
+  const core = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.24, 8), new THREE.MeshBasicMaterial({ color: '#fff3b0' }));
+  core.geometry.translate(0, -0.12, 0); flame.add(core);
+  jetObj.add(flame); jetFlames.push(flame);
+}
+P(new THREE.BoxGeometry(0.1, 0.12, 0.06), '#3a3f4c', jetObj, [0, 0.02, 0.03], null, null, 0.01);
+const soleMeshes = [];
+kid.traverse((o) => { if (o.isMesh && o.material === toon(C.sole)) soleMeshes.push(o); });
+const sneakerMat = toon('#7dff4a', { emissive: '#35ff1a', emissiveIntensity: 0.65 });
+function setSneakers(on) { for (const m of soleMeshes) m.material = on ? sneakerMat : toon(C.sole); }
 
 // backpack + spare cans
 const PACK_POS = new THREE.Vector3(2.5, 0.24, 4.6);
@@ -1785,7 +1820,7 @@ const points = new THREE.Points(pGeo, pMat); points.frustumCulled = false; point
 points.layers.enable(1);
 const pc = new THREE.Color();
 const basisA = new THREE.Vector3(), basisB = new THREE.Vector3(), dirV = new THREE.Vector3();
-function emit(origin, target, n, rainbow = false, spread = 0.11, speed = 1) {
+function emit(origin, target, n, rainbow = false, spread = 0.11, speed = 1, color = null) {
   dirV.subVectors(target, origin).normalize();
   basisA.set(0, 1, 0).cross(dirV).normalize(); basisB.crossVectors(dirV, basisA);
   for (let k = 0; k < n; k++) {
@@ -1795,7 +1830,7 @@ function emit(origin, target, n, rainbow = false, spread = 0.11, speed = 1) {
     pPos[j] = origin.x; pPos[j + 1] = origin.y; pPos[j + 2] = origin.z;
     pVel[j] = dx * sp; pVel[j + 1] = dy * sp; pVel[j + 2] = dz * sp;
     if (rainbow) pc.set(PASS_COLORS[Math.floor(rnd() * PASS_COLORS.length)]);
-    else pc.copy(spray.color).offsetHSL(0, 0, (rnd() - 0.5) * 0.12);
+    else pc.copy(color || spray.color).offsetHSL(0, 0, (rnd() - 0.5) * (color ? 0.25 : 0.12));
     if (rnd() < 0.08) pc.set('#ffffff');
     pCol[j] = pc.r; pCol[j + 1] = pc.g; pCol[j + 2] = pc.b; pCss[i] = spray.css;
     pLife[i] = 0; pMax[i] = 0.55 + rnd() * 0.45; pS0[i] = 0.025 + rnd() * 0.02; pS1[i] = 0.16 + rnd() * 0.26; pA0[i] = 0.42 + rnd() * 0.3; pHit[i] = 0;
@@ -2360,7 +2395,7 @@ function updateRunView(dt) {
   run.camZ += (kid.position.z - run.camZ) * Math.min(1, dt * 15);
   const f = lerp(1, 0.82, portrait), k = kid.position, z = run.camZ, push = mode === 'run' ? 1 - 0.18 * (1 - run.ts) : 1;
   const back = lerp(RUN_CAM.backL, RUN_CAM.backP, portrait) * push, up = lerp(RUN_CAM.upL, RUN_CAM.upP, portrait) * push;
-  chasePos.set(k.x + back, KID_POS.y + up + run.jumpY * 0.25, z);
+  chasePos.set(k.x + back, KID_POS.y + up + run.jumpY * 0.25 + (run.flyY || 0) * 0.92, z);
   chaseLook.set(chasePos.x - Math.cos(RUN_CAM.pitch) * 10, chasePos.y - Math.sin(RUN_CAM.pitch) * 10, z);
   const wE = run.state === 'brake' || run.state === 'end' ? smooth(clamp((run.bt - 0.35) / 0.9)) : 0;
   if (wE > 0) {
@@ -2415,6 +2450,126 @@ const coins = Array.from({ length: COIN_N }, () => ({ x: 0, y: 0, z: 0, on: fals
 const coinDummy = new THREE.Object3D();
 let nextX = ENDLESS.firstX, coinSpin = 0, hudScoreShown = -1, hudCoinsShown = -1;
 const dizzy = [0, 1, 2].map(() => { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: starTex, color: '#ffe14a', transparent: true, depthWrite: false })); sp.scale.setScalar(0.32); sp.visible = false; scene.add(sp); return sp; });
+// ---- power-ups: pickups on the line, timers, effects (durations live here so Upgrades can extend them)
+const POWERS = {
+  magnet: { name: 'Coin Magnet', dur: 10, color: '#ff4057', deep: '#a3102a' },
+  sneakers: { name: 'Super Sneakers', dur: 10, color: '#3bd96b', deep: '#137a3a' },
+  jetpack: { name: 'Jetpack', dur: 7, color: '#ff9a1f', deep: '#b85200' },
+  mult: { name: '2x Multiplier', dur: 12, color: '#a066ff', deep: '#4f1fb8' },
+};
+const PU_TYPES = Object.keys(POWERS);
+const JET_H = 7.2, JET_EXHAUST = new THREE.Vector3(2.4, -3.4, 0), JET_SMOKE = new THREE.Color('#ffb347');
+const P_JET = pose({
+  spine: [0.55, 0, 0], chest: [0.1, 0, 0], neck: [-0.35, 0, 0], head: [-0.35, 0, 0],
+  shL: [0.2, 0, 0.5], elL: [-1.7, 0, 0], shR: [0.2, 0, -0.5], elR: [-1.7, 0, 0],
+  hipL: [0.15, 0, 0.12], kneeL: [0.7, 0, 0], ankL: [0.4, 0, 0], hipR: [0.35, 0, -0.12], kneeR: [0.9, 0, 0], ankR: [0.4, 0, 0],
+});
+const puFaces = {};
+for (const type of PU_TYPES) { const cv = makeCanvas(128, 128), tex = canvasTex(cv); puFaces[type] = { cv, tex, mat: toon('#ffffff', { map: tex }) }; }
+const powerPills = {};
+for (const type of PU_TYPES) {
+  const el = document.createElement('div'); el.className = 'pw-pill gloss navy'; el.hidden = true;
+  el.innerHTML = `<img alt="${POWERS[type].name}" width="34" height="34"><span class="pw-bar"><span></span></span>`;
+  $('hud-powers').appendChild(el); powerPills[type] = el;
+}
+function drawPowerFaces() {
+  for (const type of PU_TYPES) {
+    const { cv, tex } = puFaces[type], g = cv.getContext('2d');
+    g.clearRect(0, 0, 128, 128);
+    const gr = g.createRadialGradient(46, 40, 6, 64, 64, 64);
+    gr.addColorStop(0, '#ffffff'); gr.addColorStop(0.32, POWERS[type].color); gr.addColorStop(1, POWERS[type].deep);
+    g.fillStyle = gr; g.beginPath(); g.arc(64, 64, 63, 0, Math.PI * 2); g.fill();
+    g.lineWidth = 5; g.strokeStyle = 'rgba(255,255,255,.55)'; g.beginPath(); g.arc(64, 64, 53, 0, Math.PI * 2); g.stroke();
+    g.lineJoin = 'round'; g.lineCap = 'round'; g.strokeStyle = INK;
+    if (type === 'magnet') {
+      const U = () => { g.beginPath(); g.moveTo(42, 36); g.lineTo(42, 66); g.arc(64, 66, 22, Math.PI, 0, true); g.lineTo(86, 36); };
+      g.lineCap = 'butt'; U(); g.lineWidth = 28; g.stroke(); U(); g.strokeStyle = '#ffffff'; g.lineWidth = 16; g.stroke();
+      g.fillStyle = '#c9d3df'; g.strokeStyle = INK; g.lineWidth = 5;
+      for (const x of [42, 86]) { g.beginPath(); g.rect(x - 11, 22, 22, 16); g.fill(); g.stroke(); }
+    } else if (type === 'sneakers') {
+      g.beginPath(); g.moveTo(26, 84); g.lineTo(32, 50); g.quadraticCurveTo(46, 42, 60, 54); g.lineTo(82, 64); g.quadraticCurveTo(106, 68, 106, 84); g.closePath();
+      g.fillStyle = '#ffffff'; g.fill(); g.lineWidth = 6; g.stroke();
+      g.fillStyle = '#ffd23f'; g.beginPath(); g.rect(24, 84, 84, 12); g.fill(); g.stroke();
+      g.lineWidth = 4; for (const x of [50, 60, 70]) { g.beginPath(); g.moveTo(x, 58 + (x - 50) * 0.3); g.lineTo(x + 6, 66 + (x - 50) * 0.3); g.stroke(); }
+      g.strokeStyle = '#ffffff'; g.lineWidth = 5; for (const y of [58, 70, 82]) { g.beginPath(); g.moveTo(8, y); g.lineTo(17, y); g.stroke(); }
+    } else if (type === 'jetpack') {
+      g.lineWidth = 6;
+      for (const x of [36, 70]) { roundRect(g, x, 28, 22, 50, 10); g.fillStyle = '#ffffff'; g.fill(); g.stroke(); }
+      g.fillStyle = '#c9d3df'; g.fillRect(58, 42, 12, 14); g.strokeRect(58, 42, 12, 14);
+      for (const x of [47, 81]) { g.beginPath(); g.moveTo(x - 9, 80); g.lineTo(x + 9, 80); g.lineTo(x, 108); g.closePath(); g.fillStyle = '#ffe14a'; g.fill(); g.stroke(); }
+    } else {
+      g.font = FONT_BUBBLE(60); g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.lineWidth = 12; g.strokeText('2x', 64, 70); g.fillStyle = '#ffffff'; g.fillText('2x', 64, 70);
+    }
+    tex.needsUpdate = true;
+    powerPills[type].querySelector('img').src = cv.toDataURL();
+  }
+}
+drawPowerFaces(); redrawers.push(drawPowerFaces);
+const puGeo = new THREE.CylinderGeometry(0.58, 0.58, 0.16, 32); puGeo.rotateX(Math.PI / 2);
+const puCircle = new THREE.CircleGeometry(0.5, 32);
+const puGlowMat = new THREE.SpriteMaterial({
+  map: spriteTex((g, sz) => {
+    const h = sz / 2, gr = g.createRadialGradient(h, h, 0, h, h, h);
+    gr.addColorStop(0, 'rgba(255,255,255,.9)'); gr.addColorStop(0.35, 'rgba(255,240,160,.45)'); gr.addColorStop(1, 'rgba(255,240,160,0)');
+    g.fillStyle = gr; g.fillRect(0, 0, sz, sz);
+  }),
+  color: '#fff4b8', transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+});
+const puPool = Array.from({ length: 6 }, () => {
+  const obj = new THREE.Group(), disc = new THREE.Group();
+  const glow = new THREE.Sprite(puGlowMat); glow.scale.setScalar(2.3); obj.add(glow);
+  const rim = new THREE.Mesh(puGeo, toon('#ffd23f')); rim.castShadow = true; rim.add(new THREE.Mesh(puGeo, outlineMat(0.05))); disc.add(rim);
+  const front = new THREE.Mesh(puCircle, puFaces.magnet.mat); front.position.z = 0.085; disc.add(front);
+  const back = new THREE.Mesh(puCircle, puFaces.magnet.mat); back.position.z = -0.085; back.rotation.y = Math.PI; disc.add(back);
+  obj.add(disc); obj.visible = false; scene.add(obj);
+  return { obj, disc, front, back, active: false, x: 0, lane: 0, type: 'magnet' };
+});
+function placePickup(lane, x, type) {
+  const o = grab(puPool); if (!o) return;
+  Object.assign(o, { active: true, x, lane, type }); o.front.material = o.back.material = puFaces[type].mat;
+  o.obj.position.set(x, 1.49, LANES[lane]); o.obj.visible = true;
+}
+function clearHazards(x0, x1) {
+  for (const t of trainPool) if (t.active && t.x - CAR_L / 2 < x1 && t.x + CAR_L / 2 > x0) release(t);
+  for (const b of jumpPool.concat(rollPool)) if (b.active && b.x > x0 && b.x < x1) release(b);
+}
+function spawnSkyCoins() {
+  const len = Math.max(run.v, ENDLESS.v0) * (run.jetDur - 1.2);
+  let L = run.lane;
+  for (let d = 14, k = 0; d < len; d += 3, k++) { if (k % 9 === 8) L = clamp(L + (rnd() < 0.5 ? -1 : 1), 0, 2); placeCoin(kid.position.x - d, JET_H + 1.0, L); }
+}
+function activatePower(type) {
+  const r = run, P = POWERS[type];
+  if (type === 'jetpack') {
+    if (r.jetT < 0) { r.jetT = 0; r.jetLanding = false; } else r.jetT = Math.min(r.jetT, 0.7);
+    r.jetDur = P.dur; r.jumpT = -1; r.rollT = -1; r.slamT = -1; r.jumpY = 0;
+    jetObj.visible = true;
+    const landX = kid.position.x - Math.max(r.v, ENDLESS.v0) * P.dur;
+    r.noSpawn = [landX - 30, landX + 15]; clearHazards(r.noSpawn[0], r.noSpawn[1]);
+    spawnSkyCoins(); SFX.jet();
+  } else {
+    r.powers[type] = P.dur;
+    if (type === 'magnet') magnetObj.visible = true;
+    if (type === 'sneakers') setSneakers(true);
+  }
+  shout(niceEl, P.name + '!'); SFX.power();
+}
+function endPower(type) {
+  if (type === 'magnet') magnetObj.visible = false;
+  if (type === 'sneakers') setSneakers(false);
+  SFX.powerEnd();
+}
+function resetPowers() {
+  if (run.powers) run.powers.magnet = run.powers.sneakers = run.powers.mult = 0;
+  Object.assign(run, { jetT: -1, flyY: 0, invuln: 0, noSpawn: null, jetLanding: false });
+  magnetObj.visible = false; jetObj.visible = false; setSneakers(false);
+  for (const k of PU_TYPES) powerPills[k].hidden = true;
+  $('hud-score').parentElement.classList.remove('x2');
+}
+SFX.power = () => { if (!audio()) return; const t = actx.currentTime; [659.25, 880, 1174.66, 1567.98].forEach((f, i) => tone(f, t + i * 0.05, 0.16, 'triangle', 0.07)); };
+SFX.powerEnd = () => { if (!audio()) return; tone(880, actx.currentTime, 0.2, 'triangle', 0.05, 440); };
+SFX.jet = () => { if (!audio()) return; burst(actx.currentTime, 0.6, 300, 1800, 0.25); };
 const P_CRASH = pose({
   spine: [-0.5, 0, 0.12], chest: [-0.2, 0, 0], neck: [-0.3, 0, 0], head: [-0.35, 0.2, 0],
   shL: [-0.5, 0, 1.7], elL: [-0.6, 0, 0], shR: [-0.5, 0, -1.7], elR: [-0.6, 0, 0],
@@ -2431,11 +2586,13 @@ function clearEndless() {
   for (const list of [trainPool, jumpPool, rollPool]) for (const o of list) release(o);
   for (const c of coins) c.on = false;
   for (const d of dizzy) d.visible = false;
+  for (const pk of puPool) release(pk);
+  resetPowers();
   hudScoreShown = hudCoinsShown = -1;
 }
 function placeTrain(lane, cx, v) { const o = grab(trainPool); if (!o) return; Object.assign(o, { active: true, x: cx, lane, v }); o.obj.position.set(cx, 0, LANES[lane]); o.obj.visible = true; }
 function placeHurdle(kind, lane, x) { const o = grab(kind === 'jump' ? jumpPool : rollPool); if (!o) return; Object.assign(o, { active: true, x, lane, kind }); o.obj.position.set(x, 0.24, LANES[lane]); o.obj.visible = true; }
-function placeCoin(x, h, lane) { const c = coins.find((k) => !k.on); if (!c) return; Object.assign(c, { on: true, x, y: 0.24 + h, z: LANES[lane] }); }
+function placeCoin(x, h, lane) { const c = coins.find((k) => !k.on); if (!c) return; Object.assign(c, { on: true, x, y: 0.24 + h, z: LANES[lane], mag: false }); }
 function coinLine(lane, x0, n) { for (let k = 0; k < n; k++) placeCoin(x0 - k * 2.4, 1.0, lane); }
 function coinArc(lane, bx) { for (let k = -3; k <= 3; k++) { const dx = k * 1.35; placeCoin(bx - dx, 1.0 + 1.5 * (1 - (dx / 4.6) ** 2), lane); } }
 function otherLane(...not) { return shuffled([0, 1, 2]).find((l) => !not.includes(l)); }
@@ -2452,12 +2609,19 @@ function expressLane(x) {
     for (const t of trainPool) if (t.active && t.lane === L && t.x + CAR_L / 2 > x - 1 && t.x - CAR_L / 2 < xm + 4) ok = false;
     for (const b of jumpPool.concat(rollPool)) if (b.active && b.lane === L && b.x > x - 1 && b.x < xm + 4) ok = false;
     for (const c of coins) if (c.on && Math.abs(c.z - LANES[L]) < 0.5 && c.x > x - 1 && c.x < xm + 4) ok = false;
+    for (const pk of puPool) if (pk.active && pk.lane === L && pk.x > x - 1 && pk.x < xm + 4) ok = false;
     if (ok) return L;
   }
   return -1;
 }
 function spawnSegment(x) {
   const v = Math.max(run.v, ENDLESS.v0), gap = clamp(14 + v * 1.0, 22, 36), n = run.segN++, r = rnd();
+  if (run.noSpawn && x <= run.noSpawn[1] && x >= run.noSpawn[0]) return x - 12;   // keep the jetpack landing strip clear
+  if (n >= 4 && r > 0.86) {                                  // a power-up, with a few coins leading to it
+    const L = Math.floor(rnd() * 3);
+    coinLine(L, x + 8, 3); placePickup(L, x - 1, PU_TYPES[Math.floor(rnd() * PU_TYPES.length)]);
+    return x - 22;
+  }
   if (n < 2 || r < 0.32) {                                   // hurdles: jump barrier and/or roll bar, one lane always open
     const L = Math.floor(rnd() * 3), kind = rnd() < 0.55 ? 'jump' : 'roll';
     placeHurdle(kind, L, x);
@@ -2486,6 +2650,8 @@ function recenter() {
   kid.position.x += s; camera.position.x += s; camLook.x += s; run.camFromPos.x += s; run.camFromLook.x += s;
   for (const list of [trainPool, jumpPool, rollPool]) for (const o of list) if (o.active) { o.x += s; o.obj.position.x += s; }
   for (const c of coins) c.x += s;
+  for (const pk of puPool) if (pk.active) { pk.x += s; pk.obj.position.x += s; }
+  if (run.noSpawn) { run.noSpawn[0] += s; run.noSpawn[1] += s; }
   for (const c of clouds) c.position.x += s;
   nextX += s; run.recentered = true;
 }
@@ -2497,6 +2663,7 @@ function startEndless() {
   Object.assign(run, {
     state: 'go', t: 0, v: 0, phase: 0, camT: 0, ts: 1, lane: 0, laneDir: 1, laneFromZ: LANES[0], laneT: -1, laneZ: LANES[0],
     jumpT: -1, jumpY: 0, rollT: -1, slamT: -1, slamFrom: 0, bumpT: -1, bumpDir: 1, runT: 0, dist: 0, score: 0, coins: 0,
+    scoreF: 0, jumpH: RUN.jumpH, jumpDur: RUN.jumpDur, powers: { magnet: 0, sneakers: 0, mult: 0 }, jetT: -1, jetDur: 0, flyY: 0, invuln: 0, noSpawn: null, jetLanding: false,
     best, beaten: false, crashT: 0, crashReal: 0, knock: 0, shake: 0, recentered: false, paused: false, leaving: false, segN: 0, need: null,
   });
   run.camFromPos.copy(camera.position); run.camFromLook.copy(camLook);
@@ -2523,10 +2690,15 @@ function endlessMove(dir) {
   if (r.paused || (r.state !== 'run' && r.state !== 'go')) return;
   if (dir === 'left' || dir === 'right') {
     const step = dir === 'right' ? 1 : -1, target = r.lane + step;
-    if (target < 0 || target > 2 || laneBlocked(target, kid.position.x)) { bump(step); return; }
+    if (target < 0 || target > 2 || (r.jetT < 0 && laneBlocked(target, kid.position.x))) { bump(step); return; }
     r.laneFromZ = kid.position.z; r.lane = target; r.laneDir = step; r.laneT = 0; SFX.whoosh();
+  } else if (r.jetT >= 0) {
+    return;
   } else if (dir === 'up') {
-    if (r.jumpT < 0 && r.slamT < 0) { r.rollT = -1; r.jumpT = 0; SFX.jump(); }
+    if (r.jumpT < 0 && r.slamT < 0) {
+      const sn = r.powers.sneakers > 0;
+      r.rollT = -1; r.jumpT = 0; r.jumpH = sn ? 2.9 : RUN.jumpH; r.jumpDur = sn ? 1.0 : RUN.jumpDur; SFX.jump();
+    }
   } else if (dir === 'down') {
     if (r.jumpT >= 0) { r.slamFrom = r.jumpY; r.slamT = 0; r.jumpT = -1; }
     if (r.rollT < 0) { r.rollT = 0; SFX.roll(); }
@@ -2540,11 +2712,12 @@ function crash(knock) {
 }
 function checkHits() {
   const r = run, x = kid.position.x;
+  if (r.jetT >= 0 || r.invuln > 0) return;
   const lane = r.laneT >= 0 && r.laneT / ENDLESS.laneDur < 0.5 ? laneOfZ(r.laneFromZ) : r.lane;
   for (const t of trainPool) if (t.active && t.lane === lane && x < t.x + CAR_L / 2 + 0.3 && x > t.x - CAR_L / 2 - 0.3) return crash(t.v ? 7 : 3);
   if (!r.recentered) for (const t of YARD_TRAINS) if (t.lane === lane && x < t.x + CAR_L / 2 + 0.3 && x > t.x - CAR_L / 2 - 0.3) return crash(3);
   for (const b of jumpPool) if (b.active && b.lane === lane && Math.abs(x - b.x) < 0.35 && r.jumpY < 1.1) return crash(2);
-  for (const b of rollPool) if (b.active && b.lane === lane && Math.abs(x - b.x) < 0.35 && r.rollT < 0) return crash(2);
+  for (const b of rollPool) if (b.active && b.lane === lane && Math.abs(x - b.x) < 0.35 && r.rollT < 0 && r.jumpY < 2.5) return crash(2);
 }
 function updateEndlessWorld(g) {
   const kx = kid.position.x;
@@ -2555,17 +2728,27 @@ function updateEndlessWorld(g) {
   for (const b of jumpPool.concat(rollPool)) if (b.active && b.x > kx + 25) release(b);
   if (run.state !== 'crash') spawnAhead();
   coinSpin += g * 4.5;
-  const kz = kid.position.z, ky = kid.position.y + (run.rollT >= 0 ? 0.55 : 1.1);
+  const kz = kid.position.z, ky = kid.position.y + (run.rollT >= 0 ? 0.55 : 1.1), magnet = run.powers.magnet > 0 && run.state !== 'crash';
   for (let i = 0; i < COIN_N; i++) {
     const c = coins[i];
     if (c.on) {
-      if (c.x > kx + 12) c.on = false;
+      if (magnet && !c.mag && c.x < kx + 3 && c.x > kx - 26 && Math.abs(c.y - ky) < 7) c.mag = true;
+      if (c.mag) {
+        const dx = kx - c.x, dy = ky - c.y, dz = kz - c.z, d = Math.hypot(dx, dy, dz), step = (16 + run.v) * 1.5 * g;
+        if (d <= step + 0.6) { c.on = false; run.coins++; SFX.coin(); }
+        else { c.x += (dx / d) * step; c.y += (dy / d) * step; c.z += (dz / d) * step; }
+      } else if (c.x > kx + 12) c.on = false;
       else if (run.state !== 'crash' && Math.abs(c.x - kx) < 0.95 && Math.abs(c.z - kz) < 1.3 && Math.abs(c.y - ky) < 1.3) { c.on = false; run.coins++; SFX.coin(); }
     }
     coinDummy.position.set(c.x, c.y, c.z); coinDummy.rotation.set(0, coinSpin, 0); coinDummy.scale.setScalar(c.on ? 1 : 0); coinDummy.updateMatrix();
     coinMesh.setMatrixAt(i, coinDummy.matrix); coinOutline.setMatrixAt(i, coinDummy.matrix);
   }
   coinMesh.instanceMatrix.needsUpdate = coinOutline.instanceMatrix.needsUpdate = true;
+  for (const pk of puPool) if (pk.active) {
+    pk.obj.position.y = 1.49 + Math.sin(elapsed * 3 + pk.x) * 0.12; pk.disc.rotation.y = elapsed * 2.6;
+    if (pk.x > kx + 12) release(pk);
+    else if (run.state !== 'crash' && Math.abs(pk.x - kx) < 1.1 && Math.abs(pk.obj.position.z - kz) < 1.4 && Math.abs(pk.obj.position.y - ky) < 1.6) { release(pk); activatePower(pk.type); }
+  }
 }
 function updateKidEndless(dt) {
   const r = run;
@@ -2575,7 +2758,7 @@ function updateKidEndless(dt) {
   if (kid.position.x < ENDLESS.recenterAt && r.state !== 'crash') recenter();
   if (r.state === 'go') { r.v = ENDLESS.v0 * smooth(clamp(r.t / 0.75)); if (r.t >= 0.75) r.state = 'run'; }
   else if (r.state === 'run') { r.runT += g; r.v = ENDLESS.v0 + (ENDLESS.vMax - ENDLESS.v0) * (1 - Math.exp(-r.runT / ENDLESS.ramp)); }
-  if (r.state !== 'crash') { kid.position.x -= r.v * g; r.dist += r.v * g; r.score = Math.floor(r.dist * 10); }
+  if (r.state !== 'crash') { kid.position.x -= r.v * g; r.dist += r.v * g; r.scoreF += r.v * g * 10 * (r.powers.mult > 0 ? 2 : 1); r.score = Math.floor(r.scoreF); }
   else { r.crashT += g; r.crashReal += dt; kid.position.x += r.knock * g; r.knock *= Math.exp(-5 * g); }
   updateEndlessWorld(g);
 
@@ -2584,8 +2767,8 @@ function updateKidEndless(dt) {
   r.jumpY = 0;
   if (r.jumpT >= 0) {
     r.jumpT += g;
-    const u = clamp(r.jumpT / RUN.jumpDur);
-    r.jumpY = 4 * RUN.jumpH * u * (1 - u);
+    const u = clamp(r.jumpT / r.jumpDur);
+    r.jumpY = 4 * r.jumpH * u * (1 - u);
     wJ = smooth(clamp(u / 0.18)) * (1 - smooth(clamp((u - 0.78) / 0.22)));
     if (u >= 1) { r.jumpT = -1; r.jumpY = 0; SFX.land(); }
   }
@@ -2613,6 +2796,18 @@ function updateKidEndless(dt) {
     spin = Math.PI * 2 * smooth(clamp((u - 0.1) / 0.75));
     if (u >= 1) r.rollT = -1;
   }
+  // power-up timers and the jetpack flight
+  for (const k of ['magnet', 'sneakers', 'mult']) if (r.powers[k] > 0 && r.state !== 'crash') { r.powers[k] -= g; if (r.powers[k] <= 0) { r.powers[k] = 0; endPower(k); } }
+  let wF = 0;
+  if (r.jetT >= 0) {
+    r.jetT += g;
+    const T = r.jetT, D = r.jetDur;
+    wF = smooth(clamp(T / 0.7)) * (1 - smooth(clamp((T - (D - 0.9)) / 0.9)));
+    if (T > D - 0.9 && !r.jetLanding) { r.jetLanding = true; clearHazards(kid.position.x - 28, kid.position.x + 3); }
+    if (T >= D) { r.jetT = -1; r.jetLanding = false; r.noSpawn = null; jetObj.visible = false; r.invuln = 1.2; SFX.powerEnd(); }
+  }
+  r.flyY = JET_H * wF;
+  if (r.invuln > 0) r.invuln -= g;
   if (r.state === 'run' || r.state === 'go') checkHits();
 
   // pose
@@ -2624,15 +2819,23 @@ function updateKidEndless(dt) {
   if (wJ > 0) blendPose(work, P_RJUMP, wJ);
   if (wR > 0) { blendPose(work, P_ROLL, wR); work.hips.multiply(qE(spin, 0, 0)); }
   const wC = r.state === 'crash' ? smooth(clamp(r.crashT / 0.3)) : 0;
+  if (wF > 0) blendPose(work, P_JET, wF);
   if (wC > 0) { blendPose(work, P_CRASH, wC); work.hips.multiply(qE(-1.25 * wC, 0, 0)); }
   for (const n of NAMES) J[n].quaternion.copy(work[n]);
   kid.rotation.y = r.state === 'go' ? THETA1 + (RUN.heading - THETA1) * inOutCubic(clamp(r.t / 0.45)) : RUN.heading;
   if (r.state === 'go' && r.laneT < 0 && r.bumpT < 0) kid.position.z = lerp(KID_POS.z, LANES[r.lane], smooth(clamp(r.t / 0.5)));
-  const bob = 0.07 * (1 - Math.abs(Math.cos(r.phase))) * (r.jumpT >= 0 || wR > 0 || wC > 0 ? 0 : 1);
-  kid.position.y = KID_POS.y + r.jumpY + bob + hop - 0.62 * wR - 0.5 * wC;
+  const bob = 0.07 * (1 - Math.abs(Math.cos(r.phase))) * (r.jumpT >= 0 || wR > 0 || wC > 0 ? 0 : 1) * (1 - wF);
+  kid.position.y = KID_POS.y + r.jumpY + bob + hop - 0.62 * wR - 0.5 * wC + r.flyY + Math.sin(elapsed * 4) * 0.08 * wF;
   setFace(r.state === 'crash' ? 'surprise' : 'ready');
   blinkEyes(dt);
   kid.updateMatrixWorld(true);
+
+  // jetpack flames + exhaust; blink while landing-safe
+  if (jetObj.visible) {
+    for (const f of jetFlames) f.scale.set(1, 0.75 + rnd() * 0.6, 1);
+    if (wF > 0.15 && !r.paused) for (const f of jetFlames) { f.getWorldPosition(tv2); emit(tv2, tv.copy(tv2).add(JET_EXHAUST), 2, false, 0.35, 0.3, JET_SMOKE); }
+  }
+  kid.visible = !(r.invuln > 0 && Math.floor(elapsed * 14) % 2);
 
   // dizzy stars after a crash
   const showStars = r.state === 'crash' && r.crashT > 0.3;
@@ -2645,6 +2848,12 @@ function updateKidEndless(dt) {
   // HUD
   if (r.score !== hudScoreShown) { hudScoreShown = r.score; $('hud-score').textContent = String(r.score).padStart(6, '0'); }
   if (r.coins !== hudCoinsShown) { hudCoinsShown = r.coins; $('hud-coins').textContent = fmt(r.coins); }
+  for (const k of PU_TYPES) {
+    const full = k === 'jetpack' ? r.jetDur : POWERS[k].dur, left = k === 'jetpack' ? (r.jetT >= 0 ? Math.max(0, r.jetDur - r.jetT) : 0) : r.powers[k], el = powerPills[k];
+    el.hidden = left <= 0;
+    if (left > 0) { el.lastChild.firstChild.style.transform = `scaleX(${(left / full).toFixed(3)})`; el.classList.toggle('low', left < 2); }
+  }
+  $('hud-score').parentElement.classList.toggle('x2', r.powers.mult > 0);
   if (!r.beaten && r.best > 0 && r.score > r.best) {
     r.beaten = true; $('hud-best-label').textContent = 'NEW BEST!'; $('hud-best').classList.add('beaten'); SFX.check();
   }
@@ -2663,7 +2872,8 @@ function peek() {
   if (!run.recentered) for (const t of YARD_TRAINS) if (t.x + CAR_L / 2 < x + 0.5 && t.x + CAR_L / 2 > x - 40) out.push({ kind: 'train', lane: t.lane, dist: x - (t.x + CAR_L / 2) });
   for (const b of jumpPool) if (b.active && b.x < x + 0.3 && b.x > x - 40) out.push({ kind: 'jump', lane: b.lane, dist: x - b.x });
   for (const b of rollPool) if (b.active && b.x < x + 0.3 && b.x > x - 40) out.push({ kind: 'roll', lane: b.lane, dist: x - b.x });
-  return { lane: run.lane, laneT: run.laneT, jumpT: run.jumpT, rollT: run.rollT, state: run.state, v: run.v, x, out, blocked: [0, 1, 2].map((l) => laneBlocked(l, x)) };
+  for (const pk of puPool) if (pk.active && pk.x < x + 0.3 && pk.x > x - 60) out.push({ kind: 'power', type: pk.type, lane: pk.lane, dist: x - pk.x });
+  return { jumpY: run.jumpY, flyY: run.flyY, powers: { ...run.powers }, jetT: run.jetT, invuln: run.invuln, score: run.score, coins: run.coins, dist: run.dist, lane: run.lane, laneT: run.laneT, jumpT: run.jumpT, rollT: run.rollT, state: run.state, v: run.v, x, out, blocked: [0, 1, 2].map((l) => laneBlocked(l, x)) };
 }
 
 // ------------------------------------------------------------------ title menu + shop (daily gift, mystery box)
@@ -3079,7 +3289,7 @@ function frame() {
     emit(nozzleW, spray.target, n);
     spray.queue.push({ p: spray.target.clone(), t: elapsed, stroke: spray.idx + spray.pass * 10 });
   }
-  setHiss(spray.on && phase === 'game' && mode === 'title' && !noRender);
+  setHiss((spray.on && phase === 'game' && mode === 'title' && !noRender) || (phase === 'game' && mode === 'endless' && run.jetT >= 0 && !run.paused));
   while (spray.queue.length && elapsed - spray.queue[0].t > 0.28) {
     const q = spray.queue.shift();
     const last = spray.lastStamp;
@@ -3150,7 +3360,7 @@ Promise.race([
   new Promise((r) => setTimeout(r, 3500)),
 ]).catch(() => {}).then(() => { redrawers.forEach((fn) => fn()); });
 
-window.__railDash = { start: startIntro, tap: onTap, get resState() { return res.state; }, get resFlags() { return res.flags; }, get mode() { return mode; }, get phase() { return phase; }, get unlockState() { return unlock.state; }, get unlockT() { return unlock.t; }, move: doMove, get runState() { return run.state; }, get runNeed() { return run.need; }, get score() { return run.score; }, get coins() { return run.coins; }, peek, get draws() { return renderer.info.render.calls; }, set noRender(v) { noRender = v; } };
+window.__railDash = { start: startIntro, tap: onTap, get resState() { return res.state; }, get resFlags() { return res.flags; }, get mode() { return mode; }, get phase() { return phase; }, get unlockState() { return unlock.state; }, get unlockT() { return unlock.t; }, move: doMove, get runState() { return run.state; }, get runNeed() { return run.need; }, get score() { return run.score; }, get coins() { return run.coins; }, peek, get draws() { return renderer.info.render.calls; }, givePower: (t) => activatePower(t), set noRender(v) { noRender = v; } };
 </script>
 </body>
 </html>
