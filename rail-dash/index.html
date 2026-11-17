@@ -941,19 +941,21 @@ function stampDot(x, y, css) {
 }
 
 // ------------------------------------------------------------------ overhead wires + gantries
+// wires hang over the back and centre tracks only; the front track is the running lane, kept clear for the chase camera
+const WIRED = TRACK_Z.slice(0, 2);
 {
   const steel = '#7f8c9a';
   for (const gx of [-26, -8, 10, 28]) {
     for (const z of [-7.4, 7.4]) P(new THREE.CylinderGeometry(0.15, 0.2, 7.4, 10), steel, scene, [gx, 3.7, z], null, null, 0.025);
     P(new THREE.BoxGeometry(0.3, 0.36, 15.2), steel, scene, [gx, 7.3, 0], null, null, 0.025);
     P(new THREE.BoxGeometry(0.12, 0.12, 15.2), steel, scene, [gx, 6.7, 0], null, null, 0);
-    for (const z of TRACK_Z) P(new THREE.BoxGeometry(0.08, 0.7, 0.08), '#5d6773', scene, [gx, 6.6, z], null, null, 0);
+    for (const z of WIRED) P(new THREE.BoxGeometry(0.08, 0.7, 0.08), '#5d6773', scene, [gx, 6.6, z], null, null, 0);
   }
   const wireMat = toon('#2a2e36');
   const dropGeo = new THREE.BoxGeometry(0.025, 0.62, 0.025);
-  const drops = new THREE.InstancedMesh(dropGeo, wireMat, 3 * 40);
+  const drops = new THREE.InstancedMesh(dropGeo, wireMat, WIRED.length * 40);
   const d = new THREE.Object3D(); let k = 0;
-  for (const z of TRACK_Z) {
+  for (const z of WIRED) {
     for (const y of [6.1, 6.72]) {
       const w = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, TRACK_LEN, 6), wireMat);
       w.rotation.z = Math.PI / 2; w.position.set(0, y, z); scene.add(w);
@@ -1163,7 +1165,7 @@ spareCan(scene, [3.0, 0.29, 4.15], [0, 0.5, Math.PI / 2], '#ff8a2a');
 spareCan(scene, [2.1, 0.34, 4.95], [0, 0, 0.0], '#3ee0ff');
 
 // ------------------------------------------------------------------ tutorial run: lane, barrier
-const RUN = { v: 10.5, laneZ: TRACK_Z[2], barrierX: KID_POS.x - 30, jumpH: 1.6, jumpDur: 0.74, heading: -Math.PI / 2, freezeAt: 6.0 };
+const RUN = { v: 10.5, laneZ: TRACK_Z[2], barrierX: KID_POS.x - 36, jumpH: 1.6, jumpDur: 0.74, heading: -Math.PI / 2, freezeAt: 6.0 };
 const barrier = new THREE.Group(); barrier.position.set(RUN.barrierX, 0.24, RUN.laneZ); scene.add(barrier);
 {
   const cv = makeCanvas(256, 64), g = cv.getContext('2d');
@@ -1431,7 +1433,7 @@ const CAM_P = {
   title: { pos: new THREE.Vector3(2.2, 2.0, 14.2), look: new THREE.Vector3(-1.0, 2.6, 1.6) },
   ready: { pos: new THREE.Vector3(3.4, 1.6, 9.8), look: new THREE.Vector3(1.5, 0.95, 3.8) },
 };
-let distMul = 1, portrait = 0, THETA1 = 0;
+let distMul = 1, portrait = 0, THETA1 = 0, baseFov = 40;
 function resize() {
   const w = window.innerWidth, h = window.innerHeight;
   renderer.setSize(w, h, false);
@@ -1445,7 +1447,7 @@ function resize() {
   // face the camera, angled a little down the tracks so the lunge reads
   const rp = tv2.lerpVectors(CAM.ready.pos, CAM_P.ready.pos, portrait);
   THETA1 = Math.atan2(rp.x - KID_POS.x, rp.z - KID_POS.z) + 0.42;
-  camera.fov = vfov; camera.updateProjectionMatrix();
+  camera.fov = vfov; camera.updateProjectionMatrix(); baseFov = vfov;
   pMat.uniforms.uScale.value = renderer.domElement.height / (2 * Math.tan((vfov * Math.PI) / 360));
 }
 window.addEventListener('resize', resize);
@@ -1553,6 +1555,7 @@ function resetKidProps() {
   kid.position.copy(KID_POS); kid.rotation.set(0, THETA0, 0); titleTheta = THETA0;
   Object.assign(run, { state: 'idle', ts: 1, jumpT: -1, jumpY: 0 });
   promptEl.hidden = true; dimEl.classList.remove('on'); goEl.hidden = true; niceEl.hidden = true;
+  setFov(baseFov);
 }
 function endBoot() {
   window.RD.hide();
@@ -1771,17 +1774,26 @@ function updateKidRun(dt) {
   blinkEyes(dt);
   kid.updateMatrixWorld(true);
 }
+const RUN_CAM = { backL: 7.2, backP: 7.5, upL: 3.9, upP: 4.6, pitch: 0.185, fovL: 50, fovP: 66 };
+function setFov(v) {
+  if (Math.abs(camera.fov - v) < 0.01) return;
+  camera.fov = v; camera.updateProjectionMatrix();
+  pMat.uniforms.uScale.value = renderer.domElement.height / (2 * Math.tan((v * Math.PI) / 360));
+}
 function updateRunView(dt) {
   run.camT += dt;
-  const f = lerp(1, 0.82, portrait), k = kid.position, push = 1 - 0.14 * (1 - run.ts);
-  chasePos.set(k.x + 6.3 * f * push, KID_POS.y + 2.8 * f * push + run.jumpY * 0.3, RUN.laneZ + 0.9 * f);
-  chaseLook.set(k.x - 6, KID_POS.y + 1.2 + run.jumpY * 0.45, RUN.laneZ - 0.2);
+  // runner camera: straight behind and above the kid, centred on his lane, tilted down the track
+  const f = lerp(1, 0.82, portrait), k = kid.position, push = 1 - 0.18 * (1 - run.ts);
+  const back = lerp(RUN_CAM.backL, RUN_CAM.backP, portrait) * push, up = lerp(RUN_CAM.upL, RUN_CAM.upP, portrait) * push;
+  chasePos.set(k.x + back, KID_POS.y + up + run.jumpY * 0.25, RUN.laneZ);
+  chaseLook.set(chasePos.x - Math.cos(RUN_CAM.pitch) * 10, chasePos.y - Math.sin(RUN_CAM.pitch) * 10, RUN.laneZ);
   const wE = run.state === 'brake' || run.state === 'end' ? smooth(clamp((run.bt - 0.35) / 0.9)) : 0;
   if (wE > 0) {
     endPos.set(k.x + 4.4 * f, KID_POS.y + 1.7, RUN.laneZ + 2.0 * f); endLook.set(k.x, KID_POS.y + 1.25, RUN.laneZ);
     chasePos.lerp(endPos, wE); chaseLook.lerp(endLook, wE);
   }
   const kIn = inOutCubic(clamp(run.camT / 1.1));
+  setFov(lerp(baseFov, lerp(RUN_CAM.fovL, RUN_CAM.fovP, portrait), kIn * (1 - wE)));
   camera.position.lerpVectors(run.camFromPos, chasePos, kIn);
   camLook.lerpVectors(run.camFromLook, chaseLook, kIn);
   camera.lookAt(camLook);
