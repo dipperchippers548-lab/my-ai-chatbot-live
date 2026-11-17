@@ -1,0 +1,1 @@
+const shot = (t0, t1, build, o = {}) => { const s = { t0, t1, ...o, ...build() }; s.scene.traverse(x => { if (x.isMesh && !x.isInstancedMesh && !x.material.isMeshStandardMaterial) { const m = Array.isArray(x.material) ? x.material[0] : x.material; const basic = m.isMeshBasicMaterial; x.castShadow = !basic && !m.transparent; x.receiveShadow = !basic; } }); shots.push(s); };
