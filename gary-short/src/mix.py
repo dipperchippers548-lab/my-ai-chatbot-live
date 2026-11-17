@@ -114,9 +114,12 @@ put(sfx, sweep(500, 900, .12) * env(.12), F(50.3) + .3, .05)
 for k in range(3):
     t = F(56.4) + .35 + k * .75; put(sfx, ding() * .6, t + .55, .1); put(sfx, norm(hp(noise(.15), 3000)) * np.exp(-tt(.15) * 20), t + .55, .04); put(sfx, whoosh(.3, 1500, 6000), t, .03)
 
-w = wave.open('build/voice_cut.wav'); v = np.frombuffer(w.readframes(w.getnframes()), dtype=np.int16).astype(float) / 32768; w.close()
-v = np.pad(v, (0, max(0, N - len(v))))[:N]; v = v / np.abs(v).max() * .84
-mus = mus / (np.sqrt(np.mean(mus ** 2)) + 1e-9) * 10 ** (-30 / 20)
+import os
+VOICE = 'build/voice_loud.wav' if os.path.exists('build/voice_loud.wav') else 'build/voice_cut.wav'  # louder, lightly compressed voice
+w = wave.open(VOICE); v = np.frombuffer(w.readframes(w.getnframes()), dtype=np.int16).astype(float) / 32768; w.close()
+v = np.pad(v, (0, max(0, N - len(v))))[:N]; v = v / np.abs(v).max() * .92
+mus = mus / (np.sqrt(np.mean(mus ** 2)) + 1e-9) * 10 ** (-25 / 20)
+sfx = sfx * 1.6
 mix = v + sfx + mus
 fade = np.ones(N); fl = int(.5 * SR); fade[-fl:] = np.linspace(1, 0, fl); mix *= fade
 mix = np.clip(np.tanh(mix * 1.05) / np.tanh(1.05) * .95, -.98, .98)
