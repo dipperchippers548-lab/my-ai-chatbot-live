@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Luckiest+Guy&family=Sedgwick+Ave+Display&display=swap">
 <style>
-/* Layout: full-bleed live 3D yard; HUD pinned to the corners, prompt bottom-center. One deliberate look, no theme switch. */
+/* Layout: full-bleed live 3D yard with no HUD; only the TAP TO PLAY prompt, bottom-center. One deliberate look, no theme switch. */
 :root {
   --sky: #8fd3f4;
   --ink: #1b1030;
@@ -30,42 +30,9 @@ body { font-family: var(--font-body); -webkit-tap-highlight-color: transparent; 
 
 #ui { position: fixed; inset: 0; pointer-events: none; transition: opacity .45s ease; }
 #ui.is-hidden { opacity: 0; }
-#ui.is-hidden .hud-top { transform: translateY(-14px); }
-#ui.is-hidden .tap { transform: translate(-50%, 26px); }
+#ui.is-hidden .btn:focus-visible { outline: 3px solid var(--sun); outline-offset: 3px; }
 
-.hud-top {
-  position: absolute; left: 0; right: 0;
-  top: calc(env(safe-area-inset-top, 0px) + 14px);
-  padding-left: max(16px, env(safe-area-inset-left, 0px));
-  padding-right: max(16px, env(safe-area-inset-right, 0px));
-  display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;
-  transition: transform .45s ease;
-}
-.icon-btn {
-  pointer-events: auto; width: 48px; height: 48px; border-radius: 15px;
-  border: 3px solid var(--ink); background: var(--paper); color: var(--ink);
-  display: grid; place-items: center; cursor: pointer; padding: 0;
-  box-shadow: 0 4px 0 var(--ink); transition: transform .12s ease, box-shadow .12s ease;
-}
-.icon-btn:hover svg { transform: rotate(40deg); }
-.icon-btn svg { transition: transform .3s ease; }
-.icon-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
-.icon-btn:focus-visible, .btn:focus-visible, .switch input:focus-visible + .track { outline: 3px solid var(--sun); outline-offset: 3px; }
-
-.stats { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
-.pill {
-  display: flex; align-items: center; justify-content: space-between; gap: 10px;
-  min-width: 112px; padding: 4px 16px 4px 5px; border-radius: 999px;
-  background: var(--glass); border: 2px solid rgba(255, 255, 255, .6);
-  font: 24px/1 var(--font-display); color: var(--paper);
-  text-shadow: 0 2px 0 var(--ink); font-variant-numeric: tabular-nums;
-}
-.pill .tag {
-  font: 15px/1 var(--font-display); letter-spacing: .06em; color: var(--ink); text-shadow: none;
-  background: var(--sun); border: 2.5px solid var(--ink); border-radius: 999px;
-  height: 28px; padding: 0 9px; display: grid; place-items: center;
-}
-.pill svg { display: block; }
+.tap { transform: translate(-50%, 26px); }
 
 .tap {
   position: absolute; left: 50%; transform: translateX(-50%);
@@ -89,31 +56,6 @@ body { font-family: var(--font-body); -webkit-tap-highlight-color: transparent; 
   border: 2px solid var(--paper); background: var(--glass);
 }
 @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.08); opacity: .8; } }
-
-.panel {
-  position: absolute; pointer-events: auto;
-  top: calc(env(safe-area-inset-top, 0px) + 74px);
-  left: max(16px, env(safe-area-inset-left, 0px));
-  width: min(250px, calc(100vw - 32px)); box-sizing: border-box;
-  background: var(--paper); color: var(--ink); border: 3px solid var(--ink); border-radius: 18px;
-  box-shadow: 0 5px 0 var(--ink); padding: 14px 16px 16px; display: grid; gap: 12px;
-  transform-origin: 20px 0; animation: drop .18s ease-out;
-}
-.panel h2 { margin: 0; font: 20px/1 var(--font-display); letter-spacing: .03em; }
-.row { display: flex; align-items: center; justify-content: space-between; gap: 12px; font: 600 15px/1.2 var(--font-body); }
-.switch { position: relative; display: inline-flex; cursor: pointer; }
-.switch input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
-.switch .track {
-  width: 46px; height: 26px; border-radius: 999px; background: #d9d3e6; border: 2.5px solid var(--ink);
-  position: relative; transition: background .15s ease;
-}
-.switch .track::after {
-  content: ""; position: absolute; top: 2px; left: 2px; width: 17px; height: 17px; border-radius: 50%;
-  background: var(--paper); border: 2px solid var(--ink); transition: transform .15s ease;
-}
-.switch input:checked + .track { background: var(--violet); }
-.switch input:checked + .track::after { transform: translateX(19px); }
-@keyframes drop { from { transform: scale(.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
 .badge {
   --bx: -50%; --by: 0px;
@@ -156,13 +98,9 @@ body { font-family: var(--font-body); -webkit-tap-highlight-color: transparent; 
 }
 #loading.gone { opacity: 0; pointer-events: none; }
 
-@media (max-width: 480px) {
-  .pill { min-width: 96px; font-size: 21px; }
-  .icon-btn { width: 44px; height: 44px; }
-}
 @media (prefers-reduced-motion: reduce) {
   .tap-text { animation-duration: 2.4s; }
-  .badge, .panel { animation: none; }
+  .badge { animation: none; }
 }
 </style>
 </head>
@@ -170,32 +108,6 @@ body { font-family: var(--font-body); -webkit-tap-highlight-color: transparent; 
 <canvas id="scene" aria-label="Rail Dash start scene: a kid spray-painting the RAIL DASH logo onto a subway car"></canvas>
 
 <div id="ui">
-  <div class="hud-top">
-    <button id="gear" class="icon-btn" type="button" aria-label="Settings" aria-expanded="false" aria-controls="settings">
-      <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M10.3 1.8h3.4l.55 2.65c.72.2 1.4.48 2.03.85l2.26-1.5 2.4 2.4-1.5 2.27c.37.63.66 1.31.85 2.03l2.66.54v3.4l-2.66.55a8 8 0 0 1-.85 2.03l1.5 2.26-2.4 2.4-2.26-1.5a8 8 0 0 1-2.03.85l-.55 2.66h-3.4l-.54-2.66a8 8 0 0 1-2.03-.85l-2.27 1.5-2.4-2.4 1.5-2.26a8 8 0 0 1-.85-2.03L1.8 13.7v-3.4l2.65-.54c.2-.72.48-1.4.85-2.03L3.8 5.46l2.4-2.4L8.47 4.6c.63-.37 1.31-.66 2.03-.85zM12 8.4a3.6 3.6 0 1 0 0 7.2 3.6 3.6 0 0 0 0-7.2z"/></svg>
-    </button>
-    <div class="stats">
-      <div class="pill" role="status" aria-label="Coins: 0">
-        <svg viewBox="0 0 28 28" width="30" height="30" aria-hidden="true"><circle cx="14" cy="14" r="12.2" fill="var(--sun)" stroke="var(--ink)" stroke-width="2.6"/><circle cx="14" cy="14" r="7.6" fill="none" stroke="var(--sun-deep)" stroke-width="2"/><path d="M14 10v8" stroke="var(--sun-deep)" stroke-width="3" stroke-linecap="round"/><ellipse cx="9.6" cy="8.6" rx="2.6" ry="1.3" fill="var(--paper)" opacity=".85" transform="rotate(-35 9.6 8.6)"/></svg>
-        <span id="coins">0</span>
-      </div>
-      <div class="pill" role="status" aria-label="High score: 0">
-        <span class="tag">HI</span>
-        <span id="hiscore">0</span>
-      </div>
-    </div>
-  </div>
-
-  <div id="settings" class="panel" role="dialog" aria-label="Settings" hidden>
-    <h2>Settings</h2>
-    <label class="row" for="opt-sound">Sound
-      <span class="switch"><input id="opt-sound" type="checkbox" checked><span class="track"></span></span>
-    </label>
-    <label class="row" for="opt-shadows">Shadows
-      <span class="switch"><input id="opt-shadows" type="checkbox" checked><span class="track"></span></span>
-    </label>
-  </div>
-
   <div class="tap" aria-live="polite">
     <div class="tap-text">TAP TO PLAY</div>
     <div class="tap-hint">or press <kbd>Space</kbd></div>
@@ -1237,23 +1149,17 @@ function setHiss(on) {
 }
 
 // ------------------------------------------------------------------ UI + state machine
-const ui = $('ui'), badge = $('badge'), settings = $('settings'), gear = $('gear');
+const ui = $('ui'), badge = $('badge');
 let mode = 'title', tMode = 0, elapsed = 0;
 let titleTheta = THETA0, thetaFrom = THETA0;
 let toss = null, badgeShown = false, sfxFlags = {};
 const canWorld = new THREE.Vector3();
-try { const hi = Number(localStorage.getItem('railDashHi') || 0); $('hiscore').textContent = String(hi); } catch (e) { /* storage blocked */ }
 
-function openSettings() { settings.hidden = false; gear.setAttribute('aria-expanded', 'true'); }
-function closeSettings() { settings.hidden = true; gear.setAttribute('aria-expanded', 'false'); }
-gear.addEventListener('click', (e) => { e.stopPropagation(); settings.hidden ? openSettings() : closeSettings(); });
-$('opt-sound').addEventListener('change', (e) => { soundOn = e.target.checked; if (soundOn) audio(); else setHiss(false); });
-$('opt-shadows').addEventListener('change', (e) => { sun.castShadow = e.target.checked; });
 
 function startIntro() {
   if (mode !== 'title') return;
   mode = 'start'; tMode = 0; badgeShown = false; sfxFlags = {}; thetaFrom = titleTheta;
-  ui.classList.add('is-hidden'); closeSettings(); setHiss(false);
+  ui.classList.add('is-hidden'); setHiss(false);
   SFX.startle();
 }
 function replay() {
@@ -1264,15 +1170,13 @@ function replay() {
 }
 $('replay').addEventListener('click', (e) => { e.stopPropagation(); replay(); });
 document.addEventListener('click', (e) => {
-  if (e.target.closest('#settings, #gear, #badge')) return;
-  if (!settings.hidden) { closeSettings(); return; }
+  if (e.target.closest('#badge')) return;
   startIntro();
 });
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') { closeSettings(); return; }
   if (e.code === 'Space' || e.key === ' ' || e.key === 'Enter') {
     if (e.target.closest && e.target.closest('button, input, label')) return;
-    e.preventDefault(); closeSettings(); startIntro();
+    e.preventDefault(); startIntro();
   }
 });
 
