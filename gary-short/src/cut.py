@@ -26,7 +26,7 @@ for a, b in cuts + [[dur, dur]]:
     out = np.concatenate([out, seg]); pos = b
 o = wave.open('build/voice_cut.wav', 'w'); o.setnchannels(1); o.setsampwidth(2); o.setframerate(SR); o.writeframes((out * 32767).astype(np.int16).tobytes()); o.close()
 import subprocess, os
-SPEED = 1.0  # the AI voice already has a good pace
+SPEED = 1.15  # snappier, Shorts-style pace (pitch kept)
 os.replace('build/voice_cut.wav', 'build/voice_cut_1x.wav')
 subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', 'build/voice_cut_1x.wav', '-af', 'atempo=%s' % SPEED, 'build/voice_cut.wav'], check=True)
 w = wave.open('build/voice_cut.wav'); fast = w.getnframes() / SR; w.close()
