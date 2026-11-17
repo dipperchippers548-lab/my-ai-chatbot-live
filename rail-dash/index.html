@@ -353,6 +353,20 @@ button.gloss:focus-visible, .coin-pill:focus-visible { outline: 3px solid var(--
 }
 .price-btn:disabled { cursor: default; font-size: 16px; }
 .price-btn.nope { animation: nope .32s ease; }
+.upg-head { margin: 0; text-align: center; font: 700 14px/1.35 var(--font-body); color: var(--paper); text-shadow: 0 1px 2px rgba(27, 16, 48, .75); text-wrap: balance; }
+.upg-list { display: grid; gap: 14px; }
+.upg { display: grid; grid-template-columns: 56px minmax(0, 1fr) 104px; align-items: center; gap: 12px; padding: 12px 12px 14px 10px; border-radius: 20px; }
+.upg-ico { width: 56px; height: 56px; border-radius: 50%; box-sizing: border-box; border: 3px solid var(--ink); box-shadow: 0 3px 0 var(--ink); }
+.upg-info { min-width: 0; display: grid; gap: 7px; }
+.upg h3 { margin: 0; font: 21px/1 var(--font-display); color: var(--paper); text-shadow: var(--outline-thin), 0 3px 0 rgba(27, 16, 48, .4); }
+.upg-bars { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; }
+.upg-bars span { height: 13px; border-radius: 4px; box-sizing: border-box; border: 2px solid var(--ink); background: rgba(12, 26, 64, .6); box-shadow: inset 0 2px 0 rgba(0, 0, 0, .3); }
+.upg-bars span.on { background: linear-gradient(var(--gold-hi), var(--gold) 60%, var(--gold-lo)); box-shadow: inset 0 2px 0 rgba(255, 255, 255, .55); }
+.upg-bars span.pop { animation: bump .5s ease; }
+.upg p { margin: 0; font: 700 13px/1.2 var(--font-body); color: var(--paper); text-shadow: 0 1px 2px rgba(27, 16, 48, .75); font-variant-numeric: tabular-nums; }
+.upg p b { color: var(--sun); font-weight: 800; }
+.upg-buy { min-height: 48px; padding: 6px; gap: 5px; font-size: 19px; }
+.upg-buy svg { width: 22px; height: 22px; flex: none; }
 .tile.nope, .tab.nope { animation: nope .32s ease; }
 
 /* ---------- box opening */
@@ -487,7 +501,7 @@ button.gloss:focus-visible, .coin-pill:focus-visible { outline: 3px solid var(--
     <nav class="navbar" aria-label="Menu">
       <button id="shop-btn" class="tile gloss gold" type="button"><svg class="ic" viewBox="0 0 200 190" aria-hidden="true" style="--b1:#3ab0f0;--b2:#2386d0;--rib:#ff4fa3"><use href="#box-sym"/></svg><span>Shop</span></button>
       <button class="tile gloss blue locked" type="button" data-soon="Crew"><svg class="ic" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="15" fill="#ffd9a8" stroke="var(--ink)" stroke-width="2"/><circle cx="16" cy="19.5" r="9" fill="#c98a5e"/><path d="M6.6 16.5a9.4 9 0 0 1 18.8 0z" fill="#2c5bff" stroke="var(--ink)" stroke-width="1.6"/><path d="M21 16.4h6.5" stroke="#ffd23f" stroke-width="3" stroke-linecap="round"/><circle cx="13" cy="20" r="1.4" fill="var(--ink)"/><circle cx="19" cy="20" r="1.4" fill="var(--ink)"/><path d="M13.4 23.6q2.6 2 5.2 0" stroke="var(--ink)" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg><span>Crew</span><svg class="lock" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="12" rx="3" fill="var(--sun)" stroke="var(--ink)" stroke-width="2.2"/><path d="M8 10V7.2a4 4 0 0 1 8 0V10" fill="none" stroke="var(--ink)" stroke-width="2.6"/><circle cx="12" cy="15.6" r="1.9" fill="var(--ink)"/></svg></button>
-      <button class="tile gloss blue locked" type="button" data-soon="Upgrades"><svg class="ic" viewBox="0 0 40 40" aria-hidden="true"><path d="M9 21 L20 10 L31 21 M9 32 L20 21 L31 32" fill="none" stroke="var(--ink)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 21 L20 10 L31 21 M9 32 L20 21 L31 32" fill="none" stroke="var(--sun)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Upgrades</span><svg class="lock" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="12" rx="3" fill="var(--sun)" stroke="var(--ink)" stroke-width="2.2"/><path d="M8 10V7.2a4 4 0 0 1 8 0V10" fill="none" stroke="var(--ink)" stroke-width="2.6"/><circle cx="12" cy="15.6" r="1.9" fill="var(--ink)"/></svg></button>
+      <button id="upg-btn" class="tile gloss blue" type="button"><svg class="ic" viewBox="0 0 40 40" aria-hidden="true"><path d="M9 21 L20 10 L31 21 M9 32 L20 21 L31 32" fill="none" stroke="var(--ink)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 21 L20 10 L31 21 M9 32 L20 21 L31 32" fill="none" stroke="var(--sun)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Upgrades</span></button>
       <button class="tile gloss blue locked" type="button" data-soon="Settings"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path fill="#eef3fb" stroke="var(--ink)" stroke-width="1.3" fill-rule="evenodd" d="M10.3 1.8h3.4l.55 2.65c.72.2 1.4.48 2.03.85l2.26-1.5 2.4 2.4-1.5 2.27c.37.63.66 1.31.85 2.03l2.66.54v3.4l-2.66.55a8 8 0 0 1-.85 2.03l1.5 2.26-2.4 2.4-2.26-1.5a8 8 0 0 1-2.03.85l-.55 2.66h-3.4l-.54-2.66a8 8 0 0 1-2.03-.85l-2.27 1.5-2.4-2.4 1.5-2.26a8 8 0 0 1-.85-2.03L1.8 13.7v-3.4l2.65-.54c.2-.72.48-1.4.85-2.03L3.8 5.46l2.4-2.4L8.47 4.6c.63-.37 1.31-.66 2.03-.85zM12 8.4a3.6 3.6 0 1 0 0 7.2 3.6 3.6 0 0 0 0-7.2z"/></svg><span>Settings</span><svg class="lock" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="12" rx="3" fill="var(--sun)" stroke="var(--ink)" stroke-width="2.2"/><path d="M8 10V7.2a4 4 0 0 1 8 0V10" fill="none" stroke="var(--ink)" stroke-width="2.6"/><circle cx="12" cy="15.6" r="1.9" fill="var(--ink)"/></svg></button>
     </nav>
   </div>
@@ -590,12 +604,12 @@ button.gloss:focus-visible, .coin-pill:focus-visible { outline: 3px solid var(--
     <div class="coin-pill static" aria-label="Coins"><svg class="pill-ico" viewBox="0 0 28 28" width="46" height="46" aria-hidden="true"><circle cx="14" cy="14" r="12.2" fill="var(--sun)" stroke="var(--ink)" stroke-width="2.4"/><circle cx="14" cy="14" r="8" fill="#ffe36b" stroke="var(--sun-deep)" stroke-width="1.8"/><path d="M14 9.6v8.8" stroke="var(--sun-deep)" stroke-width="3" stroke-linecap="round"/><ellipse cx="9.4" cy="8.4" rx="2.8" ry="1.4" fill="#ffffff" opacity=".9" transform="rotate(-35 9.4 8.4)"/></svg><span id="shop-coins">0</span></div>
   </div>
   <div class="shop-tabs" role="tablist" aria-label="Shop sections">
-    <button class="tab gloss gold" type="button" role="tab" aria-selected="true">Offers</button>
-    <button class="tab gloss navy" type="button" role="tab" aria-selected="false" data-soon="Upgrades">Upgrades<svg class="lock" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="12" rx="3" fill="var(--sun)" stroke="var(--ink)" stroke-width="2.2"/><path d="M8 10V7.2a4 4 0 0 1 8 0V10" fill="none" stroke="var(--ink)" stroke-width="2.6"/><circle cx="12" cy="15.6" r="1.9" fill="var(--ink)"/></svg></button>
+    <button id="tab-offers" class="tab gloss gold" type="button" role="tab" aria-selected="true" aria-controls="panel-offers">Offers</button>
+    <button id="tab-upg" class="tab gloss navy" type="button" role="tab" aria-selected="false" aria-controls="panel-upg">Upgrades</button>
     <button class="tab gloss navy" type="button" role="tab" aria-selected="false" data-soon="Outfits">Outfits<svg class="lock" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="12" rx="3" fill="var(--sun)" stroke="var(--ink)" stroke-width="2.2"/><path d="M8 10V7.2a4 4 0 0 1 8 0V10" fill="none" stroke="var(--ink)" stroke-width="2.6"/><circle cx="12" cy="15.6" r="1.9" fill="var(--ink)"/></svg></button>
   </div>
   <div class="shop-body">
-    <div class="shop-inner">
+    <div id="panel-offers" class="shop-inner" role="tabpanel" aria-labelledby="tab-offers">
       <article class="offer hero gloss blue">
         <div class="offer-art"><svg viewBox="0 0 200 190" aria-hidden="true" style="--b1:#3ab0f0;--b2:#2386d0;--rib:#ff4fa3"><use href="#box-sym"/></svg></div>
         <div class="offer-info">
@@ -614,6 +628,10 @@ button.gloss:focus-visible, .coin-pill:focus-visible { outline: 3px solid var(--
           <button id="buy-daily" class="price-btn gloss green" type="button">Open free</button>
         </div>
       </article>
+    </div>
+    <div id="panel-upg" class="shop-inner" role="tabpanel" aria-labelledby="tab-upg" hidden>
+      <p class="upg-head">Each level makes a power‑up last longer on every run.</p>
+      <div id="upg-list" class="upg-list"></div>
     </div>
   </div>
 </div>
@@ -2466,7 +2484,7 @@ const P_JET = pose({
 });
 const puFaces = {};
 for (const type of PU_TYPES) { const cv = makeCanvas(128, 128), tex = canvasTex(cv); puFaces[type] = { cv, tex, mat: toon('#ffffff', { map: tex }) }; }
-const powerPills = {};
+const powerPills = {}, puIcon = {};
 for (const type of PU_TYPES) {
   const el = document.createElement('div'); el.className = 'pw-pill gloss navy'; el.hidden = true;
   el.innerHTML = `<img alt="${POWERS[type].name}" width="34" height="34"><span class="pw-bar"><span></span></span>`;
@@ -2502,7 +2520,8 @@ function drawPowerFaces() {
       g.lineWidth = 12; g.strokeText('2x', 64, 70); g.fillStyle = '#ffffff'; g.fillText('2x', 64, 70);
     }
     tex.needsUpdate = true;
-    powerPills[type].querySelector('img').src = cv.toDataURL();
+    puIcon[type] = cv.toDataURL(); powerPills[type].querySelector('img').src = puIcon[type];
+    if (!$('shop').hidden && !$('panel-upg').hidden) renderUpgrades();   // fonts arrived while the upgrades list is open
   }
 }
 drawPowerFaces(); redrawers.push(drawPowerFaces);
@@ -2543,13 +2562,13 @@ function activatePower(type) {
   const r = run, P = POWERS[type];
   if (type === 'jetpack') {
     if (r.jetT < 0) { r.jetT = 0; r.jetLanding = false; } else r.jetT = Math.min(r.jetT, 0.7);
-    r.jetDur = P.dur; r.jumpT = -1; r.rollT = -1; r.slamT = -1; r.jumpY = 0;
+    r.jetDur = powerDur(type); r.jumpT = -1; r.rollT = -1; r.slamT = -1; r.jumpY = 0;
     jetObj.visible = true;
-    const landX = kid.position.x - Math.max(r.v, ENDLESS.v0) * P.dur;
+    const landX = kid.position.x - Math.max(r.v, ENDLESS.v0) * r.jetDur;
     r.noSpawn = [landX - 30, landX + 15]; clearHazards(r.noSpawn[0], r.noSpawn[1]);
     spawnSkyCoins(); SFX.jet();
   } else {
-    r.powers[type] = P.dur;
+    r.powers[type] = powerDur(type);
     if (type === 'magnet') magnetObj.visible = true;
     if (type === 'sneakers') setSneakers(true);
   }
@@ -2849,7 +2868,7 @@ function updateKidEndless(dt) {
   if (r.score !== hudScoreShown) { hudScoreShown = r.score; $('hud-score').textContent = String(r.score).padStart(6, '0'); }
   if (r.coins !== hudCoinsShown) { hudCoinsShown = r.coins; $('hud-coins').textContent = fmt(r.coins); }
   for (const k of PU_TYPES) {
-    const full = k === 'jetpack' ? r.jetDur : POWERS[k].dur, left = k === 'jetpack' ? (r.jetT >= 0 ? Math.max(0, r.jetDur - r.jetT) : 0) : r.powers[k], el = powerPills[k];
+    const full = k === 'jetpack' ? r.jetDur : powerDur(k), left = k === 'jetpack' ? (r.jetT >= 0 ? Math.max(0, r.jetDur - r.jetT) : 0) : r.powers[k], el = powerPills[k];
     el.hidden = left <= 0;
     if (left > 0) { el.lastChild.firstChild.style.transform = `scaleX(${(left / full).toFixed(3)})`; el.classList.toggle('low', left < 2); }
   }
@@ -2901,10 +2920,11 @@ function renderShop() {
   const gift = $('buy-daily'), ready = giftReady();
   gift.disabled = !ready; gift.textContent = ready ? 'Open free' : 'Next in ' + untilMidnight();
   $('buy-mystery').classList.toggle('short', w < MYSTERY_PRICE);
+  document.querySelectorAll('.upg-buy[data-price]').forEach((b) => b.classList.toggle('short', w < Number(b.dataset.price)));
 }
-function openShop() {
+function openShop(tab = 'offers') {
   if (phase !== 'game' || mode !== 'title' || !tutorialDone()) return;
-  shopEl.hidden = false; noRender = true; renderShop();
+  shopEl.hidden = false; noRender = true; showTab(tab); renderShop();
   clearInterval(shopTimer); shopTimer = setInterval(renderShop, 1000);
   SFX.pop(); $('shop-back').focus();
 }
@@ -2976,13 +2996,67 @@ $('op-collect').addEventListener('click', (e) => {
 });
 $('op-burst').style.background = $('burst').style.background;
 for (const id of ['shop-btn', 'menu-coins-btn']) $(id).addEventListener('click', (e) => { e.stopPropagation(); openShop(); });
+$('upg-btn').addEventListener('click', (e) => { e.stopPropagation(); openShop('upg'); });
+$('tab-offers').addEventListener('click', (e) => { e.stopPropagation(); showTab('offers'); });
+$('tab-upg').addEventListener('click', (e) => { e.stopPropagation(); showTab('upg'); });
+// ---- upgrades: each level makes a power-up last longer
+const UPGRADES = { magnet: 2, sneakers: 2, jetpack: 1.5, mult: 2 };   // seconds added per level
+const UPG_PRICES = [250, 500, 1000, 2000, 4000, 7500], UPG_MAX = UPG_PRICES.length;
+const upLevel = (t) => clamp(getNum('railDashUp_' + t), 0, UPG_MAX);
+function powerDur(t) { return POWERS[t].dur + upLevel(t) * UPGRADES[t]; }
+const secs = (v) => (Number.isInteger(v) ? v : v.toFixed(1)) + ' s';
+function showTab(name) {
+  for (const [t, btnId, panelId] of [['offers', 'tab-offers', 'panel-offers'], ['upg', 'tab-upg', 'panel-upg']]) {
+    const on = t === name, b = $(btnId);
+    b.setAttribute('aria-selected', String(on)); b.className = 'tab gloss ' + (on ? 'gold' : 'navy'); $(panelId).hidden = !on;
+  }
+  if (name === 'upg') renderUpgrades();
+}
+function renderUpgrades(popType, popLevel) {
+  const list = $('upg-list'), w = getNum('railDashCoins');
+  list.textContent = '';
+  for (const t of PU_TYPES) {
+    const lvl = upLevel(t), now = powerDur(t), maxed = lvl >= UPG_MAX, price = maxed ? 0 : UPG_PRICES[lvl];
+    const row = document.createElement('article'); row.className = 'upg gloss blue';
+    row.innerHTML = `<img class="upg-ico" alt="" width="56" height="56"><div class="upg-info"><h3></h3><div class="upg-bars"></div><p></p></div>
+      <button class="upg-buy price-btn gloss ${maxed ? '' : 'green'}" type="button"${maxed ? ' disabled' : ` data-price="${price}"`}></button>`;
+    row.querySelector('img').src = puIcon[t] || '';
+    row.querySelector('h3').textContent = POWERS[t].name;
+    const bars = row.querySelector('.upg-bars'); bars.setAttribute('aria-label', `Level ${lvl} of ${UPG_MAX}`);
+    for (let i = 0; i < UPG_MAX; i++) { const seg = document.createElement('span'); if (i < lvl) seg.className = 'on'; if (t === popType && i === popLevel - 1) seg.classList.add('pop'); bars.appendChild(seg); }
+    const info = row.querySelector('p');
+    if (maxed) info.textContent = `Lasts ${secs(now)} · max level`;
+    else { info.textContent = `Lasts ${secs(now)} `; const nx = document.createElement('b'); nx.textContent = `→ ${secs(now + UPGRADES[t])}`; info.appendChild(nx); }
+    const btn = row.querySelector('button');
+    if (maxed) btn.textContent = 'MAX';
+    else {
+      btn.innerHTML = `<svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="12.2" fill="var(--sun)" stroke="var(--ink)" stroke-width="2.6"/><circle cx="14" cy="14" r="7.6" fill="#ffe36b" stroke="var(--sun-deep)" stroke-width="2"/><path d="M14 10v8" stroke="var(--sun-deep)" stroke-width="3" stroke-linecap="round"/></svg><span></span>`;
+      btn.lastChild.textContent = fmt(price); btn.classList.toggle('short', w < price);
+      btn.setAttribute('aria-label', `Upgrade ${POWERS[t].name} for ${fmt(price)} coins`);
+      btn.addEventListener('click', (e) => { e.stopPropagation(); buyUpgrade(t, btn); });
+    }
+    list.appendChild(row);
+  }
+}
+function buyUpgrade(t, btn) {
+  const lvl = upLevel(t);
+  if (lvl >= UPG_MAX) return;
+  const price = UPG_PRICES[lvl], w = getNum('railDashCoins');
+  if (w < price) { nudge(btn); showToast(`You need ${fmt(price - w)} more coins`, false); return; }
+  setNum('railDashCoins', w - price); setNum('railDashUp_' + t, lvl + 1);
+  SFX.kaching(); SFX.power();
+  renderUpgrades(t, lvl + 1);
+  clearInterval(shopTimer);
+  countTo($('shop-coins'), w, w - price, 450, '', () => { renderShop(); clearInterval(shopTimer); shopTimer = setInterval(renderShop, 1000); });
+  const p = $('shop-coins').parentElement; p.classList.remove('bump'); void p.offsetWidth; p.classList.add('bump');
+}
 $('shop-back').addEventListener('click', (e) => { e.stopPropagation(); closeShop(); });
 $('buy-daily').addEventListener('click', (e) => { e.stopPropagation(); openBox('daily'); });
 $('buy-mystery').addEventListener('click', (e) => { e.stopPropagation(); openBox('mystery'); });
 for (const el of [shopEl, openerEl]) el.addEventListener('click', (e) => e.stopPropagation());
 const toastEl = $('toast');
-function showToast(text) {
-  toastEl.innerHTML = `<svg class="lock" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="12" rx="3" fill="var(--sun)" stroke="var(--ink)" stroke-width="2.2"/><path d="M8 10V7.2a4 4 0 0 1 8 0V10" fill="none" stroke="var(--ink)" stroke-width="2.6"/><circle cx="12" cy="15.6" r="1.9" fill="var(--ink)"/></svg><span></span>`; toastEl.lastChild.textContent = text;
+function showToast(text, lock = true) {
+  toastEl.innerHTML = (lock ? `<svg class="lock" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="12" rx="3" fill="var(--sun)" stroke="var(--ink)" stroke-width="2.2"/><path d="M8 10V7.2a4 4 0 0 1 8 0V10" fill="none" stroke="var(--ink)" stroke-width="2.6"/><circle cx="12" cy="15.6" r="1.9" fill="var(--ink)"/></svg>` : '') + '<span></span>'; toastEl.lastChild.textContent = text;
   toastEl.hidden = false; toastEl.style.animation = 'none'; void toastEl.offsetWidth; toastEl.style.animation = '';
   clearTimeout(showToast.t); showToast.t = setTimeout(() => { toastEl.hidden = true; }, 1750);
 }
