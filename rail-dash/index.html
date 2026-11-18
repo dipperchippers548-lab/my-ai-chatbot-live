@@ -1920,6 +1920,73 @@ for (const sl of OUTFIT_SLOTS) KM[sl] = toon(C[sl], {});
     for (const sl of OUTFIT_SLOTS) if (o.material === toon(C[sl]) && (sl !== 'shoe' || feet.has(o))) { o.material = KM[sl]; break; }
   });
 }
+// ---- Ned: the second crew member. His meshes hang off the same joints as Dex's, so every animation works for
+// both; only one body is visible at a time (setCharacter).
+const NC = { skin: '#7a4a2e', skinDark: '#5e3620', hair: '#1a1210', beanie: '#ffb627', beanieDark: '#e08e00', jacket: '#2d3a66', jacketDark: '#1f2a4d', shirt: '#f4f1e8', chain: '#ffd23f', pants: '#5b6b3a', pocket: '#4a5830', shoe: '#ffffff', sole: '#e23b3b' };
+const NM = {}; for (const sl in NC) NM[sl] = toon(NC[sl], {});
+const JOINT_SET = new Set(Object.values(J));
+const DEX_PARTS = [];
+for (const j of Object.values(J)) for (const ch of j.children) if (!JOINT_SET.has(ch) && ch !== can) DEX_PARTS.push(ch);
+const NED_PARTS = [];
+const NP = (geo, m, parent, pos, rot, scl, ol) => { const mesh = P(geo, NM[m] || m, parent, pos, rot, scl, ol); NED_PARTS.push(mesh); return mesh; };
+NP(new THREE.SphereGeometry(0.24, 20, 14), 'pants', J.hips, [0, -0.02, 0], null, [1.2, 0.84, 0.95]);
+NP(new THREE.CapsuleGeometry(0.27, 0.26, 6, 18), 'jacket', J.spine, [0, 0.27, 0], null, [1.14, 1, 0.88]);
+NP(new THREE.CylinderGeometry(0.29, 0.29, 0.09, 20), 'jacketDark', J.spine, [0, 0.06, 0], null, [1.12, 1, 0.88], 0.012);
+NP(new THREE.BoxGeometry(0.15, 0.36, 0.05), 'shirt', J.spine, [0, 0.33, 0.232], [0.05, 0, 0], null, 0);
+for (const sx of [-1, 1]) NP(new THREE.BoxGeometry(0.035, 0.38, 0.05), 'jacketDark', J.spine, [sx * 0.095, 0.33, 0.24], [0.05, 0, 0], null, 0);
+NP(new THREE.TorusGeometry(0.09, 0.013, 6, 20, Math.PI), 'chain', J.spine, [0, 0.47, 0.255], [0.2, 0, Math.PI], null, 0);
+NP(new THREE.TorusGeometry(0.15, 0.055, 8, 24), 'jacketDark', J.chest, [0, 0.12, -0.01], [Math.PI / 2 + 0.2, 0, 0], null, 0.01);
+NP(new THREE.CylinderGeometry(0.08, 0.09, 0.16, 12), 'skin', J.neck, [0, 0.03, 0], null, null, 0);
+NP(new THREE.SphereGeometry(0.28, 28, 20), 'skin', J.head, [0, 0.25, 0.01]);
+NP(new THREE.SphereGeometry(0.27, 20, 14), 'hair', J.head, [0, 0.23, -0.05], null, [1.05, 0.9, 1.03]);
+{
+  const bn = joint(J.head, [0, 0.36, -0.01]); bn.rotation.x = -0.16; NED_PARTS.push(bn);
+  P(new THREE.SphereGeometry(0.3, 26, 14, 0, Math.PI * 2, 0, Math.PI / 2), NM.beanie, bn, [0, 0.02, -0.01], null, [1.02, 1.22, 1.06]);
+  P(new THREE.CylinderGeometry(0.31, 0.318, 0.12, 26), NM.beanieDark, bn, [0, 0.02, 0], null, [1.02, 1, 1.06], 0.012);
+  P(new THREE.SphereGeometry(0.075, 12, 10), NM.beanieDark, bn, [0, 0.39, -0.03]);
+}
+const nedFace = { eyes: [], brows: [] };
+for (const sx of [-1, 1]) {
+  const eg = joint(J.head, [sx * 0.1, 0.225, 0.258]); NED_PARTS.push(eg);
+  P(new THREE.SphereGeometry(0.068, 16, 12), '#ffffff', eg, [0, 0, 0], null, [0.85, 1.12, 0.5], 0.008);
+  P(new THREE.SphereGeometry(0.036, 12, 10), INK, eg, [0, -0.005, 0.03], null, [1, 1, 0.6], 0);
+  nedFace.eyes.push(eg);
+  const brow = NP(new THREE.BoxGeometry(0.12, 0.035, 0.03), 'hair', J.head, [sx * 0.1, 0.29, 0.262], [0.2, 0, -sx * 0.12], null, 0);
+  brow.userData.y0 = 0.29; nedFace.brows.push(brow);
+  NP(new THREE.SphereGeometry(0.06, 12, 10), 'skin', J.head, [sx * 0.275, 0.2, -0.01], null, [0.55, 1, 0.8], 0.01);
+}
+NP(new THREE.SphereGeometry(0.045, 12, 10), 'skinDark', J.head, [0, 0.165, 0.288], null, null, 0);
+NP(new THREE.SphereGeometry(0.045, 10, 8), 'hair', J.head, [0, 0.05, 0.245], null, [1.25, 0.8, 0.6], 0);
+nedFace.smile = NP(new THREE.TorusGeometry(0.07, 0.016, 8, 18, Math.PI), '#5a1424', J.head, [0, 0.11, 0.268], [0.25, 0, Math.PI], null, 0);
+nedFace.oh = NP(new THREE.SphereGeometry(0.05, 14, 10), '#5a1424', J.head, [0, 0.095, 0.268], null, [0.85, 1.05, 0.45], 0);
+nedFace.oh.visible = false;
+for (const sx of [1, -1]) {
+  const side = sx > 0 ? 'L' : 'R', sh = J['sh' + side], el = J['el' + side], wr = J['wr' + side];
+  NP(new THREE.SphereGeometry(0.115, 14, 10), 'jacket', sh, [0, 0, 0]);
+  NP(new THREE.CapsuleGeometry(0.1, 0.2, 5, 14), 'jacket', sh, [0, -0.15, 0]);
+  NP(new THREE.CapsuleGeometry(0.092, 0.17, 5, 14), 'jacket', el, [0, -0.12, 0]);
+  NP(new THREE.CylinderGeometry(0.098, 0.098, 0.06, 14), 'jacketDark', el, [0, -0.24, 0], null, null, 0);
+  NP(new THREE.SphereGeometry(0.085, 14, 10), 'skin', wr, [0, -0.04, 0], null, [0.95, 1.1, 0.9]);
+  const hip = J['hip' + side], knee = J['knee' + side], ank = J['ank' + side];
+  NP(new THREE.CapsuleGeometry(0.13, 0.24, 5, 14), 'pants', hip, [0, -0.2, 0]);
+  NP(new THREE.BoxGeometry(0.05, 0.15, 0.14), 'pocket', hip, [sx * 0.125, -0.24, 0.0], null, null, 0.01);
+  NP(new THREE.CapsuleGeometry(0.118, 0.22, 5, 14), 'pants', knee, [0, -0.16, 0]);
+  NP(new THREE.CylinderGeometry(0.135, 0.125, 0.08, 14), 'pocket', knee, [0, -0.31, 0], null, null, 0.012);
+  NP(new THREE.CylinderGeometry(0.11, 0.115, 0.15, 14), 'shoe', ank, [0, -0.02, 0], null, null, 0.012);
+  NP(new THREE.CapsuleGeometry(0.1, 0.17, 5, 14), 'shoe', ank, [0, -0.07, 0.06], [Math.PI / 2, 0, 0], [1.14, 1, 0.95]);
+  NP(new THREE.BoxGeometry(0.23, 0.06, 0.39), 'sole', ank, [0, -0.13, 0.06], null, null, 0.012);
+  NP(new THREE.BoxGeometry(0.02, 0.05, 0.16), 'sole', ank, [sx * 0.108, -0.06, 0.05], [0.3, 0, 0], null, 0);
+}
+for (const pt of NED_PARTS) pt.visible = false;
+const FACES = { dex: { eyes: face.eyes, brows: face.brows, smile: face.smile, oh: face.oh }, ned: nedFace };
+let curChar = 'dex';
+function setCharacter(id) {
+  if (curChar === id || !FACES[id]) return;
+  curChar = id;
+  for (const pt of DEX_PARTS) pt.visible = id === 'dex';
+  for (const pt of NED_PARTS) pt.visible = id === 'ned';
+  Object.assign(face, FACES[id]); face.kind = '';
+}
 // the kid also lives on layer 1, which is all the crew-unlock screen renders
 kid.traverse((o) => o.layers.enable(1));
 // power-up gear (only shown while a power-up is active)
@@ -1940,9 +2007,9 @@ for (const sx of [-1, 1]) {
 }
 P(new THREE.BoxGeometry(0.1, 0.12, 0.06), '#3a3f4c', jetObj, [0, 0.02, 0.03], null, null, 0.01);
 const soleMeshes = [];
-kid.traverse((o) => { if (o.isMesh && o.material === KM.sole) soleMeshes.push(o); });
+kid.traverse((o) => { if (o.isMesh && (o.material === KM.sole || o.material === NM.sole)) { o.userData.baseMat = o.material; soleMeshes.push(o); } });
 const sneakerMat = toon('#7dff4a', { emissive: '#35ff1a', emissiveIntensity: 0.65 });
-function setSneakers(on) { for (const m of soleMeshes) m.material = on ? sneakerMat : KM.sole; }
+function setSneakers(on) { for (const m of soleMeshes) m.material = on ? sneakerMat : m.userData.baseMat; }
 
 // backpack + spare cans
 const PACK_POS = new THREE.Vector3(2.5, 0.24, 4.6);
@@ -3930,11 +3997,11 @@ function renderSettings() {
 function openSettings() { settingsEl.hidden = false; resetArmed = 0; renderSettings(); $('set-close').focus(); SFX.pop(); }
 function closeSettings() { settingsEl.hidden = true; resetArmed = 0; if (phase === 'game' && mode === 'endless' && run.paused) $('resume').focus(); }
 function resetProgress() {
-  for (const k of ['railDashCoins', 'railDashHigh', 'railDashGiftDay', 'railDashTutorial', 'railDashMenu', 'railDashCrew', 'railDashRuns', 'railDashCoinsAll', 'railDashMissions', ...PU_TYPES.map((t) => 'railDashUp_' + t), ...CREW.map((c) => 'railDashWear_' + c.id), ...Object.keys(OUTFITS).map((k2) => 'railDashOwn_' + k2)]) {
+  for (const k of ['railDashCoins', 'railDashHigh', 'railDashGiftDay', 'railDashTutorial', 'railDashMenu', 'railDashCrew', 'railDashRuns', 'railDashCoinsAll', 'railDashMissions', 'railDashChar', ...CREW.map((c) => 'railDashOwnChar_' + c.id), ...PU_TYPES.map((t) => 'railDashUp_' + t), ...CREW.map((c) => 'railDashWear_' + c.id), ...Object.keys(OUTFITS).map((k2) => 'railDashOwn_' + k2)]) {
     delete memStore[k];
     try { localStorage.removeItem(k); } catch (e) { /* storage blocked */ }
   }
-  tutorialDoneMem = false; MS = newMissionSet(1); applyWorn(); thumbs.dex = null; hideCrew();
+  tutorialDoneMem = false; MS = newMissionSet(1); applyWorn(); for (const k in thumbs) if (k !== 'sil') thumbs[k] = null; hideCrew();
   cancelCountdown(); settingsEl.hidden = true; pauseMenu.hidden = true; hud.hidden = true; run.paused = false; music.stop();
   mode = 'title'; tMode = 0; ui.classList.add('is-hidden'); menuEl.hidden = true;
   forceUnlock = true; phase = 'boot'; window.RD.restart();     // straight back to a first launch
@@ -4077,7 +4144,10 @@ msReady = true; renderMissionsTile();
 
 // ------------------------------------------------------------------ crew: character select (Dex, outfits, roster)
 // CREW is a list so more members can join later; each lists the outfits they can wear
-const CREW = [{ id: 'dex', name: 'Dex', role: 'Crew founder', outfits: ['original', 'night', 'lime', 'gold'] }];
+const CREW = [
+  { id: 'dex', name: 'Dex', role: 'Crew founder', price: 0, outfits: ['original', 'night', 'lime', 'gold'] },
+  { id: 'ned', name: 'Ned', role: 'Hype man', price: 18000, outfits: ['nedStreet', 'nedHoops', 'nedFrost', 'nedMidnight'] },
+];
 const OUTFITS = {
   original: { name: 'Original', price: 0, about: 'The orange hoodie he started the crew in.', c: {} },
   night: {
@@ -4092,18 +4162,50 @@ const OUTFITS = {
     name: 'Gold Rush', price: 15000, about: "Solid gold, for the crew's top runner.",
     c: { hoodie: '#ffcf3a', hoodieDark: '#e0a312', cap: '#22163d', capDark: '#140c26', brim: '#ffcf3a', pants: '#22163d', cuff: '#ffcf3a', shoe: '#ffcf3a', sole: '#22163d', phones: '#ffffff' },
   },
+  nedStreet: { who: 'ned', name: 'Street', price: 0, about: 'Mustard beanie, navy jacket, cargo pants.', c: {} },
+  nedHoops: {
+    who: 'ned', name: 'Hoops', price: 4000, about: 'Game-day red from the beanie down.',
+    c: { beanie: '#e23b3b', beanieDark: '#a81d2a', jacket: '#e23b3b', jacketDark: '#f4f1e8', shirt: '#ffffff', pants: '#2b2f3a', pocket: '#1f222b', shoe: '#ffffff', sole: '#e23b3b' },
+  },
+  nedFrost: {
+    who: 'ned', name: 'Frost', price: 9000, about: 'An ice-white puffer with icy blue trim.',
+    c: { beanie: '#bfe9ff', beanieDark: '#7cc8f0', jacket: '#f2f6fb', jacketDark: '#9fb4cc', shirt: '#3ee0ff', pants: '#3d5a80', pocket: '#2f4866', shoe: '#bfe9ff', sole: '#ffffff', chain: '#e8edf5' },
+  },
+  nedMidnight: {
+    who: 'ned', name: 'Midnight', price: 20000, about: 'All black with a purple glow.',
+    c: { beanie: '#2a2140', beanieDark: '#7c4dff', jacket: '#1b1530', jacketDark: '#7c4dff', shirt: '#7c4dff', pants: '#1b1530', pocket: '#2a2140', shoe: '#7c4dff', sole: '#1b1530', chain: '#e8edf5' },
+  },
 };
 const COIN_ICON = '<svg viewBox="0 0 28 28" width="26" height="26" aria-hidden="true"><circle cx="14" cy="14" r="12.2" fill="var(--sun)" stroke="var(--ink)" stroke-width="2.6"/><circle cx="14" cy="14" r="7.6" fill="#ffe36b" stroke="var(--sun-deep)" stroke-width="2"/><path d="M14 10v8" stroke="var(--sun-deep)" stroke-width="3" stroke-linecap="round"/></svg>';
 const CHECK_ICON = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const CHECK_BIG = '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="var(--ink)" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-const ownsOutfit = (id) => id === 'original' || getNum('railDashOwn_' + id) > 0;
+const charOf = (id) => CREW.find((m) => m.id === ((OUTFITS[id] && OUTFITS[id].who) || 'dex')) || CREW[0];
+const ownsChar = (m) => !m.price || getNum('railDashOwnChar_' + m.id) > 0;
+const ownsOutfit = (id) => OUTFITS[id].price === 0 || getNum('railDashOwn_' + id) > 0;
 function wornIdx(m = CREW[0]) { return Math.min(Math.max(0, Math.floor(getNum('railDashWear_' + m.id))), m.outfits.length - 1); }
-const wornId = () => CREW[0].outfits[wornIdx()];
-function applyOutfit(id) { const c = (OUTFITS[id] || OUTFITS.original).c; for (const sl of OUTFIT_SLOTS) KM[sl].color.set(c[sl] || C[sl]); }
+function selChar() { const m = CREW[Math.floor(getNum('railDashChar'))] || CREW[0]; return ownsChar(m) ? m : CREW[0]; }
+const wornId = () => { const m = selChar(); return m.outfits[wornIdx(m)]; };
+const CHAR_LOOK = { dex: { mats: KM, base: C }, ned: { mats: NM, base: NC } };
+function applyOutfit(id) { const o = OUTFITS[id] || OUTFITS.original, L = CHAR_LOOK[o.who || 'dex']; for (const sl in L.mats) L.mats[sl].color.set(o.c[sl] || L.base[sl]); }
 // a little head-and-shoulders portrait in the outfit's colors
 function outfitSvg(id, cls = '') {
-  const c = Object.assign({}, C, OUTFITS[id].c), k = '#1b1030';
-  return `<svg${cls ? ` class="${cls}"` : ''} viewBox="0 0 40 40" aria-hidden="true">`
+  const o = OUTFITS[id], k = '#1b1030', open = `<svg${cls ? ` class="${cls}"` : ''} viewBox="0 0 40 40" aria-hidden="true">`;
+  if (o.who === 'ned') {
+    const c = Object.assign({}, NC, o.c);
+    return open
+      + `<path d="M4.5 40.5v-3.2c0-6.6 6.6-10.3 15.5-10.3s15.5 3.7 15.5 10.3v3.2z" fill="${c.jacket}" stroke="${k}" stroke-width="2.2" stroke-linejoin="round"/>`
+      + `<path d="M16 28.5l4 11.5 4-11.5z" fill="${c.shirt}" stroke="${k}" stroke-width="1.4" stroke-linejoin="round"/>`
+      + `<path d="M13 28.5q7 5 14 0" fill="none" stroke="${c.jacketDark}" stroke-width="3" stroke-linecap="round"/>`
+      + `<path d="M16.5 31q3.5 4 7 0" fill="none" stroke="${c.chain}" stroke-width="1.6" stroke-linecap="round"/>`
+      + `<circle cx="20" cy="18" r="9.6" fill="${NC.skin}" stroke="${k}" stroke-width="2.2"/>`
+      + `<path d="M10.2 15.4C10.2 7 14.6 3.2 20 3.2S29.8 7 29.8 15.4Z" fill="${c.beanie}" stroke="${k}" stroke-width="2" stroke-linejoin="round"/>`
+      + `<path d="M9.4 13.4h21.2v4.6H9.4z" fill="${c.beanieDark}" stroke="${k}" stroke-width="2" stroke-linejoin="round"/>`
+      + `<circle cx="20" cy="3.4" r="2.6" fill="${c.beanieDark}" stroke="${k}" stroke-width="1.6"/>`
+      + `<circle cx="16.6" cy="21.4" r="1.5" fill="${k}"/><circle cx="23.4" cy="21.4" r="1.5" fill="${k}"/>`
+      + `<path d="M17 24.6q3 2.2 6 0" stroke="${k}" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M19 27.4h2" stroke="${NC.hair}" stroke-width="1.8" stroke-linecap="round"/></svg>`;
+  }
+  const c = Object.assign({}, C, o.c);
+  return open
     + `<path d="M4.5 40.5v-3.2c0-6.6 6.6-10.3 15.5-10.3s15.5 3.7 15.5 10.3v3.2z" fill="${c.hoodie}" stroke="${k}" stroke-width="2.2" stroke-linejoin="round"/>`
     + `<path d="M13.5 29q6.5 4.4 13 0" fill="none" stroke="${c.hoodieDark}" stroke-width="2.6" stroke-linecap="round"/>`
     + `<circle cx="11.6" cy="28.6" r="2.6" fill="${c.phones}" stroke="${k}" stroke-width="1.6"/><circle cx="28.4" cy="28.6" r="2.6" fill="${c.phones}" stroke="${k}" stroke-width="1.6"/>`
@@ -4114,60 +4216,78 @@ function outfitSvg(id, cls = '') {
     + `<circle cx="16.6" cy="19.2" r="1.5" fill="${k}"/><circle cx="23.4" cy="19.2" r="1.5" fill="${k}"/>`
     + `<path d="M17 22.7q3 2.2 6 0" stroke="${k}" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>`;
 }
-// put the worn outfit on Dex everywhere: the 3D kid, the Crew tile and the in-run high score badge
+// put the chosen crew member in their worn outfit everywhere: the 3D kid, the Crew tile and the in-run badge
 function applyWorn() {
   const id = wornId();
-  applyOutfit(id);
+  setCharacter(selChar().id); applyOutfit(id);
   for (const t of [$('crew-btn'), $('crew-tab')]) if (t && t.firstElementChild) t.firstElementChild.outerHTML = outfitSvg(id, 'ic');
   $('hud-face').innerHTML = outfitSvg(id);
 }
-// the Buy / Wear / Wearing button, shared by the Crew screen and the shop's Outfits tab
-function outfitBtnState(btn, i) {
-  const id = CREW[0].outfits[i], o = OUTFITS[id], w = getNum('railDashCoins'), base = btn.dataset.base;
-  const st = i === wornIdx() ? 'worn' : ownsOutfit(id) ? 'own' : w < o.price ? 'short' : 'buy';
-  if (btn.dataset.state === st) return;
-  btn.dataset.state = st; btn.removeAttribute('aria-label');
-  const big = !!btn.dataset.labels, [lWorn, lOwn] = (btn.dataset.labels || 'Wearing|Wear').split('|');
+// the Buy / Wear / Select button, shared by the Crew screen (big: Selected|Select) and the shop's Outfits tab
+function outfitBtnState(btn, id) {
+  const o = OUTFITS[id], m = charOf(id), w = getNum('railDashCoins'), base = btn.dataset.base, big = !!btn.dataset.labels;
+  let st, price = o.price;
+  if (!ownsChar(m)) { st = w < m.price ? 'cshort' : 'char'; price = m.price; }
+  else if (!ownsOutfit(id)) st = w < o.price ? 'short' : 'buy';
+  else st = m.outfits[wornIdx(m)] === id && (!big || selChar() === m) ? 'worn' : 'own';
+  if (btn.dataset.state === st + id) return;
+  btn.dataset.state = st + id; btn.removeAttribute('aria-label');
+  const [lWorn, lOwn] = (btn.dataset.labels || 'Wearing|Wear').split('|');
   if (st === 'worn') { btn.className = base + (big ? ' gloss blue' : ' gloss navy'); btn.innerHTML = (big ? '' : CHECK_BIG) + `<span>${lWorn}</span>`; }
   else if (st === 'own') { btn.className = base + ' gloss green'; btn.textContent = lOwn; }
   else {
-    btn.className = base + ' gloss green' + (st === 'short' ? ' short' : ''); btn.innerHTML = COIN_ICON + `<span>${fmt(o.price)}</span>`;
-    btn.setAttribute('aria-label', `Buy ${o.name} for ${fmt(o.price)} coins`);
+    btn.className = base + ' gloss green' + (st === 'short' || st === 'cshort' ? ' short' : ''); btn.innerHTML = COIN_ICON + `<span>${fmt(price)}</span>`;
+    btn.setAttribute('aria-label', st === 'char' || st === 'cshort' ? `Unlock ${m.name} for ${fmt(price)} coins` : `Buy ${o.name} for ${fmt(price)} coins`);
   }
 }
 function bumpCoinPills() {
   for (const id of ['crew-coins', 'shop-coins']) { const p = $(id).parentElement; p.classList.remove('bump'); void p.offsetWidth; p.classList.add('bump'); }
 }
-function outfitAct(i, btn) {
-  const id = CREW[0].outfits[i], o = OUTFITS[id], w = getNum('railDashCoins');
-  if (i === wornIdx()) { nudge(btn); showToast(`Dex is already wearing ${o.name}`, false); return; }
-  if (!ownsOutfit(id)) {
+function outfitAct(id, btn) {
+  const o = OUTFITS[id], m = charOf(id), w = getNum('railDashCoins'), crewMode = btn === crewAct;
+  let i = m.outfits.indexOf(id);
+  if (!ownsChar(m)) {
+    if (w < m.price) { nudge(btn); showToast(`You need ${fmt(m.price - w)} more coins`, false); return; }
+    setNum('railDashCoins', w - m.price); setNum('railDashOwnChar_' + m.id, 1);
+    if (!ownsOutfit(id)) i = 0;
+    SFX.kaching(); SFX.fanfare(); confetti(); bumpCoinPills(); showToast(`${m.name} joined the crew!`, false);
+  } else if (!ownsOutfit(id)) {
     if (w < o.price) { nudge(btn); showToast(`You need ${fmt(o.price - w)} more coins`, false); return; }
     setNum('railDashCoins', w - o.price); setNum('railDashOwn_' + id, 1);
     SFX.kaching(); SFX.fanfare(); confetti(); bumpCoinPills(); showToast(`${o.name} unlocked!`, false);
-  } else { SFX.check(); showToast(`Dex is wearing ${o.name}`, false); }
-  setNum('railDashWear_' + CREW[0].id, i); applyWorn(); thumbs.dex = null;
-  if (phase === 'crew') { crew.sel = i; crew.danceT = 0; renderCrew(); }
+  } else if (m.outfits[wornIdx(m)] === id && (!crewMode || selChar() === m)) {
+    nudge(btn); showToast(crewMode ? `${m.name} is already selected` : `${m.name} is already wearing ${o.name}`, false); return;
+  } else { SFX.check(); showToast(crewMode ? `Playing as ${m.name}` : `${m.name} is wearing ${o.name}`, false); }
+  setNum('railDashWear_' + m.id, i);
+  if (crewMode) setNum('railDashChar', CREW.indexOf(m));
+  thumbs[m.id] = null; applyWorn();
+  if (phase === 'crew') { crew.sel = i; crew.danceT = 0; showCrewMember(); renderCrew(); }
   if (!shopEl.hidden) renderShop();
 }
+// shop Outfits tab: every outfit of every crew member you own
 function renderOutfitShop() {
-  const list = $('outfit-list'), ids = CREW[0].outfits;
-  if (!list.childElementCount) ids.forEach((id, i) => {
-    const o = OUTFITS[id], card = document.createElement('article');
-    card.className = 'offer gloss blue';
-    card.innerHTML = `<div class="offer-art">${outfitSvg(id)}</div><div class="offer-info"><span class="offer-kicker">Dex outfit</span><h3></h3><p></p><button class="price-btn of-buy" type="button"></button></div>`;
-    card.querySelector('h3').textContent = o.name; card.querySelector('p').textContent = o.about;
-    const b = card.querySelector('button'); b.dataset.base = 'price-btn of-buy';
-    b.addEventListener('click', (e) => { e.stopPropagation(); outfitAct(i, b); });
-    list.append(card);
-  });
-  list.querySelectorAll('.of-buy').forEach((b, i) => outfitBtnState(b, i));
+  const list = $('outfit-list'), ids = CREW.filter(ownsChar).flatMap((m) => m.outfits);
+  if (list.dataset.ids !== ids.join()) {
+    list.textContent = ''; list.dataset.ids = ids.join();
+    for (const id of ids) {
+      const o = OUTFITS[id], card = document.createElement('article');
+      card.className = 'offer gloss blue';
+      card.innerHTML = `<div class="offer-art">${outfitSvg(id)}</div><div class="offer-info"><span class="offer-kicker"></span><h3></h3><p></p><button class="price-btn of-buy" type="button"></button></div>`;
+      card.querySelector('.offer-kicker').textContent = charOf(id).name + ' outfit';
+      card.querySelector('h3').textContent = o.name; card.querySelector('p').textContent = o.about;
+      const b = card.querySelector('button'); b.dataset.base = 'price-btn of-buy'; b.dataset.id = id;
+      b.addEventListener('click', (e) => { e.stopPropagation(); outfitAct(id, b); });
+      list.append(card);
+    }
+  }
+  list.querySelectorAll('.of-buy').forEach((b) => outfitBtnState(b, b.dataset.id));
 }
 $('tab-outfits').addEventListener('click', (e) => { e.stopPropagation(); showTab('outfits'); });
 
 // a hoodie icon in the outfit's colors, for the outfit picker
 function hoodieSvg(id) {
-  const c = Object.assign({}, C, OUTFITS[id].c), k = '#1b1030';
+  const o = OUTFITS[id], b = Object.assign({}, o.who === 'ned' ? NC : C, o.c), k = '#1b1030';
+  const c = { hoodie: b.hoodie || b.jacket, hoodieDark: b.hoodieDark || b.jacketDark };
   return `<svg viewBox="0 0 40 40" aria-hidden="true">`
     + `<path d="M14 7.5Q20 4 26 7.5L33.5 11.5L38 21L32 23.6L29.6 18.6V35.5H10.4V18.6L8 23.6L2 21L6.5 11.5Z" fill="${c.hoodie}" stroke="${k}" stroke-width="2.2" stroke-linejoin="round"/>`
     + `<path d="M15 8Q20 15.5 25 8" fill="${c.hoodieDark}" stroke="${k}" stroke-width="1.8" stroke-linejoin="round"/>`
@@ -4180,12 +4300,18 @@ const crewEl = $('crew'), crewBg = $('crew-bg'), crewStage = $('crew-stage'), cr
 const CREW_REST = 0.32;      // the 3/4 turn he settles back to
 const crew = { who: 0, sel: 0, yaw: CREW_REST, vel: 0, drag: null, dragged: false, idle: 0, danceT: -1, hopT: -1, spinT: -1, busy: false };
 crewAct.dataset.base = 'crew-select'; crewAct.dataset.labels = 'Selected|Select';
-// roster: the crew so far plus "?" spots for members still to come; Dex stands in the middle
-const ROSTER = ['?', '?', 'dex', '?', '?'];
+// roster: the crew so far plus "?" spots for members still to come
+const ROSTER = ['?', 'dex', 'ned', '?', '?'];
 const CR_LOCK = '<svg class="cr-lock" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="12" rx="3" fill="var(--sun)" stroke="var(--ink)" stroke-width="2.4"/><path d="M8 10V7.2a4 4 0 0 1 8 0V10" fill="none" stroke="var(--ink)" stroke-width="2.8"/><circle cx="12" cy="15.6" r="1.9" fill="var(--ink)"/></svg>';
-const CREW_FOV = 30;          // a narrow lens so Dex looks like a clean character shot, not a close-up
+const CREW_FOV = 30;          // a narrow lens so the crew member looks like a clean character shot, not a close-up
 const SIL_POSES = [[P_D_GROOVE_A, 0.5], [P_READY, -0.25], [P_D_FINAL, 0.3], [P_D_GROOVE_B, -0.5]];
-const thumbs = { dex: null, sil: [] };
+const thumbs = { sil: [] };
+function showCrewMember() { const m = CREW[crew.who]; setCharacter(m.id); applyOutfit(m.outfits[crew.sel]); }
+function viewMember(i) {
+  if (i === crew.who) { if (crew.danceT < 0) { crew.danceT = 0; SFX.ready(); } return; }
+  crew.who = i; crew.sel = wornIdx(CREW[i]); showCrewMember();
+  crew.spinT = 0; crew.hopT = 0; crew.idle = 0; SFX.pop(); renderCrew();
+}
 function renderRoster() {
   const box = $('crew-roster');
   if (!box.childElementCount) {
@@ -4198,24 +4324,30 @@ function renderRoster() {
         b.insertAdjacentHTML('beforeend', '<span class="ro-q" aria-hidden="true">?</span>');
         b.addEventListener('click', (e) => { e.stopPropagation(); showToast('New crew members are coming soon'); SFX.bump(); });
       } else {
-        const m = CREW.find((c) => c.id === who);
-        b.dataset.who = who; b.setAttribute('aria-label', m.name + ', selected');
-        b.insertAdjacentHTML('beforeend', `<span class="ro-check" aria-hidden="true">${CHECK_ICON}</span>`);
-        b.addEventListener('click', (e) => { e.stopPropagation(); if (crew.danceT < 0) { crew.danceT = 0; SFX.ready(); } });
+        b.dataset.who = who;
+        b.insertAdjacentHTML('beforeend', `<span class="ro-check" aria-hidden="true">${CHECK_ICON}</span>${CR_LOCK}`);
+        b.addEventListener('click', (e) => { e.stopPropagation(); viewMember(CREW.findIndex((c) => c.id === who)); });
       }
       box.append(b);
     });
   }
+  const using = selChar().id;
   for (const b of box.children) {
-    const img = b.firstElementChild, src = b.dataset.who ? thumbs.dex : thumbs.sil[Number(b.dataset.sil)];
-    b.classList.toggle('on', !!b.dataset.who && CREW[crew.who].id === b.dataset.who);
+    const img = b.firstElementChild, who = b.dataset.who, src = who ? thumbs[who] : thumbs.sil[Number(b.dataset.sil)];
+    if (who) {
+      const m = CREW.find((c) => c.id === who), owned = ownsChar(m);
+      b.classList.toggle('on', CREW[crew.who].id === who);
+      b.querySelector('.ro-check').hidden = using !== who;
+      b.querySelector('.cr-lock').style.display = owned ? 'none' : '';
+      b.setAttribute('aria-label', m.name + (using === who ? ', playing' : owned ? '' : `, locked, ${fmt(m.price)} coins`));
+    }
     if (src && img.src !== src) img.src = src;
     img.hidden = !src;
   }
 }
 function renderCrew() {
-  const m = CREW[crew.who], ids = m.outfits, row = $('crew-outfits');
-  $('crew-name').textContent = m.name; $('crew-role').textContent = m.role;
+  const m = CREW[crew.who], ids = m.outfits, row = $('crew-outfits'), mOwned = ownsChar(m);
+  $('crew-name').textContent = m.name; $('crew-role').textContent = mOwned ? m.role : `${m.role} · ${fmt(m.price)} coins`;
   $('crew-coins').textContent = fmt(getNum('railDashCoins')); $('crew-best').textContent = fmt(getNum('railDashHigh'));
   if (row.dataset.who !== m.id) {
     row.textContent = ''; row.dataset.who = m.id;
@@ -4229,13 +4361,13 @@ function renderCrew() {
   }
   const worn = wornIdx(m);
   ids.forEach((id, i) => {
-    const b = row.children[i], o = OUTFITS[id], owned = ownsOutfit(id), on = i === crew.sel;
+    const b = row.children[i], o = OUTFITS[id], owned = mOwned && ownsOutfit(id), on = i === crew.sel;
     b.setAttribute('aria-checked', String(on)); b.tabIndex = on ? 0 : -1;
     b.querySelector('.cr-lock').style.display = owned ? 'none' : '';
-    b.setAttribute('aria-label', o.name + (i === worn ? ', wearing' : owned ? ', owned' : `, ${fmt(o.price)} coins`));
+    b.setAttribute('aria-label', o.name + (mOwned && i === worn ? ', wearing' : owned ? ', owned' : o.price ? `, ${fmt(o.price)} coins` : ', locked'));
   });
   $('crew-oname').textContent = OUTFITS[ids[crew.sel]].name;
-  outfitBtnState(crewAct, crew.sel);
+  outfitBtnState(crewAct, ids[crew.sel]);
   renderRoster();
 }
 function pickOutfit(i) {
@@ -4249,9 +4381,10 @@ function enterCrew() {
   setTimeout(() => {
     phase = 'crew'; tMode = 0;
     resetKidProps(); pLife.set(pMax);      // clear leftover paint mist from the title
-    Object.assign(crew, { sel: wornIdx(CREW[crew.who]), yaw: CREW_REST, vel: 0, drag: null, dragged: false, idle: 0, danceT: -1, hopT: -1, spinT: -1, busy: false });
+    const who = CREW.indexOf(selChar());
+    Object.assign(crew, { who, sel: wornIdx(CREW[who]), yaw: CREW_REST, vel: 0, drag: null, dragged: false, idle: 0, danceT: -1, hopT: -1, spinT: -1, busy: false });
     camera.layers.set(1); ui.classList.add('is-hidden'); crewBg.hidden = false; crewEl.hidden = false; document.body.classList.add('in-crew');
-    renderCrew(); flash.classList.remove('on'); $('crew-menu').focus();
+    showCrewMember(); renderCrew(); flash.classList.remove('on'); $('crew-menu').focus();
   }, 230);
 }
 function hideCrew() { crewEl.hidden = true; crewBg.hidden = true; document.body.classList.remove('in-crew'); }
@@ -4273,8 +4406,8 @@ const thumbCam = new THREE.PerspectiveCamera(28, 2 / 3, 0.1, 60); thumbCam.layer
 const silMat = new THREE.MeshBasicMaterial({ color: '#3a4263' });
 const thumbCanvas = document.createElement('canvas'), thumbV = new THREE.Vector2();
 function captureThumbs() {
-  const needSil = thumbs.sil.length < SIL_POSES.length;
-  if (thumbs.dex && !needSil) return;
+  const needSil = thumbs.sil.length < SIL_POSES.length, need = ROSTER.filter((w) => w !== '?' && !thumbs[w]);
+  if (!need.length && !needSil) return;
   const pr = renderer.getPixelRatio(), TW = 120, TH = 180, ch = renderer.domElement.height;
   thumbCanvas.width = Math.round(TW * pr); thumbCanvas.height = Math.round(TH * pr);
   const g = thumbCanvas.getContext('2d');
@@ -4293,8 +4426,10 @@ function captureThumbs() {
     return thumbCanvas.toDataURL('image/png');
   };
   setFace('ready');
-  if (!thumbs.dex) { applyOutfit(wornId()); thumbs.dex = shoot(P_U_IDLE, 0.32, false); applyOutfit(saveOutfit); }
-  if (needSil) thumbs.sil = SIL_POSES.map(([q, r]) => shoot(q, r, true));
+  const saveChar = curChar;
+  for (const id of need) { const m = CREW.find((c) => c.id === id); setCharacter(id); applyOutfit(m.outfits[wornIdx(m)]); thumbs[id] = shoot(P_U_IDLE, 0.32, false); }
+  if (needSil) { setCharacter('dex'); thumbs.sil = SIL_POSES.map(([q, r]) => shoot(q, r, true)); }
+  setCharacter(saveChar); applyOutfit(saveOutfit);
   scene.overrideMaterial = null;
   renderer.setScissorTest(false); renderer.getSize(thumbV); renderer.setViewport(0, 0, thumbV.x, thumbV.y);
   NAMES.forEach((n, i) => J[n].quaternion.copy(saveQ[i]));
@@ -4369,7 +4504,7 @@ $('crew-btn').addEventListener('click', (e) => { e.stopPropagation(); enterCrew(
 $('crew-menu').addEventListener('click', (e) => { e.stopPropagation(); leaveCrew(); });
 $('crew-tab').addEventListener('click', (e) => { e.stopPropagation(); });
 $('crew-gear').addEventListener('click', (e) => { e.stopPropagation(); openSettings(); });
-crewAct.addEventListener('click', (e) => { e.stopPropagation(); outfitAct(crew.sel, crewAct); });
+crewAct.addEventListener('click', (e) => { e.stopPropagation(); outfitAct(CREW[crew.who].outfits[crew.sel], crewAct); });
 crewEl.addEventListener('click', (e) => e.stopPropagation());
 $('crew-outfits').addEventListener('keydown', (e) => {
   if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
@@ -4400,9 +4535,9 @@ function setFace(kind) {
   face.smile.visible = kind !== 'surprise'; face.oh.visible = kind === 'surprise';
   face.brows.forEach((b, i) => {
     const s = i === 0 ? -1 : 1;
-    if (kind === 'surprise') { b.position.y = 0.405; b.rotation.z = s * 0.1; }
-    else if (kind === 'ready') { b.position.y = 0.37; b.rotation.z = s * 0.28; }
-    else { b.position.y = 0.375; b.rotation.z = -s * 0.12; }
+    if (kind === 'surprise') { b.position.y = (b.userData.y0 ?? 0.375) + 0.03; b.rotation.z = s * 0.1; }
+    else if (kind === 'ready') { b.position.y = (b.userData.y0 ?? 0.375) - 0.005; b.rotation.z = s * 0.28; }
+    else { b.position.y = b.userData.y0 ?? 0.375; b.rotation.z = -s * 0.12; }
   });
   face.smile.scale.set(kind === 'ready' ? 1.15 : 0.8, kind === 'ready' ? 1.1 : 0.55, 1);
 }
