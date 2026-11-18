@@ -1158,16 +1158,16 @@ const FONT_UI = (s) => `${s}px "Lilita One", "Arial Black", sans-serif`;
 const canvas = $('scene');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
 renderer.setClearColor(0x000000, 0);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.6));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.type = THREE.PCFShadowMap;
 const MAX_ANISO = Math.min(8, renderer.capabilities.getMaxAnisotropy());
 
 const scene = new THREE.Scene();
 const HORIZON = new THREE.Color('#d3f1fc');
 scene.fog = new THREE.Fog(HORIZON, 48, 150);
-const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 420);
+const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 158);   // nothing past the fog gets drawn
 
 // cel-shading ramp + ink outlines
 const ramp = new THREE.DataTexture(new Uint8Array([120, 120, 120, 255, 192, 192, 192, 255, 255, 255, 255, 255]), 3, 1);
@@ -1256,7 +1256,7 @@ scene.add(sun, sun.target);
 sun.layers.enable(1);
 const SUN_OFF = sun.position.clone().sub(sun.target.position);
 sun.castShadow = true;
-sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.mapSize.set(1024, 1024);
 Object.assign(sun.shadow.camera, { left: -15, right: 15, top: 13, bottom: -9, near: 2, far: 60 });
 sun.shadow.bias = -0.0004;
 sun.shadow.normalBias = 0.035;
@@ -2679,7 +2679,7 @@ function updateRunView(dt) {
 
 // ------------------------------------------------------------------ endless run: random trains, barriers, roll bars and coins on all three tracks
 const LANES = [TRACK_Z[2], TRACK_Z[1], TRACK_Z[0]];   // screen left -> right while running
-const ENDLESS = { v0: 11, vMax: 21, ramp: 110, ahead: 170, firstX: -50, recenterAt: -230, shift: LINE_PERIOD, trainV: 9, laneDur: 0.15, rollDur: 0.72 };
+const ENDLESS = { v0: 13, vMax: 30, ramp: 95, ahead: 150, firstX: -26, recenterAt: -230, shift: LINE_PERIOD, trainV: 9, laneDur: 0.15, rollDur: 0.72 };
 const hud = $('hud'), pauseMenu = $('pause-menu');
 const laneOfZ = (z) => { let b = 0; for (let i = 1; i < 3; i++) if (Math.abs(LANES[i] - z) < Math.abs(LANES[b] - z)) b = i; return b; };
 const shuffled = (a) => { const r = a.slice(); for (let i = r.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [r[i], r[j]] = [r[j], r[i]]; } return r; };
@@ -2916,23 +2916,23 @@ function expressLane(x) {
   return -1;
 }
 function spawnSegment(x) {
-  const v = Math.max(run.v, ENDLESS.v0), gap = clamp(14 + v * 1.0, 22, 36), n = run.segN++, r = rnd();
+  const v = Math.max(run.v, ENDLESS.v0), gap = clamp(8 + v * 0.9, 18, 34), n = run.segN++, r = rnd();
   if (run.noSpawn && x <= run.noSpawn[1] && x >= run.noSpawn[0]) return x - 12;   // keep the jetpack landing strip clear
   if (n >= 4 && r > 0.86) {                                  // a power-up, with a few coins leading to it
     const L = Math.floor(rnd() * 3);
     coinLine(L, x + 8, 3); placePickup(L, x - 1, PU_TYPES[Math.floor(rnd() * PU_TYPES.length)]);
     return x - 22;
   }
-  if (n < 2 || r < 0.32) {                                   // hurdles: jump barrier and/or roll bar, one lane always open
+  if (n < 1 || r < 0.32) {                                   // hurdles: jump barrier and/or roll bar, one lane always open
     const L = Math.floor(rnd() * 3), kind = rnd() < 0.55 ? 'jump' : 'roll';
     placeHurdle(kind, L, x);
     if (kind === 'jump' && rnd() < 0.6) coinArc(L, x); else coinLine(otherLane(L), x + 5, 6);
-    if (n >= 3 && rnd() < 0.45) placeHurdle(kind === 'jump' ? 'roll' : 'jump', otherLane(L), x);
+    if (n >= 2 && rnd() < 0.5) placeHurdle(kind === 'jump' ? 'roll' : 'jump', otherLane(L), x);
     return x - gap;
   }
   if (r < 0.62) {                                            // parked trains in one or two lanes
-    const lanes = shuffled([0, 1, 2]), count = rnd() < 0.5 ? 1 : 2, cars = n < 3 ? 1 : 1 + Math.floor(rnd() * 3);
-    const ramp = n >= 2 && rnd() < 0.6;
+    const lanes = shuffled([0, 1, 2]), count = rnd() < 0.5 ? 1 : 2, cars = n < 2 ? 1 + Math.floor(rnd() * 2) : 1 + Math.floor(rnd() * 3);
+    const ramp = n >= 1 && rnd() < 0.6;
     for (let k = 0; k < count; k++) for (let c = 0; c < cars; c++) placeTrain(lanes[k], x - CAR_L / 2 - c * (CAR_L + 0.5), 0, ramp && k === 0 && c === 0);
     const len = cars * (CAR_L + 0.5);
     coinLine(lanes[2], x, Math.floor(len / 2.4));
@@ -3735,7 +3735,7 @@ function getPref(k, d) {
   try { const v = localStorage.getItem(k); if (v !== null) return Number(v); } catch (e) { /* storage blocked */ }
   return k in memStore ? memStore[k] : d;
 }
-function applyGfx() { renderer.setPixelRatio(gfxHigh ? Math.min(window.devicePixelRatio || 1, 2) : 1); sun.castShadow = gfxHigh; resize(); }
+function applyGfx() { renderer.setPixelRatio(gfxHigh ? Math.min(window.devicePixelRatio || 1, 1.6) : 1); sun.castShadow = gfxHigh; resize(); }
 function loadSettings() {
   soundOn = !!getPref('railDashSfx', 1); musicOn = !!getPref('railDashMusic', 1); gfxHigh = !!getPref('railDashGfx', 1);
   swipePx = [14, 22, 34].includes(getPref('railDashSwipe', 22)) ? getPref('railDashSwipe', 22) : 22;
