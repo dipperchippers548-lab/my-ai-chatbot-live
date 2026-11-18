@@ -415,6 +415,15 @@ body.in-crew .toast { bottom: auto; top: calc(env(safe-area-inset-top, 0px) + 76
   .crew-select { min-height: 48px; font-size: 21px; }
 }
 
+/* ---------- speed lines at the screen edges, stronger as the run speeds up */
+.speedlines {
+  position: fixed; inset: -10%; z-index: 4; pointer-events: none; opacity: 0;
+  background: repeating-conic-gradient(from 0deg at 50% 46%, rgba(255, 255, 255, 0) 0deg 4deg, rgba(255, 255, 255, .7) 4deg 4.5deg, rgba(255, 255, 255, 0) 4.5deg 11deg);
+  -webkit-mask-image: radial-gradient(ellipse 60% 55% at 50% 46%, transparent 55%, #000 100%);
+  mask-image: radial-gradient(ellipse 60% 55% at 50% 46%, transparent 55%, #000 100%);
+}
+@media (prefers-reduced-motion: reduce) { .speedlines { display: none !important; } }
+
 /* ---------- shop */
 .shop {
   position: fixed; inset: 0; z-index: 12; display: grid; grid-template-rows: auto auto minmax(0, 1fr); color: var(--paper);
@@ -710,6 +719,7 @@ body.in-crew .toast { bottom: auto; top: calc(env(safe-area-inset-top, 0px) + 76
 </div>
 <div id="go" class="go" aria-hidden="true" hidden>GO!</div>
 <div id="nice" class="nice" aria-hidden="true" hidden>Nice jump!</div>
+<div id="speedlines" class="speedlines" aria-hidden="true" hidden></div>
 <div id="hud" class="hud" hidden>
   <div id="hud-powers" class="hud-powers" aria-label="Active power-ups"></div>
   <button id="pause" class="pause-btn gloss blue" type="button" aria-label="Pause"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><rect x="5.5" y="4" width="4.6" height="16" rx="1.6" fill="currentColor"/><rect x="13.9" y="4" width="4.6" height="16" rx="1.6" fill="currentColor"/></svg></button>
@@ -2337,7 +2347,7 @@ function resetKidProps() {
   resetTutorial();
   promptEl.hidden = true; dimEl.classList.remove('on'); goEl.hidden = true; niceEl.hidden = true;
   setFov(baseFov);
-  clearEndless(); hideTutorialProps(false); hud.hidden = true; pauseMenu.hidden = true;
+  clearEndless(); hideTutorialProps(false); hud.hidden = true; pauseMenu.hidden = true; $('speedlines').hidden = true;
 }
 function endBoot() {
   window.RD.hide();
@@ -2662,7 +2672,8 @@ function updateRunView(dt) {
     chasePos.lerp(endPos, w); chaseLook.lerp(endLook, w);
   }
   const kIn = inOutCubic(clamp(run.camT / 1.1));
-  setFov(lerp(baseFov, lerp(RUN_CAM.fovL, RUN_CAM.fovP, portrait), kIn * (1 - wE)));
+  const speedK = mode === 'endless' ? clamp((run.v - ENDLESS.v0) / (ENDLESS.vMax - ENDLESS.v0)) : 0;
+  setFov(lerp(baseFov, lerp(RUN_CAM.fovL, RUN_CAM.fovP, portrait) + speedK * 9, kIn * (1 - wE)));
   camera.position.lerpVectors(run.camFromPos, chasePos, kIn);
   camLook.lerpVectors(run.camFromLook, chaseLook, kIn);
   if (run.shake > 0.002) { camera.position.x += (Math.random() - 0.5) * run.shake; camera.position.y += (Math.random() - 0.5) * run.shake; run.shake *= Math.exp(-dt * 7); }
@@ -2918,12 +2929,13 @@ function expressLane(x) {
 function spawnSegment(x) {
   const v = Math.max(run.v, ENDLESS.v0), gap = clamp(8 + v * 0.9, 18, 34), n = run.segN++, r = rnd();
   if (run.noSpawn && x <= run.noSpawn[1] && x >= run.noSpawn[0]) return x - 12;   // keep the jetpack landing strip clear
-  if (n >= 4 && r > 0.86) {                                  // a power-up, with a few coins leading to it
+  if (n >= 2 && r > 0.84) {                                  // a power-up, with a few coins leading to it
     const L = Math.floor(rnd() * 3);
     coinLine(L, x + 8, 3); placePickup(L, x - 1, PU_TYPES[Math.floor(rnd() * PU_TYPES.length)]);
     return x - 22;
   }
-  if (n < 1 || r < 0.32) {                                   // hurdles: jump barrier and/or roll bar, one lane always open
+  if (n >= 1 && r >= 0.18 && r < 0.62) return funSegment(x, gap, r);   // the mixed patterns below
+  if (n < 1 || r < 0.18) {                                   // hurdles: jump barrier and/or roll bar, one lane always open
     const L = Math.floor(rnd() * 3), kind = rnd() < 0.55 ? 'jump' : 'roll';
     placeHurdle(kind, L, x);
     if (kind === 'jump' && rnd() < 0.6) coinArc(L, x); else coinLine(otherLane(L), x + 5, 6);
@@ -2949,6 +2961,48 @@ function spawnSegment(x) {
   let L = Math.floor(rnd() * 3);                             // breather: coins weaving across the tracks
   for (let k = 0; k < 3; k++) { coinLine(L, x - k * 9, 4); L = clamp(L + (rnd() < 0.5 ? -1 : 1), 0, 2); }
   return x - 27 - gap * 0.5;
+}
+// patterns that make you choose and chain moves; coins mark the line through each one
+function lowCoins(lane, x0, len) { for (let d = 0; d < len; d += 2.4) placeCoin(x0 - d, 0.55, lane); }
+function trainRow(lane, x, cars, ramp = false) { for (let c = 0; c < cars; c++) placeTrain(lane, x - CAR_L / 2 - c * (CAR_L + 0.5), 0, ramp && c === 0); return cars * (CAR_L + 0.5); }
+function funSegment(x, gap, r) {
+  const lanes = shuffled([0, 1, 2]);
+  if (r < 0.29) {                                            // slalom: three hurdles in a row, each in a different lane
+    let L = lanes[0];
+    for (let k = 0; k < 3; k++) {
+      const hx = x - k * 11, kind = rnd() < 0.5 ? 'jump' : 'roll';
+      placeHurdle(kind, L, hx);
+      if (kind === 'jump') coinArc(L, hx); else lowCoins(L, hx + 3, 6);
+      L = L === 1 ? (rnd() < 0.5 ? 0 : 2) : 1;
+    }
+    return x - 22 - gap;
+  }
+  if (r < 0.41) {                                            // gate: trains in two lanes, the open lane has jump, roll, jump
+    const len = trainRow(lanes[0], x, 2); trainRow(lanes[1], x - 2, 2);
+    const L = lanes[2];
+    placeHurdle('jump', L, x - 4); coinArc(L, x - 4);
+    placeHurdle('roll', L, x - 18); lowCoins(L, x - 13, 8);
+    placeHurdle('jump', L, x - 30); coinArc(L, x - 30);
+    return x - len - gap;
+  }
+  if (r < 0.53) {                                            // climb: the coin line goes up a ramp and along a long roof
+    const len = trainRow(lanes[0], x, 3, true);
+    for (let d = 1; d < RAMP_L; d += 2.2) placeCoin(x + RAMP_L - d, ROOF_H * (d / RAMP_L) + 1.0, lanes[0]);
+    for (let d = 2; d < len - 1; d += 2.4) placeCoin(x - d, ROOF_H + 1.0, lanes[0]);
+    trainRow(lanes[1], x - 6, 2);
+    placeHurdle(rnd() < 0.5 ? 'jump' : 'roll', lanes[2], x - 8); placeHurdle(rnd() < 0.5 ? 'jump' : 'roll', lanes[2], x - 30);
+    return x - len - gap;
+  }
+  // squeeze: an express charging down one lane next to a parked train; coins in the lane you have to reach
+  const L = expressLane(x);
+  if (L < 0) { placeHurdle('jump', lanes[0], x); coinArc(lanes[0], x); return x - gap; }
+  placeTrain(L, x - CAR_L / 2, ENDLESS.trainV);
+  const P = L === 1 ? (rnd() < 0.5 ? 0 : 2) : 1;
+  const len = trainRow(P, x + 4, 2);
+  const free = [0, 1, 2].find((l) => l !== L && l !== P);
+  coinLine(free, x + 2, Math.floor(len / 2.4));
+  if (rnd() < 0.5) placeHurdle('roll', free, x - 10);
+  return x - len - gap;
 }
 function spawnAhead() { let guard = 0; while (nextX > kid.position.x - ENDLESS.ahead && guard++ < 8) nextX = spawnSegment(nextX); }
 function recenter() {
@@ -3283,7 +3337,7 @@ function updateKidEndless(dt) {
   if (r.jetT < 0) {
     if (r.air) {
       r.vy -= GRAV * g; r.alt += r.vy * g;
-      if (r.alt <= gh) { r.alt = gh; r.vy = 0; r.air = false; SFX.land(); }
+      if (r.alt <= gh) { if (r.vy < -14) r.shake = Math.max(r.shake, 0.14); r.alt = gh; r.vy = 0; r.air = false; SFX.land(); }
     } else if (gh < r.alt - 0.05) { r.air = true; r.vy = 0; }   // ran off a roof or hopped to an empty track
     else r.alt = gh;                                             // follow ramps up
   }
@@ -3365,6 +3419,10 @@ function updateKidEndless(dt) {
     if (showStars) { const a = elapsed * 5 + (i * Math.PI * 2) / 3; d.position.set(tv.x + Math.cos(a) * 0.45, tv.y + 0.55, tv.z + Math.sin(a) * 0.45); }
   });
 
+  // speed lines: none at the start, strong near top speed and while flying
+  const sl = $('speedlines'), sk = clamp((r.v - ENDLESS.v0 * 1.15) / (ENDLESS.vMax - ENDLESS.v0 * 1.15));
+  sl.hidden = r.state === 'crash' || r.paused;
+  if (!sl.hidden) { sl.style.opacity = Math.max(sk * 0.55, wF * 0.6).toFixed(3); sl.style.transform = `rotate(${(Math.random() * 6).toFixed(2)}deg)`; }
   // HUD
   if (r.score !== hudScoreShown) { hudScoreShown = r.score; $('hud-score').textContent = String(r.score).padStart(6, '0'); }
   if (r.coins !== hudCoinsShown) { hudCoinsShown = r.coins; $('hud-coins').textContent = fmt(r.coins); }
