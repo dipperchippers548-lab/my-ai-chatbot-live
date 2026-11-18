@@ -10,7 +10,7 @@ function drawCaption(tc) {
 const tmp = document.createElement('canvas'); tmp.width = W; tmp.height = H; const tg = tmp.getContext('2d');
 const bino = document.createElement('canvas'); bino.width = W; bino.height = H; { const b = bino.getContext('2d'); b.fillStyle = '#000'; b.fillRect(0, 0, W, H); b.globalCompositeOperation = 'destination-out'; const r = W * .4; for (const x of [W / 2 - r * .62, W / 2 + r * .62]) { b.beginPath(); b.arc(x, H * .46, r, 0, 7); b.fill(); } }
 // ---- camera energy layer, applied on top of every shot ----
-const KEY = /^walt$|steals|single|cameras|mask|police|^sir|online|sneeze|storms|screaming|^stop|robbed|parkers|lees|thing|nobody's|empty|^ever$|^read/i
+const KEY = /^lost$|nine|^again$|^car$|^couch$|^left$|goldfish|madman|^eggs$|^meat$|^down$|laughs|^luck$|rings|swings|floor|^cold$|shoebox|dollar|cried|rematch/i
 const kicks = () => words.filter((w, i) => KEY.test(w.w) || /[?!]$/.test(w.raw || '') || (i > 0 && /[?]$/.test(words[i - 1].raw || ''))).map(w => w.s + .04);
 let KICKS = null;
 function renderShot(s, tc) {
@@ -18,15 +18,15 @@ function renderShot(s, tc) {
   NOW = tc; const f = tc - s.f0, fd = s.f1 - s.f0; s.update(f, fd, tc);
   statics.forEach(g => { if (g.parent !== s.scene) return; const b = Math.sin(tc * 4.4 + g.userData.seed), s0 = g.userData.s0; g.scale.set(s0 * (1 + .03 * b), s0 * (1 - .04 * b), s0 * (1 + .03 * b)); });
   const cam = s.cam, fov0 = cam.fov; KICKS = KICKS || kicks();
-  let fov = fov0 * (1.13 - .13 * (1 - Math.exp(-f * 5)));                                   // punchy push-in at the top of every shot
-  const kz = KICKS.reduce((a, k) => a + (tc >= k ? Math.exp(-(tc - k) * 9) * (1 - Math.exp(-(tc - k) * 60)) : 0), 0); fov *= 1 - .06 * Math.min(1.3, kz);   // kick-zooms on key words
-  if (!s.noCut && fd > 2.4) { const mid = words.find(w => w.s > s.f0 + fd * .45 && w.s < s.f0 + fd * .78); if (mid && tc >= mid.s) { fov *= .74; cam.rotation.z += .02; } }   // punch-in cut: a second, tighter angle
+  let fov = fov0 * (1.06 - .06 * (f / Math.max(fd, .1)));   // slow, steady push through every shot                                   // punchy push-in at the top of every shot
+  const kz = KICKS.reduce((a, k) => a + (tc >= k ? Math.exp(-(tc - k) * 9) * (1 - Math.exp(-(tc - k) * 60)) : 0), 0); fov *= 1 - .03 * Math.min(1.3, kz);   // kick-zooms on key words
+  if (s.punch && fd > 2.4) { const mid = words.find(w => w.s > s.f0 + fd * .45 && w.s < s.f0 + fd * .78); if (mid && tc >= mid.s) { fov *= .74; cam.rotation.z += .02; } }   // punch-in cut: a second, tighter angle
   cam.rotation.x += (Math.sin(tc * 2.3) * .6 + Math.sin(tc * 5.3 + 1) * .35) * .007; cam.rotation.y += (Math.sin(tc * 1.9 + 2) * .6 + Math.sin(tc * 4.9) * .35) * .007;   // hand-held
-  const wo = s.f1 - tc, wi = tc - s.f0; if (wo < .1) cam.rotation.y -= (1 - wo / .1) ** 2 * .35; if (wi < .1 && !s.xf) cam.rotation.y += (1 - wi / .1) ** 2 * .35;   // whip pan out / in
+  const wo = s.f1 - tc, wi = tc - s.f0;    // whip pan out / in
   cam.fov = fov; cam.updateProjectionMatrix(); cam.updateMatrixWorld(); renderer.render(s.scene, cam); cam.fov = fov0; cam.updateProjectionMatrix();
 }
 // motion-blur smear across hard cuts (whip pans)
-function whipBlur(tc) { let w = 0; for (const s of shots) { if (s.f0 > 0 && !s.xf) w = Math.max(w, 1 - Math.abs(tc - s.f0) / .1); } if (w <= .02) return; tg.drawImage(out, 0, 0); og.save(); og.globalAlpha = .22; for (let k = -4; k <= 4; k++) og.drawImage(tmp, k * 26 * w, 0); og.restore(); }
+function whipBlur(tc) { return; let w = 0; for (const s of shots) { if (s.f0 > 0 && !s.xf) w = Math.max(w, 1 - Math.abs(tc - s.f0) / .1); } if (w <= .02) return; tg.drawImage(out, 0, 0); og.save(); og.globalAlpha = .22; for (let k = -4; k <= 4; k++) og.drawImage(tmp, k * 26 * w, 0); og.restore(); }
 function post(s, tc) {
   if (s.dream) { og.save(); og.globalCompositeOperation = 'soft-light'; og.globalAlpha = .55; og.fillStyle = s.dream; og.fillRect(0, 0, W, H); og.restore();
     og.save(); og.fillStyle = 'rgba(255,255,255,.92)'; const r = rng(7); for (let i = 0; i < 44; i++) { const side = i % 4, u = r(); const x = side < 2 ? (side ? W : 0) : u * W, y = side < 2 ? u * H : (side === 2 ? 0 : H); og.beginPath(); og.arc(x, y, 70 + r() * 70 + Math.sin(tc * 2 + i) * 6, 0, 7); og.fill(); } og.restore(); }
