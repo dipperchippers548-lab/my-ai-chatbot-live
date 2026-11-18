@@ -424,6 +424,102 @@ body.in-crew .toast { bottom: auto; top: calc(env(safe-area-inset-top, 0px) + 76
 }
 @media (prefers-reduced-motion: reduce) { .speedlines { display: none !important; } }
 
+/* ---------- missions: three goals per set; each finished set raises the score multiplier (up to x30) */
+.side-btn {
+  position: absolute; left: max(16px, env(safe-area-inset-left, 0px)); top: calc(env(safe-area-inset-top, 0px) + 78px); pointer-events: auto;
+  width: 64px; height: 64px; padding: 0; border-radius: 16px; display: grid; place-items: center;
+}
+.side-btn svg { width: 38px; height: 38px; overflow: visible; filter: drop-shadow(0 2px 0 rgba(27, 16, 48, .45)); }
+.side-btn .side-mult {
+  position: absolute; right: -10px; bottom: -8px; padding: 3px 7px 2px; border-radius: 10px; border: 2.5px solid var(--ink);
+  background: linear-gradient(var(--gold-hi), var(--gold) 55%, var(--gold-lo)); font: 15px/1 var(--font-display); color: var(--paper); text-shadow: var(--outline-thin);
+}
+.side-btn .side-dot { position: absolute; top: -6px; right: -6px; width: 16px; height: 16px; border-radius: 50%; background: #ff4057; border: 2.5px solid var(--ink); }
+.missions {
+  position: fixed; inset: 0; z-index: 12; display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; background: #eef1fb; color: #2b2f6b;
+}
+.ms-top {
+  display: flex; align-items: center; justify-content: flex-end; gap: 10px; background: linear-gradient(#6f7f9f, #56668a); border-bottom: 3px solid #3d4a69;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 10px); padding-bottom: 10px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.ms-star { display: flex; align-items: center; gap: 4px; font: 24px/1 var(--font-display); color: var(--sun); text-shadow: var(--outline-thin); }
+.ms-star svg { width: 34px; height: 34px; }
+.ms-banner {
+  position: relative; margin: 24px 0 0; display: grid; grid-template-columns: 92px 1fr 60px; align-items: center; gap: 8px;
+  background: #4f7fd9; border-top: 3px solid #3a63b8; border-bottom: 3px solid #3a63b8; min-height: 70px;
+  padding-left: max(12px, env(safe-area-inset-left, 0px)); padding-right: max(14px, env(safe-area-inset-right, 0px));
+}
+.ms-banner::after {                                         /* paint drips off the right end of the banner */
+  content: ""; position: absolute; right: 18px; top: calc(100% - 2px); width: 46px; height: 26px;
+  background: radial-gradient(circle at 10px 18px, #4f7fd9 8px, transparent 9px), radial-gradient(circle at 34px 8px, #4f7fd9 7px, transparent 8px), linear-gradient(#4f7fd9, #4f7fd9) 4px 0 / 38px 9px no-repeat;
+}
+.ms-face {
+  width: 98px; height: 98px; margin: -26px 0 -18px -4px; border-radius: 50%; background: #e3e8f8; border: 4px solid #3a63b8;
+  display: grid; place-items: center; overflow: hidden;
+}
+.ms-face svg { width: 100%; height: 100%; transform: translateY(8%) scale(1.08); }
+.ms-banner h2 { margin: 0; text-align: center; font: 400 clamp(26px, 7.4vw, 40px)/1 var(--font-display); color: var(--paper); letter-spacing: .02em; text-shadow: 0 3px 0 rgba(27, 16, 48, .35); }
+.ms-box { width: 58px; height: 54px; filter: drop-shadow(0 3px 0 rgba(27, 16, 48, .35)); }
+.ms-body {
+  overflow-y: auto; display: grid; align-content: start; justify-items: center; gap: 10px; padding-top: 16px; padding-bottom: 14px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.ms-mult {
+  margin: 0; display: flex; align-items: center; gap: 12px; padding: 6px 8px 6px 18px; border-radius: 12px; background: #dfe4f5;
+  font: 400 15px/1.2 var(--font-display); color: #3b4a8f; text-align: center;
+}
+.ms-mult b { font-weight: 400; color: #2b2f6b; }
+.ms-info { flex: none; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font: 22px/1 var(--font-display); color: var(--paper); padding: 0; }
+.ms-lead { margin: 0; max-width: 34ch; text-align: center; font: 400 clamp(17px, 4.8vw, 21px)/1.3 var(--font-display); color: #3a3a9a; text-wrap: balance; }
+.ms-lead span { color: #ff9f1c; }
+.ms-list { width: min(560px, 100%); display: grid; gap: 10px; }
+.ms-card {
+  display: grid; grid-template-columns: minmax(0, 1.9fr) minmax(0, 1fr); align-items: center; gap: 8px; padding: 8px; border-radius: 16px;
+  background: #cbd4ef; border: 3px solid #9aa9d6; box-shadow: inset 0 -4px 0 rgba(58, 99, 184, .18);
+}
+.ms-inner { display: grid; grid-template-columns: minmax(0, 1fr) 56px; align-items: center; gap: 6px; padding: 8px 8px 10px 12px; border-radius: 10px; background: #e6eaf8; }
+.ms-text { margin: 0; font: 400 clamp(16px, 4.6vw, 21px)/1.2 var(--font-display); color: #3a3f6e; }
+.ms-text .num { color: #2fae3a; }
+.ms-ico { width: 62px; height: 46px; overflow: visible; }
+.ms-bar {
+  grid-column: 1 / -1; position: relative; height: 30px; box-sizing: border-box; border-radius: 9px; border: 3px solid var(--ink); background: #5f6a8a; overflow: hidden;
+}
+.ms-bar i { position: absolute; inset: 0 auto 0 0; background: linear-gradient(#8fe07a, #4fbf3a 60%, #33962a); }
+.ms-bar span { position: relative; display: block; text-align: center; font: 400 18px/24px var(--font-display); color: var(--paper); text-shadow: var(--outline-thin); font-variant-numeric: tabular-nums; }
+.ms-state { display: flex; align-items: center; justify-content: center; gap: 6px; font: 400 clamp(17px, 4.8vw, 24px)/1 var(--font-display); color: var(--paper); text-shadow: var(--outline-thin); }
+.ms-state svg { width: 40px; height: 40px; flex: none; }
+.ms-state.todo { color: #8a96c2; text-shadow: none; font-size: 15px; }
+.ms-tabs { display: grid; grid-template-columns: 1fr 1fr; background: #2b3352; padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 62px); position: relative; }
+.ms-tab {
+  display: flex; align-items: center; justify-content: center; gap: 8px; height: 60px; padding: 0 8px; border: 0; border-top: 4px solid #3d4a69;
+  background: linear-gradient(#3b4d86, #2d3c6e); font: 400 clamp(22px, 6.4vw, 30px)/1 var(--font-display); color: #aab4d8; text-shadow: 0 2px 0 rgba(0, 0, 0, .35);
+}
+.ms-tab.on { background: linear-gradient(#6d8fdc, #4f74c9); color: var(--paper); text-shadow: var(--outline-thin); border-top-color: #9ab5ef; }
+.ms-tab svg { width: 30px; height: 30px; }
+.ms-close {
+  position: absolute; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 8px); transform: translateX(-50%);
+  width: 62px; height: 62px; padding: 0; border-radius: 50%; display: grid; place-items: center;
+  background: radial-gradient(circle at 50% 35%, #ff8a8a, #e23b3b 60%, #b51f2a); border: 4px solid #d9dde8; box-shadow: 0 0 0 3px var(--ink), 0 5px 0 var(--ink);
+}
+.ms-close svg { width: 30px; height: 30px; }
+.mis-pop {
+  position: fixed; z-index: 7; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 196px); width: min(320px, calc(100% - 32px)); box-sizing: border-box;
+  display: grid; grid-template-columns: 40px 1fr; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 16px; pointer-events: none;
+  transform: translateX(-50%); animation: mis-pop 2.6s cubic-bezier(.2, 1.3, .4, 1) both;
+}
+.mis-pop svg { width: 40px; height: 40px; }
+.mis-pop b { display: block; font: 400 20px/1 var(--font-display); color: var(--sun); text-shadow: var(--outline-thin); }
+.mis-pop span { display: block; margin-top: 3px; font: 700 13px/1.25 var(--font-body); color: var(--paper); text-shadow: 0 1px 2px rgba(27, 16, 48, .8); }
+@keyframes mis-pop { 0% { transform: translate(-50%, -24px) scale(.8); opacity: 0; } 10% { transform: translate(-50%, 0) scale(1); opacity: 1; } 85% { opacity: 1; } 100% { transform: translate(-50%, -10px); opacity: 0; } }
+.hud-mult { display: flex; align-items: center; gap: 3px; font: 22px/1 var(--font-display); color: var(--sun); text-shadow: var(--outline-thin), 0 3px 0 rgba(27, 16, 48, .4); }
+.hud-mult svg { width: 24px; height: 24px; }
+.pm-mis { width: 100%; display: grid; gap: 6px; }
+.pm-mis div { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 12px; background: rgba(12, 26, 64, .38); border: 2px solid rgba(27, 16, 48, .5); }
+.pm-mis span { font: 700 13px/1.25 var(--font-body); text-shadow: 0 1px 2px rgba(27, 16, 48, .8); }
+.pm-mis b { font: 400 16px/1 var(--font-display); color: var(--sun); text-shadow: var(--outline-thin); font-variant-numeric: tabular-nums; }
+.pm-mis div.done b { color: #8ff09a; }
+
 /* ---------- shop */
 .shop {
   position: fixed; inset: 0; z-index: 12; display: grid; grid-template-rows: auto auto minmax(0, 1fr); color: var(--paper);
@@ -665,6 +761,7 @@ body.in-crew .toast { bottom: auto; top: calc(env(safe-area-inset-top, 0px) + 76
       <div class="best-pill" aria-label="Best score"><svg class="pill-ico" viewBox="0 0 32 28" width="46" height="40" aria-hidden="true"><path d="M3 24 L1 7 L9 13 L16 2 L23 13 L31 7 L29 24 Z" fill="var(--sun)" stroke="var(--ink)" stroke-width="2.2" stroke-linejoin="round"/><path d="M4 20h24" stroke="var(--sun-deep)" stroke-width="2"/><circle cx="16" cy="15" r="2.8" fill="var(--hot)" stroke="var(--ink)" stroke-width="1.4"/><circle cx="1.5" cy="6.5" r="2" fill="#ffe36b" stroke="var(--ink)" stroke-width="1.2"/><circle cx="16" cy="2.5" r="2" fill="#ffe36b" stroke="var(--ink)" stroke-width="1.2"/><circle cx="30.5" cy="6.5" r="2" fill="#ffe36b" stroke="var(--ink)" stroke-width="1.2"/></svg><span id="menu-best">0</span></div>
       <button id="menu-coins-btn" class="coin-pill" type="button" aria-label="Coins. Open the shop"><svg class="pill-ico" viewBox="0 0 28 28" width="46" height="46" aria-hidden="true"><circle cx="14" cy="14" r="12.2" fill="var(--sun)" stroke="var(--ink)" stroke-width="2.4"/><circle cx="14" cy="14" r="8" fill="#ffe36b" stroke="var(--sun-deep)" stroke-width="1.8"/><path d="M14 9.6v8.8" stroke="var(--sun-deep)" stroke-width="3" stroke-linecap="round"/><ellipse cx="9.4" cy="8.4" rx="2.8" ry="1.4" fill="#ffffff" opacity=".9" transform="rotate(-35 9.4 8.4)"/></svg><span id="menu-coins">0</span><span class="plus" aria-hidden="true">+</span></button>
     </div>
+    <button id="ms-btn" class="side-btn gloss blue" type="button" aria-label="Missions"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 3l5 10.6 11.6 1.5-8.5 8 2.2 11.5L20 29l-10.3 5.6 2.2-11.5-8.5-8L15 13.6z" fill="var(--sun)" stroke="var(--ink)" stroke-width="2.6" stroke-linejoin="round"/><path d="M20 9l3 6.4 7 .9" fill="none" stroke="#fff6b0" stroke-width="2.2" stroke-linecap="round"/></svg><span id="ms-btn-mult" class="side-mult">x1</span><span id="ms-btn-dot" class="side-dot" hidden></span></button>
     <nav class="navbar" aria-label="Menu">
       <button id="shop-btn" class="tile gloss gold" type="button"><svg class="ic" viewBox="0 0 200 190" aria-hidden="true" style="--b1:#3ab0f0;--b2:#2386d0;--rib:#ff4fa3"><use href="#box-sym"/></svg><span>Shop</span></button>
       <button id="crew-btn" class="tile gloss blue" type="button"><svg class="ic" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="15" fill="#ffd9a8" stroke="var(--ink)" stroke-width="2"/><circle cx="16" cy="19.5" r="9" fill="#c98a5e"/><path d="M6.6 16.5a9.4 9 0 0 1 18.8 0z" fill="#2c5bff" stroke="var(--ink)" stroke-width="1.6"/><path d="M21 16.4h6.5" stroke="#ffd23f" stroke-width="3" stroke-linecap="round"/><circle cx="13" cy="20" r="1.4" fill="var(--ink)"/><circle cx="19" cy="20" r="1.4" fill="var(--ink)"/><path d="M13.4 23.6q2.6 2 5.2 0" stroke="var(--ink)" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg><span>Crew</span></button>
@@ -726,6 +823,7 @@ body.in-crew .toast { bottom: auto; top: calc(env(safe-area-inset-top, 0px) + 76
   <div class="hud-right">
     <div class="hud-score gloss navy" aria-label="Score"><span id="hud-score">000000</span></div>
     <div class="hud-coins" aria-label="Coins"><span id="hud-coins">0</span><svg viewBox="0 0 28 28" width="26" height="26" aria-hidden="true"><circle cx="14" cy="14" r="12.2" fill="var(--sun)" stroke="var(--ink)" stroke-width="2.6"/><circle cx="14" cy="14" r="7.6" fill="none" stroke="var(--sun-deep)" stroke-width="2"/><path d="M14 10v8" stroke="var(--sun-deep)" stroke-width="3" stroke-linecap="round"/></svg></div>
+    <div class="hud-mult" aria-label="Score multiplier"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 3l5 10.6 11.6 1.5-8.5 8 2.2 11.5L20 29l-10.3 5.6 2.2-11.5-8.5-8L15 13.6z" fill="var(--sun)" stroke="var(--ink)" stroke-width="2.6" stroke-linejoin="round"/><path d="M20 9l3 6.4 7 .9" fill="none" stroke="#fff6b0" stroke-width="2.2" stroke-linecap="round"/></svg><span id="hud-mult">x1</span></div>
     <div id="hud-best" class="hud-best gloss navy">
       <span id="hud-best-label" class="hb-label">HIGH SCORE</span>
       <div class="hb-row">
@@ -854,6 +952,24 @@ body.in-crew .toast { bottom: auto; top: calc(env(safe-area-inset-top, 0px) + 76
     <p class="set-foot">Rail Dash · prototype build</p>
   </div>
 </div>
+<div id="missions" class="missions" role="dialog" aria-labelledby="ms-title" hidden>
+  <div class="ms-top">
+    <div class="coin-pill static" aria-label="Coins"><svg viewBox="0 0 28 28" width="46" height="46" class="pill-ico" aria-hidden="true"><circle cx="14" cy="14" r="12.2" fill="var(--sun)" stroke="var(--ink)" stroke-width="2.4"/><circle cx="14" cy="14" r="8" fill="#ffe36b" stroke="var(--sun-deep)" stroke-width="1.8"/><path d="M14 9.6v8.8" stroke="var(--sun-deep)" stroke-width="3" stroke-linecap="round"/></svg><span id="ms-coins">0</span></div>
+    <div class="ms-star" aria-label="Score multiplier"><span id="ms-mult-top">x1</span><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 3l5 10.6 11.6 1.5-8.5 8 2.2 11.5L20 29l-10.3 5.6 2.2-11.5-8.5-8L15 13.6z" fill="#5b8cff" stroke="var(--ink)" stroke-width="2.6" stroke-linejoin="round"/><path d="M15 15l10 10M25 15l-10 10" stroke="#fff" stroke-width="3.2" stroke-linecap="round"/></svg></div>
+  </div>
+  <div class="ms-banner"><div id="ms-face" class="ms-face" aria-hidden="true"></div><h2 id="ms-title">Mission Set 1</h2><svg class="ms-box" viewBox="0 0 60 56" aria-hidden="true"><path d="M8 18l22-10 22 10v26L30 54 8 44z" fill="#ffb627" stroke="var(--ink)" stroke-width="3" stroke-linejoin="round"/><path d="M8 18l22 10 22-10M30 28v26" fill="none" stroke="var(--ink)" stroke-width="3" stroke-linejoin="round"/><path d="M8 18l22 10v26L8 44z" fill="#e8940f"/><path d="M8 18l22-10 22 10-22 10z" fill="#ffd36b" stroke="var(--ink)" stroke-width="3" stroke-linejoin="round"/><text x="41" y="46" font-family="Lilita One, sans-serif" font-size="18" fill="#ff4057" stroke="var(--ink)" stroke-width="1" text-anchor="middle">?</text></svg></div>
+  <div class="ms-body">
+    <p class="ms-mult"><span>Raise your score multiplier:<br><b id="ms-mult-count">1/30</b></span><button id="ms-info" class="ms-info gloss green" type="button" aria-label="How missions work">i</button></p>
+    <p class="ms-lead">Complete the missions below to get a <span>bonus reward</span>!</p>
+    <div id="ms-list" class="ms-list"></div>
+  </div>
+  <div class="ms-tabs">
+    <button class="ms-tab on" type="button" aria-current="page">Missions<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 3l5 10.6 11.6 1.5-8.5 8 2.2 11.5L20 29l-10.3 5.6 2.2-11.5-8.5-8L15 13.6z" fill="var(--sun)" stroke="var(--ink)" stroke-width="2.6" stroke-linejoin="round"/><path d="M20 9l3 6.4 7 .9" fill="none" stroke="#fff6b0" stroke-width="2.2" stroke-linecap="round"/></svg></button>
+    <button class="ms-tab" type="button" data-soon="Awards">Awards</button>
+    <button id="ms-close" class="ms-close" type="button" aria-label="Close missions"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="var(--ink)" stroke-width="7" stroke-linecap="round"/><path d="M6 6l12 12M18 6L6 18" stroke="#fff" stroke-width="3.6" stroke-linecap="round"/></svg></button>
+  </div>
+</div>
+<div id="mis-pop" class="mis-pop gloss navy" aria-live="polite" hidden><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 3l5 10.6 11.6 1.5-8.5 8 2.2 11.5L20 29l-10.3 5.6 2.2-11.5-8.5-8L15 13.6z" fill="var(--sun)" stroke="var(--ink)" stroke-width="2.6" stroke-linejoin="round"/><path d="M20 9l3 6.4 7 .9" fill="none" stroke="#fff6b0" stroke-width="2.2" stroke-linecap="round"/></svg><div><b id="mis-pop-title">Mission complete!</b><span id="mis-pop-text"></span></div></div>
 <div id="crew" class="crew" hidden>
   <div class="crew-top">
     <button id="crew-gear" class="crew-gear gloss blue" type="button" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#eef3fb" stroke="var(--ink)" stroke-width="1.3" fill-rule="evenodd" d="M10.3 1.8h3.4l.55 2.65c.72.2 1.4.48 2.03.85l2.26-1.5 2.4 2.4-1.5 2.27c.37.63.66 1.31.85 2.03l2.66.54v3.4l-2.66.55a8 8 0 0 1-.85 2.03l1.5 2.26-2.4 2.4-2.26-1.5a8 8 0 0 1-2.03.85l-.55 2.66h-3.4l-.54-2.66a8 8 0 0 1-2.03-.85l-2.27 1.5-2.4-2.4 1.5-2.26a8 8 0 0 1-.85-2.03L1.8 13.7v-3.4l2.65-.54c.2-.72.48-1.4.85-2.03L3.8 5.46l2.4-2.4L8.47 4.6c.63-.37 1.31-.66 2.03-.85zM12 8.4a3.6 3.6 0 1 0 0 7.2 3.6 3.6 0 0 0 0-7.2z"/></svg></button>
@@ -894,7 +1010,8 @@ body.in-crew .toast { bottom: auto; top: calc(env(safe-area-inset-top, 0px) + 76
     </div>
     <button id="resume" class="pm-btn gloss green" type="button">Resume</button>
     <button id="home" class="pm-btn end gloss gold" type="button">End run</button>
-    <p class="pm-tip"><b>TIP</b><span id="pm-tip"></span></p>
+    <div id="pm-mis" class="pm-mis" aria-label="Missions"></div>
+    <p class="pm-tip" hidden><b>TIP</b><span id="pm-tip"></span></p>
   </div>
 </div>
 <div id="countdown" class="countdown" aria-live="assertive" hidden><span id="cd-num">3</span></div>
@@ -2433,7 +2550,7 @@ function startIntro() {
   SFX.startle();
 }
 function onTap() {
-  if (!shopEl.hidden || !openerEl.hidden || !settingsEl.hidden) return;
+  if (!shopEl.hidden || !openerEl.hidden || !settingsEl.hidden || !missionsEl.hidden) return;
   if (phase === 'unlock') unlockTap();
   else if (phase === 'results') resultsTap();
   else if (phase === 'crew') crewTap();
@@ -2443,6 +2560,7 @@ document.addEventListener('click', () => onTap());
 document.addEventListener('keydown', (e) => {
   if (!settingsEl.hidden) { if (e.key === 'Escape') closeSettings(); return; }
   if (!shopEl.hidden) { if (e.key === 'Escape' && openerEl.hidden) closeShop(); return; }
+  if (!missionsEl.hidden) { if (e.key === 'Escape') closeMissions(); return; }
   const k = e.key;
   const dir = k === 'ArrowUp' || k === 'w' || k === 'W' ? 'up'
     : k === 'ArrowDown' || k === 's' || k === 'S' ? 'down'
@@ -2833,6 +2951,7 @@ function spawnSkyCoins() {
 }
 function activatePower(type) {
   const r = run, P = POWERS[type];
+  msAdd('powers');
   if (type === 'jetpack') {
     if (r.jetT < 0) { r.jetT = 0; r.jetLanding = false; } else r.jetT = Math.min(r.jetT, 0.7);
     r.jetDur = powerDur(type); r.jetBase = r.alt; r.air = false; r.vy = 0; r.rollT = -1;
@@ -3032,6 +3151,7 @@ function startEndless() {
   nextX = ENDLESS.firstX; SEED = (Date.now() % 100000) + 7; spawnAhead();
   $('hud-best-num').textContent = fmt(best); $('hud-best-label').textContent = 'HIGH SCORE'; $('hud-best').classList.remove('beaten');
   hud.hidden = false; pauseMenu.hidden = true;
+  run.mult = msMult(); msRun.roof = false; $('hud-mult').textContent = 'x' + run.mult;
   resetChaser(); shout(goEl); SFX.go(); setTimeout(() => { if (mode === 'endless' && run.state !== 'crash') SFX.whistle(); }, 450);
 }
 // ---- pause menu (run stats, power-ups left, quick toggles, end run) and the 3-2-1 resume countdown
@@ -3069,6 +3189,7 @@ function renderPauseMenu() {
   pw.hidden = !pw.childElementCount;
   tipIdx = (tipIdx + 1 + Math.floor(Math.random() * (PAUSE_TIPS.length - 1))) % PAUSE_TIPS.length;
   $('pm-tip').textContent = PAUSE_TIPS[tipIdx];
+  msRows($('pm-mis'), true);
   endArmed = 0; clearTimeout(renderEnd.t); renderEnd(); renderQuick();
 }
 function cancelCountdown() { for (const t of cdTimers) clearTimeout(t); cdTimers = []; countdownEl.hidden = true; run.counting = false; }
@@ -3220,7 +3341,7 @@ function updateChaser(g, dt, wJ, wR, spin) {
   } else {
     if (r.jetT >= 0) chaser.nearT = 0;
     if (chaser.nearT > 0) { chaser.nearT -= g; chaser.gap = Math.max(CHASE.near, chaser.gap - CHASE.closeV * g); }
-    else { chaser.gap = Math.min(CHASE.far, chaser.gap + CHASE.dropV * g); if (chaser.gap >= CHASE.far) chaser.alert = false; }
+    else { chaser.gap = Math.min(CHASE.far, chaser.gap + CHASE.dropV * g); if (chaser.gap >= CHASE.far && chaser.alert) { chaser.alert = false; msAdd('escapes'); } }
   }
   guard.visible = chaser.gap < 11.5;
   if (!guard.visible) return;
@@ -3258,10 +3379,10 @@ function endlessMove(dir) {
   } else if (r.jetT >= 0) {
     return;
   } else if (dir === 'up') {
-    if (!r.air) { r.vy = Math.sqrt(2 * GRAV * (r.powers.sneakers > 0 ? SNEAKER_H : RUN.jumpH)); r.air = true; r.rollT = -1; SFX.jump(); }
+    if (!r.air) { r.vy = Math.sqrt(2 * GRAV * (r.powers.sneakers > 0 ? SNEAKER_H : RUN.jumpH)); r.air = true; r.rollT = -1; SFX.jump(); msAdd('jumps'); }
   } else if (dir === 'down') {
     if (r.air) r.vy = Math.min(r.vy, -26);                     // slam back down
-    if (r.rollT < 0) { r.rollT = 0; SFX.roll(); }
+    if (r.rollT < 0) { r.rollT = 0; SFX.roll(); msAdd('rolls'); }
   }
 }
 function crash(knock) {
@@ -3298,10 +3419,10 @@ function updateEndlessWorld(g) {
       if (magnet && !c.mag && c.x < kx + 3 && c.x > kx - 26 && Math.abs(c.y - ky) < 7) c.mag = true;
       if (c.mag) {
         const dx = kx - c.x, dy = ky - c.y, dz = kz - c.z, d = Math.hypot(dx, dy, dz), step = (16 + run.v) * 1.5 * g;
-        if (d <= step + 0.6) { c.on = false; run.coins++; SFX.coin(); }
+        if (d <= step + 0.6) { c.on = false; run.coins++; SFX.coin(); msCoin(); }
         else { c.x += (dx / d) * step; c.y += (dy / d) * step; c.z += (dz / d) * step; }
       } else if (c.x > kx + 12) c.on = false;
-      else if (run.state !== 'crash' && Math.abs(c.x - kx) < 0.95 && Math.abs(c.z - kz) < 1.3 && Math.abs(c.y - ky) < 1.3) { c.on = false; run.coins++; SFX.coin(); }
+      else if (run.state !== 'crash' && Math.abs(c.x - kx) < 0.95 && Math.abs(c.z - kz) < 1.3 && Math.abs(c.y - ky) < 1.3) { c.on = false; run.coins++; SFX.coin(); msCoin(); }
     }
     coinDummy.position.set(c.x, c.y, c.z); coinDummy.rotation.set(0, coinSpin, 0); coinDummy.scale.setScalar(c.on ? 1 : 0); coinDummy.updateMatrix();
     coinMesh.setMatrixAt(i, coinDummy.matrix); coinOutline.setMatrixAt(i, coinDummy.matrix);
@@ -3327,7 +3448,7 @@ function updateKidEndless(dt) {
     wSt = Math.sin(Math.PI * clamp(r.stumbleT / 0.45));
     if (r.stumbleT > 0.9) r.stumbleT = -1;
   }
-  if (r.state !== 'crash') { kid.position.x -= r.v * g; r.dist += r.v * g; r.scoreF += r.v * g * 10 * (r.powers.mult > 0 ? 2 : 1); r.score = Math.floor(r.scoreF); }
+  if (r.state !== 'crash') { kid.position.x -= r.v * g; r.dist += r.v * g; r.scoreF += r.v * g * 10 * (r.powers.mult > 0 ? 2 : 1) * (r.mult || 1); r.score = Math.floor(r.scoreF); msTick(); }
   else { r.crashT += g; r.crashReal += dt; kid.position.x += r.knock * g; r.knock *= Math.exp(-5 * g); }
   updateEndlessWorld(g);
 
@@ -3466,6 +3587,7 @@ function refreshMenu() {
   menuEl.hidden = !show; ui.classList.toggle('has-menu', show);
   $('menu-coins').textContent = fmt(getNum('railDashCoins'));
   $('menu-best').textContent = fmt(getNum('railDashHigh'));
+  if (msReady) renderMissionsTile();
 }
 const today = () => { const d = new Date(); return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate(); };
 const giftReady = () => getNum('railDashGiftDay') !== today();
@@ -3808,11 +3930,11 @@ function renderSettings() {
 function openSettings() { settingsEl.hidden = false; resetArmed = 0; renderSettings(); $('set-close').focus(); SFX.pop(); }
 function closeSettings() { settingsEl.hidden = true; resetArmed = 0; if (phase === 'game' && mode === 'endless' && run.paused) $('resume').focus(); }
 function resetProgress() {
-  for (const k of ['railDashCoins', 'railDashHigh', 'railDashGiftDay', 'railDashTutorial', 'railDashMenu', 'railDashCrew', 'railDashRuns', 'railDashCoinsAll', ...PU_TYPES.map((t) => 'railDashUp_' + t), ...CREW.map((c) => 'railDashWear_' + c.id), ...Object.keys(OUTFITS).map((k2) => 'railDashOwn_' + k2)]) {
+  for (const k of ['railDashCoins', 'railDashHigh', 'railDashGiftDay', 'railDashTutorial', 'railDashMenu', 'railDashCrew', 'railDashRuns', 'railDashCoinsAll', 'railDashMissions', ...PU_TYPES.map((t) => 'railDashUp_' + t), ...CREW.map((c) => 'railDashWear_' + c.id), ...Object.keys(OUTFITS).map((k2) => 'railDashOwn_' + k2)]) {
     delete memStore[k];
     try { localStorage.removeItem(k); } catch (e) { /* storage blocked */ }
   }
-  tutorialDoneMem = false; applyWorn(); thumbs.dex = null; hideCrew();
+  tutorialDoneMem = false; MS = newMissionSet(1); applyWorn(); thumbs.dex = null; hideCrew();
   cancelCountdown(); settingsEl.hidden = true; pauseMenu.hidden = true; hud.hidden = true; run.paused = false; music.stop();
   mode = 'title'; tMode = 0; ui.classList.add('is-hidden'); menuEl.hidden = true;
   forceUnlock = true; phase = 'boot'; window.RD.restart();     // straight back to a first launch
@@ -3838,6 +3960,120 @@ $('set-reset').addEventListener('click', () => {
   } else resetProgress();
 });
 loadSettings();
+
+var msReady = false;   // set once the mission data below has loaded
+// ------------------------------------------------------------------ missions: 3 goals per set; each finished set raises the score multiplier (x1 to x30)
+const MISSION_TYPES = {
+  coinsRun: { text: 'Collect {n} coins in one run', ico: 'coins', target: (s) => Math.min(600, 50 + s * 25), run: true },
+  coins: { text: 'Collect {n} coins', ico: 'coins', target: (s) => 150 + s * 75 },
+  leftCoins: { text: 'Collect {n} coins in the left lane', ico: 'coins', target: (s) => 25 + s * 10 },
+  distRun: { text: 'Run {n} m in one run', ico: 'flag', target: (s) => Math.min(4000, 300 + s * 150), run: true },
+  scoreRun: { text: 'Score {n} points in one run', ico: 'star', target: (s) => Math.min(60000, 2000 + s * 1500), run: true },
+  jumps: { text: 'Jump {n} times', ico: 'jump', target: (s) => 15 + s * 5 },
+  rolls: { text: 'Roll {n} times', ico: 'roll', target: (s) => 10 + s * 4 },
+  powers: { text: 'Pick up {n} power-ups', ico: 'bolt', target: (s) => 2 + Math.floor(s / 2) },
+  roofs: { text: 'Climb onto {n} train roofs', ico: 'train', target: (s) => 3 + s * 2 },
+  escapes: { text: 'Shake off the yard guard {n} times', ico: 'whistle', target: (s) => 1 + Math.floor(s / 3) },
+};
+const MS_ICONS = {
+  coins: '<circle cx="18" cy="30" r="11" fill="#ffd23f" stroke="#1b1030" stroke-width="2.4"/><circle cx="34" cy="24" r="11" fill="#ffd23f" stroke="#1b1030" stroke-width="2.4"/><circle cx="46" cy="32" r="11" fill="#ffd23f" stroke="#1b1030" stroke-width="2.4"/><circle cx="46" cy="32" r="6.5" fill="#ffe36b" stroke="#e0a812" stroke-width="1.6"/>',
+  flag: '<path d="M18 42V6" stroke="#1b1030" stroke-width="3.4" stroke-linecap="round"/><path d="M18 7h26l-6 8 6 8H18z" fill="#ff4057" stroke="#1b1030" stroke-width="2.4" stroke-linejoin="round"/><path d="M26 7v16M34 7v16" stroke="#fff" stroke-width="3"/>',
+  star: '<path d="M31 4l6 12.5 13.6 1.8-10 9.4 2.6 13.5L31 34.6l-12.2 6.6 2.6-13.5-10-9.4 13.6-1.8z" fill="#ffd23f" stroke="#1b1030" stroke-width="2.6" stroke-linejoin="round"/>',
+  jump: '<path d="M31 40V12M20 22l11-11 11 11" fill="none" stroke="#1b1030" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><path d="M31 40V12M20 22l11-11 11 11" fill="none" stroke="#3ee07a" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>',
+  roll: '<path d="M31 6v28M20 24l11 11 11-11" fill="none" stroke="#1b1030" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><path d="M31 6v28M20 24l11 11 11-11" fill="none" stroke="#3ee0ff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>',
+  bolt: '<path d="M35 3L16 25h12l-4 19 21-25H33z" fill="#ffd23f" stroke="#1b1030" stroke-width="2.6" stroke-linejoin="round"/>',
+  train: '<rect x="6" y="10" width="50" height="26" rx="6" fill="#33c3a6" stroke="#1b1030" stroke-width="2.6"/><rect x="11" y="15" width="11" height="9" rx="2" fill="#2d3c63"/><rect x="26" y="15" width="11" height="9" rx="2" fill="#2d3c63"/><rect x="41" y="15" width="11" height="9" rx="2" fill="#2d3c63"/><path d="M6 30h50" stroke="#ff4fa3" stroke-width="3"/><circle cx="17" cy="40" r="4" fill="#1b1030"/><circle cx="45" cy="40" r="4" fill="#1b1030"/>',
+  whistle: '<path d="M12 22h26a10 10 0 1 1-10 10H12z" fill="#cfd6e0" stroke="#1b1030" stroke-width="2.6" stroke-linejoin="round"/><rect x="10" y="17" width="12" height="7" rx="2" fill="#ff8a1f" stroke="#1b1030" stroke-width="2.2"/><circle cx="38" cy="32" r="3.4" fill="#1b1030"/>',
+};
+const msCheck = '<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M7 21l9 9L34 9" fill="none" stroke="#1b1030" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 21l9 9L34 9" fill="none" stroke="#7be05a" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+function loadJSON(k, d) {
+  try { const v = localStorage.getItem(k); if (v) return JSON.parse(v); } catch (e) { /* storage blocked or bad data */ }
+  return memStore[k] ? JSON.parse(memStore[k]) : d;
+}
+function saveJSON(k, v) { const t = JSON.stringify(v); memStore[k] = t; try { localStorage.setItem(k, t); } catch (e) { /* storage blocked */ } }
+function newMissionSet(set) {
+  const types = shuffled(Object.keys(MISSION_TYPES)).slice(0, 3);
+  return { set, list: types.map((type) => ({ type, target: MISSION_TYPES[type].target(set), prog: 0, done: false })) };
+}
+let MS = loadJSON('railDashMissions', null);
+if (!MS || !Array.isArray(MS.list) || MS.list.length !== 3) MS = newMissionSet(1);
+const msMult = () => Math.min(30, MS.set);
+const msRun = { roof: false };
+function msSave() { saveJSON('railDashMissions', MS); }
+function msText(m) { return MISSION_TYPES[m.type].text; }
+function msPop(title, text) {
+  const el = $('mis-pop');
+  $('mis-pop-title').textContent = title; $('mis-pop-text').textContent = text;
+  el.hidden = false; el.style.animation = 'none'; void el.offsetWidth; el.style.animation = '';
+  clearTimeout(msPop.t); msPop.t = setTimeout(() => { el.hidden = true; }, 2600);
+}
+function msFinish(m) {
+  m.done = true; m.prog = m.target; SFX.check();
+  msPop('Mission complete!', msText(m).replace('{n}', fmt(m.target)));
+  if (MS.list.every((x) => x.done)) {
+    const reward = Math.min(5000, 250 + MS.set * 150), next = MS.set + 1;
+    setNum('railDashCoins', getNum('railDashCoins') + reward);
+    MS = newMissionSet(next);
+    setTimeout(() => { msPop(`Mission set complete!`, `+${fmt(reward)} coins. Multiplier is now x${Math.min(30, next)} from your next run`); SFX.fanfare(); }, 1400);
+  }
+  msSave();
+}
+// count something that adds up across runs (jumps, rolls, coins ...)
+function msAdd(type, n = 1) {
+  if (mode !== 'endless') return;
+  for (const m of MS.list) if (!m.done && m.type === type) { m.prog = Math.min(m.target, m.prog + n); if (m.prog >= m.target) msFinish(m); }
+  if (!msAdd.t) msAdd.t = setTimeout(() => { msAdd.t = 0; msSave(); }, 1500);
+}
+// a best-in-one-run value (coins, distance, score in this run)
+function msBest(type, v) {
+  for (const m of MS.list) if (!m.done && m.type === type && v > m.prog) { m.prog = Math.min(m.target, Math.floor(v)); if (m.prog >= m.target) msFinish(m); }
+}
+function msCoin() { msAdd('coins'); if (laneOfZ(kid.position.z) === 0) msAdd('leftCoins'); msBest('coinsRun', run.coins); }
+function msTick() {                                         // called every frame of a run
+  const r = run;
+  msBest('distRun', r.dist); msBest('scoreRun', r.score);
+  const onRoof = r.ground > ROOF_H - 0.35 && !r.air && r.jetT < 0;
+  if (onRoof && !msRun.roof) msAdd('roofs');
+  msRun.roof = onRoof;
+}
+function renderMissionsTile() { $('ms-btn-mult').textContent = 'x' + msMult(); $('ms-btn-dot').hidden = !MS.list.some((m) => !m.done && m.prog > 0); }
+function msRows(box, compact) {
+  box.textContent = '';
+  for (const m of MS.list) {
+    const T = MISSION_TYPES[m.type], [a, b] = T.text.split('{n}');
+    if (compact) {
+      const d = document.createElement('div'); d.className = m.done ? 'done' : '';
+      const sp = document.createElement('span'); sp.textContent = a + fmt(m.target) + b;
+      const bb = document.createElement('b'); bb.textContent = m.done ? '✓' : `${fmt(m.prog)}/${fmt(m.target)}`;
+      d.append(sp, bb); box.append(d); continue;
+    }
+    const card = document.createElement('div'); card.className = 'ms-card';
+    card.innerHTML = `<div class="ms-inner"><p class="ms-text"></p><svg class="ms-ico" viewBox="0 0 62 46" aria-hidden="true">${MS_ICONS[T.ico]}</svg><div class="ms-bar"><i></i><span></span></div></div><div class="ms-state"></div>`;
+    const p = card.querySelector('.ms-text'), num = document.createElement('span');
+    num.className = 'num'; num.textContent = fmt(m.target); p.append(a, num, b);
+    card.querySelector('.ms-bar i').style.width = (100 * m.prog / m.target).toFixed(1) + '%';
+    card.querySelector('.ms-bar span').textContent = `${fmt(m.prog)}/${fmt(m.target)}`;
+    const st = card.querySelector('.ms-state');
+    if (m.done) st.innerHTML = '<span>Done!</span>' + msCheck; else { st.classList.add('todo'); st.textContent = T.run ? 'In one run' : 'Keep going'; }
+    box.append(card);
+  }
+}
+const missionsEl = $('missions');
+function openMissions() {
+  if (phase !== 'game' || mode !== 'title' || menuEl.hidden) return;
+  $('ms-title').textContent = 'Mission Set ' + MS.set;
+  $('ms-mult-count').textContent = `${msMult()}/30`; $('ms-mult-top').textContent = 'x' + msMult();
+  $('ms-coins').textContent = fmt(getNum('railDashCoins'));
+  $('ms-face').innerHTML = outfitSvg(wornId());
+  msRows($('ms-list'), false);
+  missionsEl.hidden = false; noRender = true; SFX.pop(); $('ms-close').focus();
+}
+function closeMissions() { missionsEl.hidden = true; noRender = false; refreshMenu(); $('ms-btn').focus(); }
+$('ms-btn').addEventListener('click', (e) => { e.stopPropagation(); openMissions(); });
+$('ms-close').addEventListener('click', (e) => { e.stopPropagation(); closeMissions(); });
+$('ms-info').addEventListener('click', (e) => { e.stopPropagation(); showToast('Finish all 3 missions to raise your multiplier', false); });
+missionsEl.addEventListener('click', (e) => e.stopPropagation());
+msReady = true; renderMissionsTile();
 
 // ------------------------------------------------------------------ crew: character select (Dex, outfits, roster)
 // CREW is a list so more members can join later; each lists the outfits they can wear
@@ -4373,7 +4609,7 @@ Promise.race([
   new Promise((r) => setTimeout(r, 3500)),
 ]).catch(() => {}).then(() => { redrawers.forEach((fn) => fn()); });
 
-window.__railDash = { start: startIntro, tap: onTap, get resState() { return res.state; }, get resFlags() { return res.flags; }, get mode() { return mode; }, get phase() { return phase; }, get unlockState() { return unlock.state; }, get unlockT() { return unlock.t; }, move: doMove, get runState() { return run.state; }, get chaser() { return chaser; }, stumble, get guardOn() { return guard.visible; }, get caught() { return !!run.caught; }, enterCrew, leaveCrew, get crew() { return crew; }, get paused() { return !!run.paused; }, get counting() { return !!run.counting; }, get dist() { return run.dist; }, get runNeed() { return run.need; }, get score() { return run.score; }, get coins() { return run.coins; }, peek, get draws() { return renderer.info.render.calls; }, givePower: (t) => activatePower(t),
+window.__railDash = { start: startIntro, tap: onTap, get resState() { return res.state; }, get resFlags() { return res.flags; }, get mode() { return mode; }, get phase() { return phase; }, get unlockState() { return unlock.state; }, get unlockT() { return unlock.t; }, move: doMove, get runState() { return run.state; }, get missions() { return MS; }, msAdd, openMissions, get chaser() { return chaser; }, stumble, get guardOn() { return guard.visible; }, get caught() { return !!run.caught; }, enterCrew, leaveCrew, get crew() { return crew; }, get paused() { return !!run.paused; }, get counting() { return !!run.counting; }, get dist() { return run.dist; }, get runNeed() { return run.need; }, get score() { return run.score; }, get coins() { return run.coins; }, peek, get draws() { return renderer.info.render.calls; }, givePower: (t) => activatePower(t),
   spawnRoof: (cars = 2, lane = run.lane, ramp = true, ahead = 40, clear = true) => {
     const nose = kid.position.x - ahead;
     if (clear) { clearHazards(nose - cars * (CAR_L + 0.5) - 10, kid.position.x + 2); for (const pk of puPool) if (pk.active && pk.x > nose - cars * 18) release(pk); }
