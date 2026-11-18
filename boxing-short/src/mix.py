@@ -51,15 +51,54 @@ def groove(t0, t1, key=0, minor=False, g=1.0, drums=True, sneaky=False):
 def pad(t0, t1, notes, g):
     d = t1 - t0; x = tt(d); s = sum(np.sin(2 * np.pi * hz(m) * x * (1 + .002 * i)) for i, m in enumerate(notes)) / len(notes); put(mus, s * env(d, .4, .5), t0, g)
 END = F(78.6)
-groove(0, F(7.0), key=0, g=.9)                                        # fight night
-groove(F(9.7), F(18.5), key=0, g=.85)                                 # every year, same ring
-groove(F(18.5), F(23.4), key=-3, minor=True, sneaky=True, g=.7)       # selling the couches
-groove(F(23.4), F(30.4), key=-5, minor=True, drums=False, g=.55)      # wife, dog... goldfish
-groove(F(30.4), F(38.8), key=2, g=1.1); pad(F(30.4), F(38.8), [62, 66, 69], .05)   # TRAINING MONTAGE
-groove(F(38.8), F(52.3), key=-3, minor=True, sneaky=True, g=.8)       # the staredown
-pad(F(52.3), F(58.0), [57, 60, 64, 69], .08)                          # the bell... the swing... (slow-mo)
-groove(F(59.6), F(74.7), key=0, g=.55, drums=False); pad(F(68.8), F(74.7), [60, 64, 67, 72], .08)   # the shoebox
-groove(F(75.9), END, key=0, g=.7)
+# ---- a NEW sound for this one: boom-bap drums + 808, piano, strings, brass (A minor) ----
+def saw(m, d): x = tt(d); return 2 * ((hz(m) * x) % 1) - 1
+def piano(m, d=1.4): x = tt(d); f = hz(m); return sum(a * np.sin(2 * np.pi * f * k * x) * np.exp(-x * (1.6 + k * 1.4)) for k, a in ((1, 1), (2, .45), (3, .22), (4, .1))) * np.minimum(1, x / .004)
+def strings(ms, d): return norm(sum(lp(saw(m, d) + saw(m + .12, d) + saw(m - .1, d), 1500) for m in ms)) * env(d, min(.6, d / 3), min(.8, d / 3))
+def brassc(ms, d=.4): return norm(sum(lp(saw(m, d) + saw(m + .08, d), 2400) for m in ms)) * env(d, .015, .2)
+def k808(m=33, d=.55): x = tt(d); f = hz(m) * (1 + 1.5 * np.exp(-x * 40)); return np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-x * 4) * np.minimum(1, x / .002)
+def bkick(): x = tt(.22); return np.tanh(2.5 * np.sin(2 * np.pi * np.cumsum(50 + 110 * np.exp(-x * 35)) / SR) * np.exp(-x * 13))
+def bsnare(): x = tt(.22); return norm(bp(noise(.22), 1200, 6000) * np.exp(-x * 16) + np.sin(2 * np.pi * 190 * x) * np.exp(-x * 25) * .8)
+def bhat(o=False): d = .18 if o else .05; return norm(hp(noise(d), 7500)) * np.exp(-tt(d) * (18 if o else 75))
+CH = [(45, [57, 60, 64]), (41, [57, 60, 65]), (48, [55, 60, 64]), (43, [55, 59, 62])]       # Am  F  C  G
+def beat(t0, t1, bpm=88, g=1.0, keys=True, bass=True, drums=True, light=False):
+    s16 = 60 / bpm / 4; t = t0; k = 0
+    while t < t1 - .05:
+        bar = k // 16; root, ch = CH[bar % 4]; st = k % 16; sw = s16 * .18 if st % 2 else 0
+        if drums:
+            if st in (0, 7, 10) and not (light and st == 7): put(mus, bkick(), t, .5 * g)
+            if st in (4, 12) and not light: put(mus, bsnare(), t, .32 * g)
+            if st % 2 == 0: put(mus, bhat(st == 14), t + sw, (.07 if st % 4 else .1) * g)
+        if bass and st in (0, 10): put(mus, k808(root - 12, s16 * (8 if st == 0 else 5)), t, .55 * g)
+        if keys and st == 0: [put(mus, piano(m, 1.6), t + i * .012, .1 * g) for i, m in enumerate(ch)]
+        if keys and st == 8: put(mus, piano(ch[-1] + 12, .8), t, .07 * g)
+        t += s16; k += 1
+def lonely(t0, t1, bpm=70, g=1.0):          # just a slow piano, arpeggiated
+    b = 60 / bpm; t = t0; k = 0
+    while t < t1 - .05:
+        root, ch = CH[(k // 4) % 4]; m = [root + 12, ch[0], ch[1], ch[2]][k % 4]; put(mus, piano(m, 2.0), t, .16 * g); t += b; k += 1
+def anthem(t0, t1, bpm=124, g=1.0):         # training montage: four-on-the-floor, brass stabs climbing, strings swelling
+    b = 60 / bpm; t = t0; k = 0; d = t1 - t0
+    put(mus, strings([57, 64, 69, 72], d) * np.linspace(.4, 1, int(d * SR)), t0, .1 * g)
+    while t < t1 - .05:
+        put(mus, bkick(), t, .45 * g); put(mus, bhat(), t + b / 2, .09 * g)
+        if k % 2: put(mus, bsnare(), t, .3 * g)
+        bar = k // 4; root, ch = CH[bar % 4]
+        if k % 4 == 0: put(mus, k808(root - 12, b * 3.5), t, .45 * g)
+        if k % 4 in (0, 3): put(mus, brassc([m + 12 + (bar // 4) * 2 for m in ch], .3 if k % 4 else .45), t + (b / 2 if k % 4 == 3 else 0), .14 * g)
+        t += b; k += 1
+def tension(t0, t1, g=1.0):                 # the staredown: low drone + heartbeat
+    d = t1 - t0; x = tt(d); put(mus, (np.sin(2 * np.pi * 55 * x) + .5 * np.sin(2 * np.pi * 82.5 * x * (1 + .002 * np.sin(x)))) * env(d, 1.0, 1.0), t0, .22 * g)
+    for t in np.arange(t0 + .3, t1 - .3, .8): put(mus, k808(28, .25), t, .4 * g); put(mus, k808(28, .25), t + .24, .28 * g)
+beat(0, F(7.0), g=1.0)                                  # fight night
+beat(F(9.7), F(18.5), g=.95)                            # every year, same ring
+beat(F(18.5), F(23.4), g=.7, light=True, keys=False)    # selling the couches (stripped down)
+lonely(F(23.4), F(30.4), g=.9)                          # wife, dog... goldfish
+anthem(F(30.4), F(38.8), g=1.05)                        # TRAINING MONTAGE
+tension(F(38.8), F(52.3))                               # the staredown
+d = F(56.4) - F(52.6); put(mus, strings([45, 52, 57, 64], d) * np.linspace(.2, 1, int(d * SR)) ** 2, F(52.6), .12)   # the swing (slow-mo swell)... then silence
+lonely(F(59.6), F(74.7), bpm=76, g=.8); d = F(74.7) - F(64.4); put(mus, strings([57, 60, 64, 69], d), F(64.4), .07)   # the shoebox: piano + strings
+beat(F(75.9), END + .8, g=1.05)                         # REMATCH: the beat slams back in
 # ================= SOUND EFFECTS =================
 def bed(t0, t1, kind, g):
     d = t1 - t0
