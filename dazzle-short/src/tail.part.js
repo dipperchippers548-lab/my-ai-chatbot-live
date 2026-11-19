@@ -8,9 +8,10 @@ function drawCaption(tc) {
 }
 // ---------- frame: render, cross-fades between shots, dream frames, viewfinder, emotion flash, fades ----------
 const tmp = document.createElement('canvas'); tmp.width = W; tmp.height = H; const tg = tmp.getContext('2d');
+const scopeC = document.createElement('canvas'); scopeC.width = W; scopeC.height = H; { const b = scopeC.getContext('2d'); b.fillStyle = '#000'; b.fillRect(0, 0, W, H); b.globalCompositeOperation = 'destination-out'; b.beginPath(); b.arc(W / 2, H * .46, W * .44, 0, 7); b.fill(); }
 const bino = document.createElement('canvas'); bino.width = W; bino.height = H; { const b = bino.getContext('2d'); b.fillStyle = '#000'; b.fillRect(0, 0, W, H); b.globalCompositeOperation = 'destination-out'; const r = W * .4; for (const x of [W / 2 - r * .62, W / 2 + r * .62]) { b.beginPath(); b.arc(x, H * .46, r, 0, 7); b.fill(); } }
 // ---- camera energy layer, applied on top of every shot ----
-const KEY = /^rich$|shaving|silver|sliver|^melt$|thousands|shrinking|smartest|newton|laughed|calculate|disguises|undercover|^fix$|ridges|vanish|^cut$|quarter|prison|^one$/i
+const KEY = /zebras|stripes|zigzags|swirls|battleships|laughed|^hide$|circus|submarines|periscope|torpedo|^front$|turning|^fast$|^past$|barber|thousand|dazzle|^too$/i
 const kicks = () => words.filter((w, i) => KEY.test(w.w) || /[?!]$/.test(w.raw || '') || (i > 0 && /[?]$/.test(words[i - 1].raw || ''))).map(w => w.s + .04);
 let KICKS = null;
 function renderShot(s, tc) {
@@ -39,6 +40,7 @@ function post(s, tc) {
     og.save(); og.font = '900 52px Nunito'; og.fillStyle = '#fff'; og.textAlign = 'left'; og.fillText(s.camLabel || 'FRONT DOOR', 90, 190); og.textAlign = 'right'; og.fillText(s.doorcam, W - 90, 190); if (Math.sin(tc * 6) > 0) { og.fillStyle = '#ff2020'; og.beginPath(); og.arc(110, 262, 17, 0, 7); og.fill(); } og.fillStyle = '#fff'; og.textAlign = 'left'; og.fillText('LIVE', 142, 280); og.restore();
     if (s.circle) { const [cx, cy, rr, k] = s.circle; og.save(); og.strokeStyle = '#ff2a2a'; og.lineWidth = 16; og.lineCap = 'round'; og.beginPath(); og.ellipse(cx, cy, rr, rr * 1.12, -.25, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2.15 * k); og.stroke(); og.restore(); } }
   if (s.binoc) og.drawImage(bino, 0, 0);
+  if (s.scope) { og.drawImage(scopeC, 0, 0); og.save(); og.strokeStyle = 'rgba(20,20,20,.85)'; og.lineWidth = 4; const cx = W / 2, cy = H * .46, r = W * .44; og.beginPath(); og.moveTo(cx - r, cy); og.lineTo(cx + r, cy); og.moveTo(cx, cy - r); og.lineTo(cx, cy + r); og.stroke(); for (let i = -4; i <= 4; i++) { if (!i) continue; og.beginPath(); og.moveTo(cx + i * r / 5, cy - 14); og.lineTo(cx + i * r / 5, cy + 14); og.stroke(); } og.restore(); }
   if (s.sepia) { og.save(); og.globalCompositeOperation = 'color'; og.globalAlpha = .6; og.fillStyle = '#c8955a'; og.fillRect(0, 0, W, H); og.globalCompositeOperation = 'soft-light'; og.globalAlpha = .45; og.fillStyle = '#ffd08a'; og.fillRect(0, 0, W, H); og.restore(); }
   const vg = og.createRadialGradient(W / 2, H * .45, W * .45, W / 2, H * .45, H * .7); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.35)'); og.fillStyle = vg; og.fillRect(0, 0, W, H);
   if (s.fade) { og.fillStyle = `rgba(0,0,0,${s.fade})`; og.fillRect(0, 0, W, H); }
