@@ -82,7 +82,7 @@ def trap(t0, t1, g=1.0, level=2):          # level 1 = hats + 808 only, 2 = full
 def ticking(t0, t1, g=1.0):
     for t in np.arange(t0, t1, .5): put(mus, tick_(), t, .3 * g)
     d = t1 - t0; put(mus, np.sin(2 * np.pi * 41.2 * tt(d)) * env(d, .3, .3), t0, .25 * g)
-def hit(t, ms=(52, 55, 59), rise=1.0, g=1.0): put(mus, riser(rise), t - rise, .16 * g); put(mus, impact(), t, .45 * g); put(mus, braam(ms), t, .22 * g)
+def hit(t, ms=(52, 55, 59), rise=1.0, g=1.0): put(mus, riser(rise), t - rise, .16 * g); put(mus, impact(), t, .32 * g); put(mus, braam(ms), t, .22 * g)
 trap(0, F(15.8), level=2); hit(F(1.47), rise=.6)                                 # "fourteen times" - impact right in the hook
 trap(F(15.8), F(27.6), level=1, g=.9); hit(F(20.11), rise=1.2); hit(F(25.92), (47, 52, 55), 1.0)   # 1992... seven million... twenty-seven MILLION
 trap(F(27.6), F(31.9), level=2, g=.95)                                           # "nobody can buy seven million tickets"
@@ -149,7 +149,7 @@ w = wave.open(VOICE); v = np.frombuffer(w.readframes(w.getnframes()), dtype=np.i
 v = np.pad(v, (0, max(0, N - len(v))))[:N]; v = v / np.abs(v).max() * .92
 mus = mus / (np.sqrt(np.mean(mus ** 2)) + 1e-9) * 10 ** (-15.5 / 20)
 sfx = sfx * 2.2
-mix = (v + sfx + mus) * .88
+mix = (v + sfx + mus) * .84
 fade = np.ones(N); fl = int(.06 * SR); fade[-fl:] = np.linspace(1, 0, fl); mix *= fade   # (tiny fade only: it loops)
 mix = np.clip(np.tanh(mix * 1.05) / np.tanh(1.05) * .95, -.98, .98)
 def db(x): return 20 * np.log10(np.sqrt(np.mean(x ** 2)) + 1e-9)
