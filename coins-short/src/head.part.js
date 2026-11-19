@@ -176,13 +176,14 @@ const newCam = (fov = 40) => new THREE.PerspectiveCamera(fov, W / H, .05, 300);
 const look = (cam, px, py, pz, tx, ty, tz) => { cam.position.set(px, py, pz); cam.lookAt(tx, ty, tz); };
 const drift = (cam, t, a = .004) => { cam.rotation.x += Math.sin(t * 1.1) * a; cam.rotation.y += Math.sin(t * .9 + 1) * a; };
 let live = [];
-let NOW = 0;   // render clock, so every noodle stays alive between poses
+let NOW = 0;
+const CHS = .8;   // characters a bit smaller than before, so the sets read bigger   // render clock, so every noodle stays alive between poses
 // a noodle that is never quite still: arms drift, the body breathes (squash & stretch), the head bobs and tilts
 function place(scene, opts, x, y, z, ry = 0) {
   const seed = (x * 7.13 + z * 3.71 + (opts.color || 0) % 97) % 6.283; let o = opts;
   if (!o.hands && !o.still) { const base = o.arms || [[-.5, -.2, .05], [.5, -.2, .05]], w = Math.sin(NOW * 3.1 + seed), w2 = Math.sin(NOW * 2.3 + seed * 2); o = { ...o, arms: base.map((a, i) => [a[0] + (i ? 1 : -1) * w2 * .03, a[1] + (i ? w : -w) * .07, a[2] + w2 * .04]) }; }
   const g = noodle(o); g.position.set(x, y, z); g.rotation.y = ry;
-  const b = Math.sin(NOW * 4.4 + seed), sq = o.squash || 0; g.scale.set(1 + .03 * b + sq * .6, 1 - .04 * b - sq, 1 + .03 * b + sq * .6);
+  const b = Math.sin(NOW * 4.4 + seed), sq = o.squash || 0; const CS = o.cs ?? CHS; g.scale.set(CS * (1 + .03 * b + sq * .6), CS * (1 - .04 * b - sq), CS * (1 + .03 * b + sq * .6));
   const hd = g.userData.head; hd.rotation.z += Math.sin(NOW * 2.6 + seed) * .07; hd.rotation.x += Math.sin(NOW * 3.9 + seed) * .035; hd.rotation.y += Math.sin(NOW * 1.7 + seed) * .06;
   scene.add(g); live.push(g); return g;
 }

@@ -10,7 +10,7 @@ function drawCaption(tc) {
 const tmp = document.createElement('canvas'); tmp.width = W; tmp.height = H; const tg = tmp.getContext('2d');
 const bino = document.createElement('canvas'); bino.width = W; bino.height = H; { const b = bino.getContext('2d'); b.fillStyle = '#000'; b.fillRect(0, 0, W, H); b.globalCompositeOperation = 'destination-out'; const r = W * .4; for (const x of [W / 2 - r * .62, W / 2 + r * .62]) { b.beginPath(); b.arc(x, H * .46, r, 0, 7); b.fill(); } }
 // ---- camera energy layer, applied on top of every shot ----
-const KEY = /fatter|weighs|^door$|^diet$|treats|^vet$|cheeseburgers|crumb|beanbag|^legs$|^camera$|^fence$|scratched|whiskers|salmon|families|^names$|dinners|^bill$|twice/i
+const KEY = /^rich$|shaving|silver|sliver|^melt$|thousands|shrinking|smartest|newton|laughed|calculate|disguises|undercover|^fix$|ridges|vanish|^cut$|quarter|prison|^one$/i
 const kicks = () => words.filter((w, i) => KEY.test(w.w) || /[?!]$/.test(w.raw || '') || (i > 0 && /[?]$/.test(words[i - 1].raw || ''))).map(w => w.s + .04);
 let KICKS = null;
 function renderShot(s, tc) {
