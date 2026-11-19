@@ -138,9 +138,9 @@ import os
 VOICE = 'build/voice_loud.wav' if os.path.exists('build/voice_loud.wav') else 'build/voice_cut.wav'  # louder, lightly compressed voice
 w = wave.open(VOICE); v = np.frombuffer(w.readframes(w.getnframes()), dtype=np.int16).astype(float) / 32768; w.close()
 v = np.pad(v, (0, max(0, N - len(v))))[:N]; v = v / np.abs(v).max() * .92
-mus = mus / (np.sqrt(np.mean(mus ** 2)) + 1e-9) * 10 ** (-18.5 / 20)
+mus = mus / (np.sqrt(np.mean(mus ** 2)) + 1e-9) * 10 ** (-15.5 / 20)
 sfx = sfx * 2.2
-mix = v + sfx + mus
+mix = (v + sfx + mus) * .88
 fade = np.ones(N); fl = int(.06 * SR); fade[-fl:] = np.linspace(1, 0, fl); mix *= fade   # (tiny fade only: it loops)
 mix = np.clip(np.tanh(mix * 1.05) / np.tanh(1.05) * .95, -.98, .98)
 def db(x): return 20 * np.log10(np.sqrt(np.mean(x ** 2)) + 1e-9)
