@@ -51,37 +51,46 @@ def groove(t0, t1, key=0, minor=False, g=1.0, drums=True, sneaky=False):
 def pad(t0, t1, notes, g):
     d = t1 - t0; x = tt(d); s = sum(np.sin(2 * np.pi * hz(m) * x * (1 + .002 * i)) for i, m in enumerate(notes)) / len(notes); put(mus, s * env(d, .4, .5), t0, g)
 END = F(64.6)
-# ---- a 90s heist groove: slap bass, clavinet stabs, brushed funk drums, horn hits (E minor) ----
+# ---- INTENSE: trap drums with rolling hats, 808 bass, dark staccato synth ostinato, risers + impacts on the big lines (E minor, 140 bpm half-time) ----
 def saw(m, d): x = tt(d); return 2 * ((hz(m) * x) % 1) - 1
-def slap(m, d=.22): x = tt(d); f = hz(m); return np.tanh(2.2 * (np.sin(2 * np.pi * f * x) + .4 * np.sin(4 * np.pi * f * x) * np.exp(-x * 30))) * np.exp(-x * 9) * np.minimum(1, x / .002)
-def clav(ms, d=.14): x = tt(d); return norm(sum(hp(np.sign(np.sin(2 * np.pi * hz(m) * x)) * np.exp(-x * 22), 400) for m in ms)) * env(d, .002, .05)
-def horns(ms, d=.35): return norm(sum(lp(saw(m, d) + saw(m + .07, d), 2600) for m in ms)) * env(d, .015, .15)
-def kick(): x = tt(.2); return np.sin(2 * np.pi * np.cumsum(50 + 100 * np.exp(-x * 32)) / SR) * np.exp(-x * 14)
-def snare(): d = .16; return norm(bp(noise(d), 1500, 7000) * np.exp(-tt(d) * 24) + np.sin(2 * np.pi * 190 * tt(d)) * np.exp(-tt(d) * 30) * .5)
-def hat(): return norm(hp(noise(.04), 8000)) * np.exp(-tt(.04) * 90)
+def k808(m=28, d=.6): x = tt(d); f = hz(m) * (1 + 1.2 * np.exp(-x * 35)); return np.tanh(1.8 * np.sin(2 * np.pi * np.cumsum(f) / SR)) * np.exp(-x * 2.6) * np.minimum(1, x / .002)
+def kick(): x = tt(.25); return np.tanh(3 * np.sin(2 * np.pi * np.cumsum(48 + 140 * np.exp(-x * 38)) / SR) * np.exp(-x * 12))
+def clap():
+    d = .22; x = tt(d); s = np.zeros(len(x))
+    for o in (0, .012, .024):
+        i = int(o * SR); n_ = norm(bp(noise(d), 1200, 6000)) * np.exp(-x * 26); s[i:] += n_[:len(s) - i]
+    return norm(s)
+def hat(): return norm(hp(noise(.035), 8500)) * np.exp(-tt(.035) * 110)
+def stab(m, d=.16): x = tt(d); return lp(saw(m, d) + saw(m + .1, d), 3200) * np.exp(-x * 18) * np.minimum(1, x / .002)
+def braam(ms, d=1.4): x = tt(d); return norm(sum(lp(saw(m, d) + saw(m - 12, d) * .7, 900) for m in ms)) * env(d, .08, .6) * (1 + .3 * np.sin(2 * np.pi * 5 * x))
+def riser(d=1.2): x = tt(d); return norm(bp(noise(d), 800, 9000) * (x / d) ** 2 + .4 * np.sin(2 * np.pi * np.cumsum(200 + 1600 * (x / d) ** 2) / SR) * (x / d) ** 2)
+def impact(): d = 1.8; x = tt(d); return norm(np.tanh(2 * sweep(65, 28, d) * np.exp(-x * 2.2)) + hp(noise(d), 5000) * np.exp(-x * 3) * .35)
 def tick_(): return norm(hp(noise(.02), 4000)) * np.exp(-tt(.02) * 200)
-EM = [(40, [64, 67, 71]), (43, [62, 67, 71]), (45, [64, 69, 72]), (47, [63, 66, 71])]
-def heist(t0, t1, bpm=104, g=1.0, full=True):
-    s16 = 60 / bpm / 4; t = t0; k = 0; bl = [0, None, 0, 12, None, 7, None, 10, 0, None, 3, None, 5, None, 7, None]
+EM = [(40, [64, 67, 71]), (36, [60, 64, 67]), (43, [62, 67, 71]), (38, [62, 66, 69])]   # Em C G D
+def trap(t0, t1, g=1.0, level=2):          # level 1 = hats + 808 only, 2 = full, 3 = full + double-time hats + octave stabs
+    s16 = 60 / 140 / 4 * 2; t = t0; k = 0; ost = [0, 2, 1, 2, 0, 2, 1, 0]
     while t < t1 - .05:
-        root, ch = EM[(k // 16) % 4]; st = k % 16
-        if bl[st] is not None: put(mus, slap(root - 12 + bl[st]), t, .45 * g)
-        if full and st in (2, 6, 10, 14): put(mus, clav(ch), t, .13 * g)
-        if st in (0, 7, 10): put(mus, kick(), t, .4 * g)
-        if st in (4, 12): put(mus, snare(), t, .2 * g)
-        if st % 2 == 0: put(mus, hat(), t + (s16 * .2 if st % 4 else 0), .06 * g)
+        st = k % 16; root, ch = EM[(k // 16) % 4]
+        if st in (0, 6, 11) and level >= 2: put(mus, kick(), t, .55 * g)
+        if st in (0, 10): put(mus, k808(root - 12, s16 * (10 if st == 0 else 6)), t, .55 * g)
+        if st == 8 and level >= 2: put(mus, clap(), t, .3 * g)
+        put(mus, hat(), t, .08 * g)
+        if (level >= 3 or st in (14, 15)) : put(mus, hat(), t + s16 / 2, .06 * g)
+        if st in (14, 15) and level >= 2: put(mus, hat(), t + s16 / 3, .05 * g); put(mus, hat(), t + 2 * s16 / 3, .05 * g)
+        if level >= 2: put(mus, stab(ch[ost[st % 8]] + (12 if level >= 3 and st % 4 == 2 else 0), s16 * .9), t, .14 * g)
         t += s16; k += 1
 def ticking(t0, t1, g=1.0):
-    for t in np.arange(t0, t1, .5): put(mus, tick_(), t, .25 * g); put(mus, slap(28, .3) * .4, t, .25 * g) if int((t - t0) * 2) % 4 == 0 else None
-heist(0, F(15.8), g=1.0); put(mus, horns([64, 67, 71], .5), F(2.3), .2)              # 14 times... none of it was luck
-ticking(F(15.8), F(27.6), g=.9); heist(F(19.9), F(27.6), g=.6, full=False)             # 1992: 7 million combinations
-put(mus, horns([59, 62, 66], .9), F(25.9), .22)                                         # twenty-seven MILLION
-heist(F(28.0), F(31.6), bpm=110, g=.75)                                                  # people laughed
-heist(F(31.9), F(40.0), bpm=116, g=1.05); put(mus, horns([64, 67, 71, 76], .4), F(36.8), .18)   # the warehouse, day and night
-ticking(F(40.0), F(44.6), g=1.1)                                                          # ran out of time...
-put(mus, horns([64, 68, 71, 76], 1.6), F(45.0), .3)                                       # THE WINNING NUMBERS (major!)
-heist(F(45.4), F(58.4), bpm=104, g=.85)                                                   # here's the math
-heist(F(58.4), END + .3, bpm=104, g=1.0); put(mus, horns([64, 67, 71], .5), F(64.4), .2) # rules changed... (loops)
+    for t in np.arange(t0, t1, .5): put(mus, tick_(), t, .3 * g)
+    d = t1 - t0; put(mus, np.sin(2 * np.pi * 41.2 * tt(d)) * env(d, .3, .3), t0, .25 * g)
+def hit(t, ms=(52, 55, 59), rise=1.0, g=1.0): put(mus, riser(rise), t - rise, .16 * g); put(mus, impact(), t, .45 * g); put(mus, braam(ms), t, .22 * g)
+trap(0, F(15.8), level=2); hit(F(1.47), rise=.6)                                 # "fourteen times" - impact right in the hook
+trap(F(15.8), F(27.6), level=1, g=.9); hit(F(20.11), rise=1.2); hit(F(25.92), (47, 52, 55), 1.0)   # 1992... seven million... twenty-seven MILLION
+trap(F(27.6), F(31.9), level=2, g=.95)                                           # "nobody can buy seven million tickets"
+hit(F(32.41), rise=.5); trap(F(32.4), F(40.1), level=3, g=1.05)                 # the warehouse: full intensity, day and night
+ticking(F(40.1), F(45.0), g=1.0); put(mus, riser(2.4), F(45.07) - 2.4, .2)     # ran out of time... (tension)
+hit(F(45.07), (52, 56, 59), .4, 1.2)                                            # THE WINNING NUMBERS
+trap(F(45.1), F(58.4), level=2, g=.95); hit(F(50.6), rise=.6, g=.8)             # here's the math... win twenty-seven million
+hit(F(60.23), (47, 50, 55), .8); trap(F(58.4), END + .3, level=3, g=1.0)        # rules changed... (loops)
 
 # ================= SOUND EFFECTS =================
 def bed(t0, t1, kind, g):
