@@ -51,46 +51,39 @@ def groove(t0, t1, key=0, minor=False, g=1.0, drums=True, sneaky=False):
 def pad(t0, t1, notes, g):
     d = t1 - t0; x = tt(d); s = sum(np.sin(2 * np.pi * hz(m) * x * (1 + .002 * i)) for i, m in enumerate(notes)) / len(notes); put(mus, s * env(d, .4, .5), t0, g)
 END = F(64.6)
-# ---- INTENSE: trap drums with rolling hats, 808 bass, dark staccato synth ostinato, risers + impacts on the big lines (E minor, 140 bpm half-time) ----
+# ---- smooth heist: soft kick + finger snaps, shaker, warm sub bass, muted plucks, string pad swells, gentle risers (A minor, 100 bpm) ----
 def saw(m, d): x = tt(d); return 2 * ((hz(m) * x) % 1) - 1
-def k808(m=28, d=.6): x = tt(d); f = hz(m) * (1 + 1.2 * np.exp(-x * 35)); return np.tanh(1.8 * np.sin(2 * np.pi * np.cumsum(f) / SR)) * np.exp(-x * 2.6) * np.minimum(1, x / .002)
-def kick(): x = tt(.25); return np.tanh(3 * np.sin(2 * np.pi * np.cumsum(48 + 140 * np.exp(-x * 38)) / SR) * np.exp(-x * 12))
-def clap():
-    d = .22; x = tt(d); s = np.zeros(len(x))
-    for o in (0, .012, .024):
-        i = int(o * SR); n_ = norm(bp(noise(d), 1200, 6000)) * np.exp(-x * 26); s[i:] += n_[:len(s) - i]
-    return norm(s)
-def hat(): return norm(hp(noise(.035), 8500)) * np.exp(-tt(.035) * 110)
-def stab(m, d=.16): x = tt(d); return lp(saw(m, d) + saw(m + .1, d), 3200) * np.exp(-x * 18) * np.minimum(1, x / .002)
-def braam(ms, d=1.4): x = tt(d); return norm(sum(lp(saw(m, d) + saw(m - 12, d) * .7, 900) for m in ms)) * env(d, .08, .6) * (1 + .3 * np.sin(2 * np.pi * 5 * x))
-def riser(d=1.2): x = tt(d); return norm(bp(noise(d), 800, 9000) * (x / d) ** 2 + .4 * np.sin(2 * np.pi * np.cumsum(200 + 1600 * (x / d) ** 2) / SR) * (x / d) ** 2)
-def impact(): d = 1.8; x = tt(d); return norm(np.tanh(2 * sweep(65, 28, d) * np.exp(-x * 2.2)) + hp(noise(d), 5000) * np.exp(-x * 3) * .35)
-def tick_(): return norm(hp(noise(.02), 4000)) * np.exp(-tt(.02) * 200)
-EM = [(40, [64, 67, 71]), (36, [60, 64, 67]), (43, [62, 67, 71]), (38, [62, 66, 69])]   # Em C G D
-def trap(t0, t1, g=1.0, level=2):          # level 1 = hats + 808 only, 2 = full, 3 = full + double-time hats + octave stabs
-    s16 = 60 / 140 / 4 * 2; t = t0; k = 0; ost = [0, 2, 1, 2, 0, 2, 1, 0]
+def pl(m, d=.3): x = tt(d); f = hz(m); return (np.sin(2 * np.pi * f * x) + .25 * np.sin(4 * np.pi * f * x)) * np.exp(-x * 14) * np.minimum(1, x / .003)
+def sub(m, d): x = tt(d); return np.sin(2 * np.pi * hz(m) * x) * env(d, .01, .2)
+def kick(): x = tt(.22); return np.sin(2 * np.pi * np.cumsum(50 + 70 * np.exp(-x * 30)) / SR) * np.exp(-x * 11)
+def snapp(): d = .1; return norm(bp(noise(d), 1800, 5000)) * np.exp(-tt(d) * 40)
+def shk(): return norm(bp(noise(.06), 5000, 11000)) * np.exp(-tt(.06) * 50)
+def pad(ms, d): return norm(sum(lp(saw(m, d) + saw(m + .1, d), 1100) for m in ms)) * env(d, min(.8, d / 3), min(1.0, d / 3))
+def keys(m, d=1.2): x = tt(d); f = hz(m); return sum(a * np.sin(2 * np.pi * f * k * x) * np.exp(-x * (2 + k * 1.5)) for k, a in ((1, 1), (2, .4), (3, .15))) * np.minimum(1, x / .004)
+def swell(d=1.2): x = tt(d); return norm(lp(noise(d), 2500)) * (x / d) ** 2.5
+def thump(): d = 1.2; x = tt(d); return np.sin(2 * np.pi * np.cumsum(55 * (1 + .6 * np.exp(-x * 8))) / SR) * np.exp(-x * 3)
+AM = [(45, [57, 60, 64]), (41, [57, 60, 65]), (43, [55, 59, 62]), (40, [56, 59, 64])]   # Am F G E
+def groove(t0, t1, g=1.0, lvl=2, bpm=100):
+    b = 60 / bpm; t = t0; k = 0; ost = [0, 2, 1, 2]
     while t < t1 - .05:
-        st = k % 16; root, ch = EM[(k // 16) % 4]
-        if st in (0, 6, 11) and level >= 2: put(mus, kick(), t, .55 * g)
-        if st in (0, 10): put(mus, k808(root - 12, s16 * (10 if st == 0 else 6)), t, .55 * g)
-        if st == 8 and level >= 2: put(mus, clap(), t, .3 * g)
-        put(mus, hat(), t, .08 * g)
-        if (level >= 3 or st in (14, 15)) : put(mus, hat(), t + s16 / 2, .06 * g)
-        if st in (14, 15) and level >= 2: put(mus, hat(), t + s16 / 3, .05 * g); put(mus, hat(), t + 2 * s16 / 3, .05 * g)
-        if level >= 2: put(mus, stab(ch[ost[st % 8]] + (12 if level >= 3 and st % 4 == 2 else 0), s16 * .9), t, .14 * g)
-        t += s16; k += 1
-def ticking(t0, t1, g=1.0):
-    for t in np.arange(t0, t1, .5): put(mus, tick_(), t, .3 * g)
-    d = t1 - t0; put(mus, np.sin(2 * np.pi * 41.2 * tt(d)) * env(d, .3, .3), t0, .25 * g)
-def hit(t, ms=(52, 55, 59), rise=1.0, g=1.0): put(mus, riser(rise), t - rise, .16 * g); put(mus, impact(), t, .32 * g); put(mus, braam(ms), t, .22 * g)
-trap(0, F(15.8), level=2); hit(F(1.47), rise=.6)                                 # "fourteen times" - impact right in the hook
-trap(F(15.8), F(27.6), level=1, g=.9); hit(F(20.11), rise=1.2); hit(F(25.92), (47, 52, 55), 1.0)   # 1992... seven million... twenty-seven MILLION
-trap(F(27.6), F(31.9), level=2, g=.95)                                           # "nobody can buy seven million tickets"
-hit(F(32.41), rise=.5); trap(F(32.4), F(40.1), level=3, g=1.05)                 # the warehouse: full intensity, day and night
-ticking(F(40.1), F(45.0), g=1.0); put(mus, riser(2.4), F(45.07) - 2.4, .2)     # ran out of time... (tension)
-hit(F(45.07), (52, 56, 59), .4, 1.2)                                            # THE WINNING NUMBERS
-trap(F(45.1), F(58.4), level=2, g=.95); hit(F(50.6), rise=.6, g=.8)             # here's the math... win twenty-seven million
-hit(F(60.23), (47, 50, 55), .8); trap(F(58.4), END + .3, level=3, g=1.0)        # rules changed... (loops)
+        bar = k // 4; root, ch = AM[bar % 4]; bt = k % 4
+        if bt == 0: put(mus, sub(root - 12, b * 3.6), t, .5 * g); put(mus, pad([m + 12 for m in ch], b * 4.1), t, .07 * g * (lvl >= 2))
+        if lvl >= 1 and bt in (0, 2): put(mus, kick(), t, .4 * g)
+        if lvl >= 2 and bt in (1, 3): put(mus, snapp(), t, .16 * g)
+        for e in range(2): put(mus, shk(), t + e * b / 2, .045 * g)
+        for e in range(2): put(mus, pl(ch[ost[(k * 2 + e) % 4]] + 12, .28), t + e * b / 2, .12 * g)
+        t += b; k += 1
+def hit(t, ms=(57, 64, 69), g=1.0): put(mus, swell(1.0), t - 1.0, .06 * g); put(mus, thump(), t, .35 * g); put(mus, keys(ms[0], 2.0) + keys(ms[1], 2.0) + keys(ms[2], 2.0), t, .1 * g)
+def hold(t0, t1, g=1.0):
+    d = t1 - t0; put(mus, pad([57, 60, 64], d), t0, .09 * g)
+    for t in np.arange(t0, t1, .5): put(mus, norm(hp(noise(.02), 4000)) * np.exp(-tt(.02) * 200), t, .18 * g)
+groove(0, F(15.8), lvl=2); hit(F(1.47))                                           # fourteen times
+groove(F(15.8), F(27.6), lvl=1, g=.9); hit(F(20.11), (52, 57, 60), .8); hit(F(25.92), (57, 61, 64))   # 1992 / seven million / twenty-seven million
+groove(F(27.6), F(31.9), lvl=2, g=.9)                                             # people laughed
+groove(F(31.9), F(40.1), lvl=2, g=1.05, bpm=104); hit(F(32.41), g=.7)            # the warehouse, day and night
+hold(F(40.1), F(45.0)); put(mus, swell(2.0), F(45.07) - 2.0, .08)               # ran out of time...
+hit(F(45.07), (57, 61, 64), 1.2); groove(F(45.1), F(58.4), lvl=2, g=.95)       # THE WINNING NUMBERS (bright A major)
+hit(F(60.23), (52, 57, 60), .8); groove(F(58.4), END + .3, lvl=2, g=1.0)        # rules changed... (loops)
 
 # ================= SOUND EFFECTS =================
 def bed(t0, t1, kind, g):
@@ -147,7 +140,7 @@ import os
 VOICE = 'build/voice_loud.wav' if os.path.exists('build/voice_loud.wav') else 'build/voice_cut.wav'  # louder, lightly compressed voice
 w = wave.open(VOICE); v = np.frombuffer(w.readframes(w.getnframes()), dtype=np.int16).astype(float) / 32768; w.close()
 v = np.pad(v, (0, max(0, N - len(v))))[:N]; v = v / np.abs(v).max() * .92
-mus = mus / (np.sqrt(np.mean(mus ** 2)) + 1e-9) * 10 ** (-15.5 / 20)
+mus = mus / (np.sqrt(np.mean(mus ** 2)) + 1e-9) * 10 ** (-16.5 / 20)
 sfx = sfx * 2.2
 mix = (v + sfx + mus) * .84
 fade = np.ones(N); fl = int(.06 * SR); fade[-fl:] = np.linspace(1, 0, fl); mix *= fade   # (tiny fade only: it loops)
