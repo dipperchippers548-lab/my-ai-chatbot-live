@@ -19,3 +19,5 @@ function shaft(sc, from, to, w = .7, a = .22, col = 0xfff2d8) { const len = from
   const grp = new THREE.Group(); for (let i = 0; i < 3; i++) { const p = new THREE.Mesh(new THREE.PlaneGeometry(w * (1 - i * .2), len), new THREE.MeshBasicMaterial({ map: tex, color: col, transparent: true, opacity: a * (1 - i * .25), blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide })); p.material.userData.keepTone = true; p.rotation.y = i * Math.PI / 3; p.position.y = -len / 2; grp.add(p); }
   grp.position.copy(from); grp.lookAt(to); grp.rotateX(-Math.PI / 2); sc.add(grp); return grp; }
 
+// the ink outline shells wrap each noodle, so ambient occlusion would see the body as "buried" and darken it: hide them while AO is computed
+{ const orig = gtao.render.bind(gtao); gtao.render = (...a) => { const hid = []; gtao.scene.traverse(o => { if (o.isMesh && o.visible && o.material && o.material.side === THREE.BackSide && o.material.isMeshBasicMaterial) { o.visible = false; hid.push(o); } }); orig(...a); hid.forEach(o => o.visible = true); }; }
