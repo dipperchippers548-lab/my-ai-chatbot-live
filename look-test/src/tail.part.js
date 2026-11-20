@@ -1,10 +1,13 @@
 // ---------- captions: one word at a time, white with a thick black outline, pop-in ----------
-const words = (await (await fetch('/build/words.json')).json()).map(w => ({ w: w.w.replace(/[.,?!]+$/, ''), raw: w.w, s: tm(w.s), e: tm(w.e) }));
+const words0 = (await (await fetch('/build/words.json')).json()).map(w => ({ w: w.w, s: tm(w.s), e: tm(w.e) }));
+// Ricks-style captions: lowercase, 1-2 words (tiny words ride with the next one), punctuation kept, smaller, low on screen
+const words = []; for (let i = 0; i < words0.length; i++) { const w = words0[i], n = words0[i + 1];
+  if (n && w.w.replace(/[^a-z']/gi, '').length <= 3 && !/[.,?!]$/.test(w.w) && n.s - w.e < .25) { words.push({ w: w.w + ' ' + n.w, raw: n.w, s: w.s, e: n.e }); i++; } else words.push({ w: w.w, raw: w.w, s: w.s, e: w.e }); }
 words.forEach((w, i) => { const n = words[i + 1]; w.s -= .04; w.e = n ? Math.max(w.e, n.s - .04) : w.e + .5; });
 function drawCaption(tc) {
-  const c = words.find(w => tc >= w.s && tc < w.e); if (!c) return; const k = 1 + .12 * Math.exp(-(tc - c.s) * 18);
-  og.save(); og.translate(W / 2, H * .66); og.scale(k, k); og.font = '900 96px Nunito'; og.textAlign = 'center'; og.textBaseline = 'middle'; og.lineJoin = 'round';
-  og.lineWidth = 20; og.strokeStyle = '#16121a'; og.strokeText(c.w.toUpperCase(), 0, 0); og.fillStyle = '#ffffff'; og.fillText(c.w.toUpperCase(), 0, 0); og.restore();
+  const c = words.find(w => tc >= w.s && tc < w.e); if (!c) return; const k = 1 + .08 * Math.exp(-(tc - c.s) * 18);
+  og.save(); og.translate(W / 2, H * .7); og.scale(k, k); og.font = '900 68px Nunito'; og.textAlign = 'center'; og.textBaseline = 'middle'; og.lineJoin = 'round';
+  const txt = c.w.toLowerCase().replace(/\.\.\./g, ''); og.lineWidth = 15; og.strokeStyle = '#16121a'; og.strokeText(txt, 0, 0); og.fillStyle = '#ffffff'; og.fillText(txt, 0, 0); og.restore();
 }
 // ---------- frame: render, cross-fades between shots, dream frames, viewfinder, emotion flash, fades ----------
 const tmp = document.createElement('canvas'); tmp.width = W; tmp.height = H; const tg = tmp.getContext('2d');
