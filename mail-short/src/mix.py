@@ -31,37 +31,43 @@ def ding(): x = tt(.8); return (np.sin(2 * np.pi * 2093 * x) + .5 * np.sin(2 * n
 
 # ================= MUSIC (original) =================
 
-# ===== MUSIC: bright "adventure" groove that never stops (plucked guitar arps, glock hook, soft drums); minor + ticking for the Paris danger =====
-def gtr(m, d=.5): x = tt(d); f = hz(m); return (np.sin(2 * np.pi * f * x) + .45 * np.sin(4 * np.pi * f * x) * np.exp(-x * 6) + .2 * np.sin(6 * np.pi * f * x) * np.exp(-x * 9)) * np.exp(-x * 5) * np.minimum(1, x / .002)
+# ===== MUSIC: driving "mission" score that never stops: pulsing 8th-note bass, punchy drums, staccato string stabs, risers into big moments =====
+def gtr(m, d=.5): x = tt(d); f = hz(m); return (np.sin(2 * np.pi * f * x) + .45 * np.sin(4 * np.pi * f * x) * np.exp(-x * 6)) * np.exp(-x * 6) * np.minimum(1, x / .002)
 def glock(m, d=.7): x = tt(d); f = hz(m); return (np.sin(2 * np.pi * f * x) + .25 * np.sin(2 * np.pi * f * 2.76 * x) * np.exp(-x * 12)) * np.exp(-x * 4.5)
-def bss(m, d): x = tt(d); return np.tanh(1.6 * np.sin(2 * np.pi * hz(m) * x)) * np.minimum(1, x / .008) * np.exp(-x * 2.2)
-def kck(): x = tt(.25); return np.sin(2 * np.pi * np.cumsum(48 + 90 * np.exp(-x * 35)) / SR) * np.exp(-x * 12)
-def snp(): d = .12; return norm(bp(noise(d), 1500, 6000)) * np.exp(-tt(d) * 32) * .8 + np.sin(2 * np.pi * 220 * tt(d)) * np.exp(-tt(d) * 40) * .3
-def hat(o=False): d = .18 if o else .04; return norm(hp(noise(d), 7000)) * np.exp(-tt(d) * (14 if o else 90))
-def padc(ms, d): x = tt(d); return sum(np.sin(2 * np.pi * hz(m) * x) + .3 * np.sin(2 * np.pi * hz(m) * 2 * x) for m in ms) / len(ms) * env(d, .4, .6)
+def saw(m, d): x = tt(d); return 2 * ((hz(m) * x) % 1) - 1
+def pulse(m, d): return lp(saw(m, d) + saw(m + .08, d), 700) * env(d, .004, d * .6)
+def stab(ms, d=.18): return lp(sum(saw(m, d) + saw(m + .1, d) for m in ms), 2600) / len(ms) * env(d, .004, .12)
+def kck(): x = tt(.28); return np.tanh(2 * np.sin(2 * np.pi * np.cumsum(46 + 110 * np.exp(-x * 30)) / SR)) * np.exp(-x * 10)
+def snr(): d = .2; return norm(bp(noise(d), 1200, 7000)) * np.exp(-tt(d) * 22) * .9 + np.sin(2 * np.pi * 190 * tt(d)) * np.exp(-tt(d) * 30) * .5
+def hat(o=False): d = .16 if o else .035; return norm(hp(noise(d), 7500)) * np.exp(-tt(d) * (16 if o else 100))
+def tom(m=40): x = tt(.4); return np.sin(2 * np.pi * np.cumsum(hz(m) * (1 + .5 * np.exp(-x * 15))) / SR) * np.exp(-x * 7)
+def riser(d=1.5): x = tt(d); return norm(bp(noise(d), 800, 6000)) * (x / d) ** 2.5 * .7 + np.sin(2 * np.pi * np.cumsum(200 * 2 ** (2 * x / d)) / SR) * (x / d) ** 3 * .3
+def boom(): x = tt(1.6); return np.sin(2 * np.pi * np.cumsum(38 * (1 + .8 * np.exp(-x * 8))) / SR) * np.exp(-x * 2.5) + norm(lp(noise(1.6), 300)) * np.exp(-x * 6) * .4
 END = DUR
-BPM = 108; b = 60 / BPM; BAR = 4 * b
-TENSE0, TENSE1 = F(32.6), F(42.0)          # "Then things went wrong" ... "No room to move"
-MAJ = [(48, [60, 64, 67, 72]), (43, [59, 62, 67, 71]), (45, [60, 64, 69, 72]), (41, [60, 65, 69, 72])]      # C  G  Am  F
-MIN = [(45, [57, 60, 64, 69]), (41, [57, 60, 65, 69]), (43, [55, 59, 62, 67]), (40, [56, 59, 64, 68])]      # Am F  G  E
-HOOK = [76, 79, 81, 79, 76, 74, 72, 74]
+BPM = 116; b = 60 / BPM; BAR = 4 * b
+TENSE0, TENSE1 = F(32.6), F(42.0)
+PROG = [(45, [57, 60, 64]), (41, [57, 60, 65]), (48, [55, 60, 64]), (43, [55, 59, 62])]       # Am F C G (heroic minor)
+TPROG = [(45, [57, 60, 64]), (46, [58, 62, 65]), (45, [57, 60, 64]), (44, [56, 59, 64])]      # Am Bb Am G#dim - tense
+HOOK = [69, None, 72, 71, 69, None, 64, 67]
 t = 0.0; bar = 0
 while t < END:
-    tense = TENSE0 <= t < TENSE1; root, ch = (MIN if tense else MAJ)[bar % 4]
-    pat = [0, 2, 1, 3, 2, 1, 3, 2]
-    for k in range(8): put(mus, gtr(ch[pat[k]], b * 1.2), t + k * b / 2, .22 if not tense else .16)
-    for off, dur in ((0, 1.4), (1.5, .45), (2, 1.4), (3.5, .45)): put(mus, bss(root - 12 + (0 if off < 2 else (7 if off == 3.5 else 0)), b * dur), t + off * b, .42)
+    tense = TENSE0 <= t < TENSE1; root, ch = (TPROG if tense else PROG)[bar % 4]
+    for k in range(8): put(mus, pulse(root - 12 + (12 if k % 4 == 3 else 0), b * .5), t + k * b / 2, .5)       # 8th-note driving bass
     if tense:
+        for off in (0, 1.5, 2.5): put(mus, tom(38 + (bar % 2) * 2), t + off * b, .5)
         for k in range(16): put(mus, hat(), t + k * b / 4, .05 + .03 * (k % 4 == 0))
-        for off in (0, 2): put(mus, kck(), t + off * b, .45)
-        put(mus, padc([m - 12 for m in ch], BAR), t, .12)
+        for off in (0, 2): put(mus, stab([m + 12 for m in ch], .12), t + off * b + b * .5, .16)
     else:
-        for off in (0, 1.5, 2, 2.75): put(mus, kck(), t + off * b, .5 if off in (0, 2) else .3)
-        for off in (1, 3): put(mus, snp(), t + off * b, .32)
-        for k in range(8): put(mus, hat(k % 2 == 1 and k == 7), t + k * b / 2, .06 + .03 * (k % 2))
-        if bar % 4 in (0, 2) and bar >= 1:
-            for k, m in enumerate(HOOK): put(mus, glock(m + (2 if bar % 8 == 2 else 0), b), t + k * b / 2, .1)
+        for off in (0, 1.5, 2, 2.75): put(mus, kck(), t + off * b, .55 if off in (0, 2) else .35)
+        for off in (1, 3): put(mus, snr(), t + off * b, .4)
+        for k in range(8): put(mus, hat(k == 7), t + k * b / 2, .06 + .03 * (k % 2))
+        for off in (0, .75, 1.5, 2.5, 3.25): put(mus, stab([m + 12 for m in ch]), t + off * b, .14)
+        if bar % 4 in (1, 3):
+            for k, m in enumerate(HOOK):
+                if m: put(mus, glock(m + 12, b), t + k * b / 2, .07)
     t += BAR; bar += 1
+for tw in (32.6, 42.0, 46.0, 55.1, 69.5): put(mus, riser(1.4), F(tw) - 1.4, .35)          # build into each big turn
+for tw in (16.19, 42.13, 48.61, 55.2): put(mus, boom(), F(tw), .5)                       # "Watch me", 63 hours, walked out, here's why
 
 # ===== SOUND EFFECTS =====
 def knock(): d = .14; return norm(lp(noise(d), 1200)) * np.exp(-tt(d) * 40) + np.sin(2 * np.pi * 180 * tt(d)) * np.exp(-tt(d) * 35) * .5
@@ -94,7 +100,7 @@ import os
 VOICE = 'build/voice_loud.wav' if os.path.exists('build/voice_loud.wav') else 'build/voice_cut.wav'  # louder, lightly compressed voice
 w = wave.open(VOICE); v = np.frombuffer(w.readframes(w.getnframes()), dtype=np.int16).astype(float) / 32768; w.close()
 v = np.pad(v, (0, max(0, N - len(v))))[:N]; v = v / np.abs(v).max() * .92
-mus = mus / (np.sqrt(np.mean(mus ** 2)) + 1e-9) * 10 ** (-16.5 / 20)
+mus = mus / (np.sqrt(np.mean(mus ** 2)) + 1e-9) * 10 ** (-19.0 / 20)
 sfx = sfx * 2.2
 mix = (v + sfx + mus) * .84
 fade = np.ones(N); fl = int(.06 * SR); fade[-fl:] = np.linspace(1, 0, fl); mix *= fade   # (tiny fade only: it loops)
