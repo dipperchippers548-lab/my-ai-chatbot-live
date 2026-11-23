@@ -14,9 +14,9 @@ const server = http.createServer((q, r) => { const f = path.join(root, decodeURI
     for (const t of process.argv[3].split(',').map(Number)) { const u = await page.evaluate(t => window.renderTime(t), t); fs.writeFileSync(path.join(dir, `t${t.toFixed(2).padStart(5, '0')}.jpg`), Buffer.from(u.split(',')[1], 'base64')); }
     console.log(JSON.stringify(await page.evaluate('window.captionChunks.map(c=>[+c.s.toFixed(2),+c.e.toFixed(2),c.text])')));
   } else {
-    const n = await page.evaluate('window.frameCount');
-    const ff = spawn('ffmpeg', ['-v', 'error', '-y', '-f', 'image2pipe', '-framerate', '30', '-c:v', 'mjpeg', '-i', '-', '-c:v', 'libx264', '-preset', 'slow', '-crf', '16', '-pix_fmt', 'yuv420p', '-color_range', 'tv', path.join(root, 'build/video.mp4')], { stdio: ['pipe', 'inherit', 'inherit'] });
-    for (let i = 0; i < n; i++) { const u = await page.evaluate(i => window.renderFrame(i), i); if (!ff.stdin.write(Buffer.from(u.split(',')[1], 'base64'))) await new Promise(r => ff.stdin.once('drain', r)); if (i % 150 === 0) console.log('frame', i, '/', n); }
+    const N = await page.evaluate('window.frameCount'); const i0 = +(process.argv[3] || 0), n = Math.min(N, +(process.argv[4] || N)); const outF = process.argv[3] ? `build/seg_${String(i0).padStart(5, '0')}.mp4` : 'build/video.mp4';
+    const ff = spawn('ffmpeg', ['-v', 'error', '-y', '-f', 'image2pipe', '-framerate', '30', '-c:v', 'mjpeg', '-i', '-', '-c:v', 'libx264', '-preset', 'slow', '-crf', '16', '-pix_fmt', 'yuv420p', '-color_range', 'tv', path.join(root, outF)], { stdio: ['pipe', 'inherit', 'inherit'] });
+    for (let i = i0; i < n; i++) { const u = await page.evaluate(i => window.renderFrame(i), i); if (!ff.stdin.write(Buffer.from(u.split(',')[1], 'base64'))) await new Promise(r => ff.stdin.once('drain', r)); if (i % 150 === 0) console.log('frame', i, '/', n); }
     ff.stdin.end(); await new Promise(r => ff.on('close', r)); console.log('done', n);
   }
   await browser.close(); server.close();

@@ -504,11 +504,11 @@ function wallClock() { const g = new THREE.Group(); g.add(new THREE.Mesh(new THR
 const sparkle = (sc, n = 40) => { const ps = [...Array(n)].map((_, i) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(.06, .1), flat([0xffd23a, 0xff6a8a, 0x5ab8ff, 0xffffff][i % 4])); m.material.side = THREE.DoubleSide; sc.add(m); m.visible = false; return m; }); return { at(t, t0, c) { ps.forEach((m, i) => { const d = t - t0; m.visible = d > 0; if (!m.visible) return; const a = i * 2.4; m.position.set(c.x + Math.cos(a) * d * 1.5, c.y + 1.5 * Math.min(d, .5) * 2 - Math.max(0, d - .5) * .8 + (i % 5) * .05, c.z + Math.sin(a) * d * 1.2); m.rotation.set(d * 5 + i, d * 4, i); }); } }; };
 
 // ===================== HQ LOOK: PBR sets, soft GI-ish light, ambient occlusion, bloom, filmic tone, 1.5x supersampling =====================
-const SSAA = 1.5; renderer.setPixelRatio(SSAA); renderer.setSize(W, H, false); renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const SSAA = 1.25; renderer.setPixelRatio(SSAA); renderer.setSize(W, H, false); renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 const pmrem = new THREE.PMREMGenerator(renderer); const ENV = pmrem.fromScene(new RoomEnvironment(renderer), .04).texture;
 const composer = new EffectComposer(renderer); composer.setPixelRatio(SSAA); composer.setSize(W, H);
 const rpass = new RenderPass(new THREE.Scene(), new THREE.PerspectiveCamera()); composer.addPass(rpass);
-const gtao = new GTAOPass(new THREE.Scene(), new THREE.PerspectiveCamera(), W * SSAA, H * SSAA); gtao.updateGtaoMaterial({ radius: .5, distanceExponent: 1.5, thickness: 1.5, scale: 1.2, samples: 16 }); gtao.blendIntensity = .9; composer.addPass(gtao);
+const gtao = new GTAOPass(new THREE.Scene(), new THREE.PerspectiveCamera(), W * SSAA, H * SSAA); gtao.updateGtaoMaterial({ radius: .5, distanceExponent: 1.5, thickness: 1.5, scale: 1.2, samples: 8 }); gtao.blendIntensity = .9; composer.addPass(gtao);
 const bloom = new UnrealBloomPass(new THREE.Vector2(W, H), .14, .5, .97); composer.addPass(new OutputPass());
 function hqRender(scene, cam) { scene.traverse(o => { if (o.material && (o.material.isMeshToonMaterial || o.material.isMeshBasicMaterial) && !o.material.userData.keepTone) o.material.toneMapped = false; }); renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = scene.userData.exposure || 1.0; rpass.scene = gtao.scene = scene; rpass.camera = gtao.camera = cam; composer.render(); }
 // PBR material helpers with painted canvas textures
@@ -535,7 +535,7 @@ function upgradeSet(sc) { sc.traverse(o => { if (!o.isMesh || o.userData.keep) r
   sc.environment = ENV; const eI = sc.userData.envI ?? .55; sc.traverse(o => { if (o.isMesh && o.material && o.material.isMeshStandardMaterial) o.material.envMapIntensity = eI; }); return sc; }
 const H_ = (t0, t1, build, o = {}) => shot(t0, t1, t => { const r = build(t); upgradeSet(r.scene); return { ...r, hq: true }; }, o);
 const skyTex = (a, b, c) => ctex(8, 256, g => { const gr = g.createLinearGradient(0, 0, 0, 256); gr.addColorStop(0, a); gr.addColorStop(.6, b); gr.addColorStop(1, c); g.fillStyle = gr; g.fillRect(0, 0, 8, 256); });
-function sunLight(sc, col, I, x, y, z, size = 8) { const s = new THREE.DirectionalLight(col, I); s.position.set(x, y, z); s.castShadow = true; s.shadow.mapSize.set(4096, 4096); Object.assign(s.shadow.camera, { left: -size, right: size, top: size, bottom: -size, near: .5, far: 60 }); s.shadow.bias = -.0004; s.shadow.normalBias = .02; sc.add(s, s.target); return s; }
+function sunLight(sc, col, I, x, y, z, size = 8) { const s = new THREE.DirectionalLight(col, I); s.position.set(x, y, z); s.castShadow = true; s.shadow.mapSize.set(2048, 2048); Object.assign(s.shadow.camera, { left: -size, right: size, top: size, bottom: -size, near: .5, far: 60 }); s.shadow.bias = -.0004; s.shadow.normalBias = .02; sc.add(s, s.target); return s; }
 const KEEP = o => { o.traverse(c => c.userData.keep = true); return o; };
 const plank = (w, h, d, c = 0xc8955a) => box(w, h, d, c, .012);
 const woodT = ctex(256, 256, (g, w, h) => { g.fillStyle = '#d8a86a'; g.fillRect(0, 0, w, h); for (let i = 0; i < 40; i++) { g.strokeStyle = `rgba(110,70,30,${.1 + Math.random() * .15})`; g.lineWidth = 1 + Math.random() * 2; g.beginPath(); const y = Math.random() * h; g.moveTo(0, y); g.bezierCurveTo(w * .3, y + 8, w * .6, y - 8, w, y + 3); g.stroke(); } for (let i = 0; i < 4; i++) { g.fillStyle = 'rgba(60,30,10,.35)'; g.beginPath(); g.ellipse(Math.random() * w, Math.random() * h, 8, 4, 0, 0, 7); g.fill(); } });
