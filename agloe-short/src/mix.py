@@ -31,46 +31,44 @@ def ding(): x = tt(.8); return (np.sin(2 * np.pi * 2093 * x) + .5 * np.sin(2 * n
 
 # ================= MUSIC (original) =================
 
-# ===== MUSIC (matched to Ricks' measured profile): D minor ~104 BPM, plucked/pizzicato strings + soft piano + woodblock/shaker,
-#       warm low-mids, almost no kick or sub-bass, soft highs, never stops =====
-def ks(m, d=.6, bright=.5, decay=.996):        # Karplus-Strong plucked string (pizzicato / upright bass)
-    f = hz(m); n = int(d * SR); P = max(2, int(SR / f)); buf = (rs.rand(P) * 2 - 1); out_ = np.zeros(n)
-    buf = lp(buf, 1500 + bright * 6000) if P > 8 else buf
-    for i in range(n): v = buf[i % P]; out_[i] = v; buf[i % P] = decay * .5 * (v + buf[(i + 1) % P])
-    return out_ * np.minimum(1, tt(d) / .002)
-KS = {}
-def pz(m, d=.5, g=1.0):
-    k = (m, round(d, 2))
-    if k not in KS: KS[k] = norm(ks(m, d, .35, .994 if m > 55 else .997))
-    return KS[k] * g
-def piano(m, d=1.6): x = tt(d); f = hz(m); return sum(a * np.sin(2 * np.pi * f * k * x) * np.exp(-x * (1.8 + k * 1.2)) for k, a in ((1, 1), (2, .35), (3, .12), (4, .05))) * np.minimum(1, x / .003)
-def cello(m, d): x = tt(d); f = hz(m); v = 1 + .004 * np.sin(2 * np.pi * 5.5 * x); return lp(sum(np.sin(2 * np.pi * f * k * np.cumsum(v) / SR) / k for k in range(1, 6)), 900) * env(d, .25, .3)
-def wood(): d = .06; x = tt(d); return (np.sin(2 * np.pi * 1250 * x) + .5 * np.sin(2 * np.pi * 2100 * x)) * np.exp(-x * 70)
-def shk(): return norm(bp(noise(.05), 5000, 9000)) * np.exp(-tt(.05) * 60)
-def brushs(): d = .18; return norm(bp(noise(d), 1500, 5000)) * env(d, .02, .14)
-def glk(m, d=1.0): x = tt(d); f = hz(m); return (np.sin(2 * np.pi * f * x) + .25 * np.sin(2 * np.pi * f * 2.76 * x) * np.exp(-x * 10)) * np.exp(-x * 3.5)
-def swell(d=1.4): x = tt(d); return norm(lp(noise(d), 2200)) * (x / d) ** 2.5
+# ===== MUSIC: driving "mission" score that never stops: pulsing 8th-note bass, punchy drums, staccato string stabs, risers into big moments =====
+def gtr(m, d=.5): x = tt(d); f = hz(m); return (np.sin(2 * np.pi * f * x) + .45 * np.sin(4 * np.pi * f * x) * np.exp(-x * 6)) * np.exp(-x * 6) * np.minimum(1, x / .002)
+def glock(m, d=.7): x = tt(d); f = hz(m); return (np.sin(2 * np.pi * f * x) + .25 * np.sin(2 * np.pi * f * 2.76 * x) * np.exp(-x * 12)) * np.exp(-x * 4.5)
+def saw(m, d): x = tt(d); return 2 * ((hz(m) * x) % 1) - 1
+def pulse(m, d): return lp(saw(m, d) + saw(m + .08, d), 700) * env(d, .004, d * .6)
+def stab(ms, d=.18): return lp(sum(saw(m, d) + saw(m + .1, d) for m in ms), 2600) / len(ms) * env(d, .004, .12)
+def kck(): x = tt(.28); return hp(np.tanh(2 * np.sin(2 * np.pi * np.cumsum(46 + 110 * np.exp(-x * 30)) / SR)) * np.exp(-x * 10), 70)
+def snr(): d = .2; return norm(bp(noise(d), 1200, 7000)) * np.exp(-tt(d) * 22) * .9 + np.sin(2 * np.pi * 190 * tt(d)) * np.exp(-tt(d) * 30) * .5
+def hat(o=False): d = .16 if o else .035; return norm(hp(noise(d), 7500)) * np.exp(-tt(d) * (16 if o else 100))
+def tom(m=40): x = tt(.4); return np.sin(2 * np.pi * np.cumsum(hz(m) * (1 + .5 * np.exp(-x * 15))) / SR) * np.exp(-x * 7)
+def riser(d=1.5): x = tt(d); return norm(bp(noise(d), 800, 6000)) * (x / d) ** 2.5 * .7 + np.sin(2 * np.pi * np.cumsum(200 * 2 ** (2 * x / d)) / SR) * (x / d) ** 3 * .3
+def boom(): x = tt(1.6); return np.sin(2 * np.pi * np.cumsum(38 * (1 + .8 * np.exp(-x * 8))) / SR) * np.exp(-x * 2.5) + norm(lp(noise(1.6), 300)) * np.exp(-x * 6) * .4
 END = DUR
-BPM = 104; b = 60 / BPM; BAR = 4 * b
-PROG = [(38, [50, 53, 57]), (34, [50, 53, 58]), (41, [48, 53, 57]), (36, [48, 52, 55])]          # Dm  Bb  F  C
-ARP = [0, 2, 1, 2, 0, 2, 1, 2]
-T_LAW, T_REVEAL, T_REAL = F(48.06), F(60.23), F(83.31)
+BPM = 116; b = 60 / BPM; BAR = 4 * b
+TENSE0, TENSE1 = F(48.06), F(60.23)          # lawyers storm in -> drive out (tense section)
+PROG = [(45, [57, 60, 64]), (41, [57, 60, 65]), (48, [55, 60, 64]), (43, [55, 59, 62])]       # Am F C G (heroic minor)
+TPROG = [(45, [57, 60, 64]), (46, [58, 62, 65]), (45, [57, 60, 64]), (44, [56, 59, 64])]      # Am Bb Am G#dim - tense
+HOOK = [69, None, 72, 71, 69, None, 64, 67]
 t = 0.0; bar = 0
-while t < END - .3:
-    root, ch = PROG[bar % 4]; tense = T_LAW <= t < T_REVEAL; build = T_REVEAL <= t < F(67.98)
-    for k, ix in enumerate(ARP): put(mus, pz(ch[ix] + 12, b * .9), t + k * b / 2, .34 if k % 2 == 0 else .24)          # pizzicato ostinato (8ths)
-    for off in (0, 1.5, 2, 3): put(mus, pz(root, b * 1.6), t + off * b, .8 if off in (0, 2) else .5)                   # plucked upright bass (soft)
-    put(mus, cello(root + 12, BAR), t, .32)                                                                                 # warm bowed cello pad (fills 90-300 Hz like Ricks)
-    put(mus, sum(piano(m + 12) for m in ch) / 3, t, .16); put(mus, sum(piano(m + 12) for m in ch) / 3, t + 2.5 * b, .09)  # soft piano
-    for off in (.5, 1.5, 2.5, 3.5): put(mus, wood(), t + off * b, .1)                                                     # woodblock on the off-beats
-    for k in range(16): put(mus, shk(), t + k * b / 4, .025 + .02 * (k % 4 == 2))
-    if tense or build:
-        for off in (1, 3): put(mus, brushs(), t + off * b, .12)                                                          # light brush backbeat for the chase
-    if bar % 4 == 3 and not tense: put(mus, glk(74), t + 3 * b, .06); put(mus, glk(77), t + 3.5 * b, .06)
+while t < END:
+    tense = TENSE0 <= t < TENSE1; root, ch = (TPROG if tense else PROG)[bar % 4]
+    for k in range(8): put(mus, pulse(root - 12 + (12 if k % 4 == 3 else 0), b * .5), t + k * b / 2, .5)       # 8th-note driving bass
+    if tense:
+        for off in (0, 1.5, 2.5): put(mus, tom(38 + (bar % 2) * 2), t + off * b, .5)
+        for k in range(16): put(mus, hat(), t + k * b / 4, .05 + .03 * (k % 4 == 0))
+        for off in (0, 2): put(mus, stab([m + 12 for m in ch], .12), t + off * b + b * .5, .16)
+    else:
+        for off in (0, 1.5, 2, 2.75): put(mus, kck(), t + off * b, .55 if off in (0, 2) else .35)
+        for off in (1, 3): put(mus, snr(), t + off * b, .4)
+        for k in range(8): put(mus, hat(k == 7), t + k * b / 2, .06 + .03 * (k % 2))
+        for off in (0, .75, 1.5, 2.5, 3.25): put(mus, stab([m + 12 for m in ch]), t + off * b, .14)
+        if bar % 4 in (1, 3):
+            for k, m in enumerate(HOOK):
+                if m: put(mus, glock(m + 12, b), t + k * b / 2, .07)
     t += BAR; bar += 1
-for tw in (15.24, 48.06, 60.23, 70.78): put(mus, swell(1.2), F(tw) - 1.2, .1)          # small lifts into each turn
-for m, o in ((74, 0), (78, .12), (81, .24), (86, .36)): put(mus, glk(m, 1.6), F(67.98) + o, .12)   # sparkle on "Agloe General Store"
-for m in (50, 54, 57, 62): put(mus, piano(m, 3.0) / 2, T_REAL, .6)                          # resolve to D MAJOR on "became real"
+for tw in (15.24, 48.06, 60.23, 70.78): put(mus, riser(1.4), F(tw) - 1.4, .35)          # build into each big turn
+for tw in (8.03, 48.06, 67.98, 83.31): put(mus, boom(), F(tw), .35)                       # "Watch me", 63 hours, walked out, here's why
+
 fo = int(1.0 * SR); mus[-fo:] *= np.linspace(1, 0, fo)
 
 # ===== SOUND EFFECTS =====
