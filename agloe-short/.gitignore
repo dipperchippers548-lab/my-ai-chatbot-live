@@ -1,0 +1,4 @@
+node_modules
+build/render.log
+build/video.mp4
+build/seg_*.mp4
