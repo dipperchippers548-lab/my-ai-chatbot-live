@@ -14,7 +14,7 @@ const tmp = document.createElement('canvas'); tmp.width = W; tmp.height = H; con
 const scopeC = document.createElement('canvas'); scopeC.width = W; scopeC.height = H; { const b = scopeC.getContext('2d'); b.fillStyle = '#000'; b.fillRect(0, 0, W, H); b.globalCompositeOperation = 'destination-out'; b.beginPath(); b.arc(W / 2, H * .46, W * .44, 0, 7); b.fill(); }
 const bino = document.createElement('canvas'); bino.width = W; bino.height = H; { const b = bino.getContext('2d'); b.fillStyle = '#000'; b.fillRect(0, 0, W, H); b.globalCompositeOperation = 'destination-out'; const r = W * .4; for (const x of [W / 2 - r * .62, W / 2 + r * .62]) { b.beginPath(); b.arc(x, H * .46, r, 0, 7); b.fill(); } }
 // ---- camera energy layer, applied on top of every shot ----
-const KEY = /1964|^box|broke|watch|crate|cash|nailed|cargo|wrong|paris|sixty|perth|walked|nobody|home|why|boxes|opened|bouncer|deliveries/i;
+const KEY = /agloe|paper|1930|months|afternoon|copied|rival|caught|lawyers|real|store|built|liars/i;
 const kicks = () => words.filter((w, i) => KEY.test(w.w) || /[?!]$/.test(w.raw || '') || (i > 0 && /[?]$/.test(words[i - 1].raw || ''))).map(w => w.s + .04);
 let KICKS = null;
 function renderShot(s, tc) {
