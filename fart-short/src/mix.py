@@ -33,15 +33,21 @@ def ding(): x = tt(.8); return (np.sin(2 * np.pi * 2093 * x) + .5 * np.sin(2 * n
 
 # ===== no music (this format runs on voice + sfx) =====
 # ===== SOUND EFFECTS =====
-def fart(d=1.1, f0=70, seed=0):     # wet "trombone" fart: jittery low buzz with pitch wobble + sputter + wet noise
+def fart(d=1.1, f0=120, seed=0):    # raspy "trombone" fart that phones can actually play: jittery pulse train (rich harmonics) through two formants + wet sputter
     r = np.random.RandomState(seed); x = tt(d); n = len(x)
-    pitch = f0 * (1 + .35 * np.sin(2 * np.pi * 2.3 * x + 1) + .15 * np.sin(2 * np.pi * 7.1 * x)) * (1 + .4 * x / d)
-    ph = np.cumsum(pitch * (1 + .08 * r.randn(n).cumsum() / np.sqrt(np.arange(1, n + 1)))) / SR
-    buzz = np.tanh(3 * np.sign(np.sin(2 * np.pi * ph)) * (np.sin(2 * np.pi * ph) ** 2) + .3 * r.randn(n))
-    flutter = .6 + .4 * (np.sin(2 * np.pi * (9 + 6 * x / d) * x) > -.2)
-    wet = bp(r.randn(n), 300, 2200) * (r.rand(n) > .992).astype(float); wet = np.convolve(wet, np.hanning(300), 'same')
-    s = lp(buzz, 900) * flutter + wet * .5
-    return norm(s * env(d, .02, .25) * (1 + .5 * np.exp(-x * 4)))
+    pitch = f0 * (1 + .3 * np.sin(2 * np.pi * 1.7 * x + 1) + .12 * np.sin(2 * np.pi * 6.3 * x)) * (1 + .25 * x / d) * (1 + .03 * r.randn(n))
+    ph = np.cumsum(pitch) / SR; pulses = (np.diff(np.floor(ph), prepend=0) > 0).astype(float)
+    src = np.convolve(pulses, np.exp(-np.arange(24) / 2.5), 'same') + .25 * r.randn(n) * pulses.cumsum().clip(0, 1)
+    s = bp(src, 140, 380) * 1.6 + bp(bp(src, 300, 700), 300, 700) * 1.1 + bp(bp(src, 750, 1500), 750, 1500) * .55 + bp(src, 1600, 3000) * .15 + lp(src, 140) * .1
+    flutter = .55 + .45 * (np.sin(2 * np.pi * (11 + 8 * x / d) * x + 3 * np.sin(2 * np.pi * 2 * x)) > -.3)
+    wet = (r.rand(n) > .996).astype(float); wet = bp(np.convolve(wet, np.hanning(400), 'same') * r.randn(n), 500, 3000)
+    return norm(np.tanh(2.5 * norm(s * flutter)) * env(d, .015, .2) + wet * .35)
+def ding(): x = tt(.8); return (np.sin(2 * np.pi * 2093 * x) + .5 * np.sin(2 * np.pi * 3136 * x)) * np.exp(-x * 6)
+
+# ================= MUSIC (original) =================
+
+# ===== no music (this format runs on voice + sfx) =====
+# ===== SOUND EFFECTS =====
 def ding(): x = tt(1.0); return (np.sin(2 * np.pi * 1318 * x) + .6 * np.sin(2 * np.pi * 1046 * x) * (x > .25)) * np.exp(-x * 4)
 def tick(): return norm(hp(noise(.01), 3000)) * np.exp(-tt(.01) * 300)
 def spray(): d = .22; return norm(bp(noise(d), 3000, 9000)) * env(d, .01, .08)
@@ -57,11 +63,11 @@ def steps(n=8, gap=.18):
     o = np.zeros(int(SR * (n * gap + .3)))
     for k in range(n): s = norm(lp(noise(.08), 900)) * np.exp(-tt(.08) * 40); i = int(k * gap * SR); o[i:i + len(s)] += s[:len(o) - i]
     return o
-put(sfx, fart(1.25, 68, 1), 0.08, .5)                                                # COLD OPEN: the fart
+put(sfx, fart(1.3, 115, 1), 0.08, .5)                                                # COLD OPEN: the fart
 put(sfx, whoosh(.25), 0.95, .12)                                                     # heads snap round
 put(sfx, ding(), F(0.0) - .05, .12)                                                  # elevator ding as the story starts
 for k in range(6): put(sfx, tick(), F(1.57) + k * .25, .05)                          # floor counter
-put(sfx, fart(.9, 64, 2), F(12.3), .45)                                              # "it is not slow" - the trombone
+put(sfx, fart(.95, 105, 2), F(12.3), .36)                                              # "it is not slow" - the trombone
 put(sfx, whoosh(.3), F(15.71), .12)                                                  # everyone turns
 for k in range(12): put(sfx, spray(), F(25.45) + k * .085, .12)                      # twelve sprays
 put(sfx, cough(), F(31.7), .2); put(sfx, cough(), F(31.95), .14); put(sfx, wah(1.1), F(33.3), .1)   # coughs, crying kid
