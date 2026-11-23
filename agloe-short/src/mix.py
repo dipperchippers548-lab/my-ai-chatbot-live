@@ -31,36 +31,33 @@ def ding(): x = tt(.8); return (np.sin(2 * np.pi * 2093 * x) + .5 * np.sin(2 * n
 
 # ================= MUSIC (original) =================
 
-# ===== MUSIC: chill piano (user's pick) - soft felt piano, warm 7th/9th chords, gentle broken-chord pattern, a little room reverb, never stops =====
+# ===== MUSIC: soft suspense strings (user's pick) - legato string section + soft pizzicato, sneaky documentary feel, no drums, never stops =====
 from scipy.signal import fftconvolve
-PCACHE = {}
-def pno(m, d=2.4, vel=1.0):
-    k = (m, round(d, 2))
-    if k not in PCACHE:
-        x = tt(d); f = hz(m); B = .0004
-        s = sum(a * np.sin(2 * np.pi * f * n * np.sqrt(1 + B * n * n) * x + n) * np.exp(-x * (1.1 + n * .9 + f / 900)) for n, a in ((1, 1), (2, .45), (3, .22), (4, .12), (5, .06), (6, .03)))
-        s *= np.minimum(1, x / .004); s += lp(noise(d), 1800) * np.exp(-x * 60) * .04      # soft felt hammer
-        PCACHE[k] = lp(s, 4200)
-    return PCACHE[k] * vel
+def saw(f, d, ph=0): x = tt(d); return 2 * (((f * x) + ph) % 1) - .5 * 2
+def strings(m, d, att=.5, rel=.6):          # ensemble: 4 slightly detuned, vibrato'd saws, warm low-pass
+    x = tt(d); f = hz(m); out_ = np.zeros(len(x))
+    for k, det in enumerate((-.006, -.002, .003, .007)):
+        vib = 1 + .0035 * np.sin(2 * np.pi * (5.2 + k * .3) * x + k); out_ += 2 * ((np.cumsum(f * (1 + det) * vib) / SR + k * .25) % 1) - 1
+    return lp(lp(out_ / 4, 2200), 2600) * env(d, att, rel)
+def pizz(m, d=.35): x = tt(d); f = hz(m); return lp((np.sin(2 * np.pi * f * x) + .5 * np.sin(4 * np.pi * f * x) * np.exp(-x * 20) + .2 * np.sin(6 * np.pi * f * x) * np.exp(-x * 30)) * np.exp(-x * 11) * np.minimum(1, x / .002), 3000)
+def trem(m, d): x = tt(d); return strings(m, d, .3, .4) * (.65 + .35 * np.sin(2 * np.pi * 9 * x))
 END = DUR
-BPM = 84; b = 60 / BPM; BAR = 4 * b
-PROG = [(38, [57, 60, 64, 65]), (43, [58, 62, 65, 69]), (46, [57, 62, 65, 69]), (45, [55, 61, 64, 67])]   # Dm9  Gm9  Bbmaj7  A7
-MEL = [[76, None, 74, None, 72, None, 69, None], [74, None, 72, None, 70, None, 69, None], [72, None, 69, None, 70, 72, None, None], [73, None, 76, None, None, None, None, None]]
+BPM = 92; b = 60 / BPM; BAR = 4 * b
+PROG = [(38, [50, 53, 57]), (34, [50, 53, 58]), (31, [50, 55, 58]), (33, [49, 52, 57])]     # Dm  Bb  Gm  A
+OST = [62, 65, 69, 65, 62, 65, 69, 70]                                                       # pizzicato figure (8ths)
 T_LAW, T_REVEAL, T_STORE, T_REAL = F(48.06), F(60.23), F(67.98), F(83.31)
 t = 0.0; bar = 0
 while t < END - .5:
-    root, ch = PROG[bar % 4]
-    put(mus, pno(root, BAR * 1.2), t, .55); put(mus, pno(root + 7, BAR), t + 2 * b, .3)                    # left hand: root, fifth
-    for k, ix in enumerate([0, 1, 2, 3, 2, 1, 2, 3]): put(mus, pno(ch[ix], b * 2.2), t + k * b / 2 + (.012 if k % 2 else 0), .2 if k % 2 else .26)   # soft broken chords (a little swing)
-    if bar >= 2 and not (T_LAW <= t < T_REVEAL):
-        for k, m in enumerate(MEL[bar % 4]):
-            if m: put(mus, pno(m, b * 2.5), t + k * b / 2, .3)                                                  # simple melody on top
+    root, ch = PROG[bar % 4]; tense = T_LAW <= t < T_REVEAL
+    put(mus, strings(root, BAR + .4, .6, .7), t, .5); put(mus, sum(strings(m, BAR + .4, .7, .7) for m in ch) / 3, t, .55)   # cellos/basses + violas/violins pad
+    shift = [0, -3, -7, -5][bar % 4]
+    for k, m in enumerate(OST): put(mus, pizz(m + shift, .4), t + k * b / 2, .32 if k % 2 == 0 else .22)
+    if tense: put(mus, trem(ch[2] + 12, BAR), t, .22)                                         # nervous high tremolo for the lawyer showdown
     t += BAR; bar += 1
-put(mus, pno(26, 3.5) + pno(38, 3.5), T_LAW, .7)                                                              # low octave on "Caught."
-for i, m in enumerate((81, 84, 88, 93)): put(mus, pno(m, 2.0), T_STORE + i * .11, .35)                        # sparkle on "Agloe General Store"
-for m in (38, 50, 54, 57, 62, 64, 66): put(mus, pno(m, 4.0), T_REAL, .4)                                      # resolve to D major (add9) on "became real"
-ir_t = np.arange(int(1.6 * SR)) / SR; ir = rs.randn(len(ir_t)) * np.exp(-ir_t * 3.2); ir = lp(ir, 3500); ir[0] = 6.0
-mus = fftconvolve(mus, ir / np.abs(ir).sum() * 8)[:N]                                                          # small warm room
+for tw in (15.24, 36.6, 48.06, 60.23, 70.78): put(mus, strings(62, 1.6, 1.4, .2) * .6, F(tw) - 1.5, .5)   # gentle swells into each turn
+for m in (38, 50, 54, 57, 62, 66): put(mus, strings(m, 4.2, .4, 1.8), T_REAL, .45)                        # resolve to D MAJOR on "became real"
+ir_t = np.arange(int(1.4 * SR)) / SR; ir = rs.randn(len(ir_t)) * np.exp(-ir_t * 3.5); ir = lp(ir, 3000); ir[0] = 7.0
+mus = fftconvolve(mus, ir / np.abs(ir).sum() * 8)[:N]
 fo = int(1.2 * SR); mus[-fo:] *= np.linspace(1, 0, fo)
 
 # ===== SOUND EFFECTS =====
@@ -94,7 +91,7 @@ import os
 VOICE = 'build/voice_loud.wav' if os.path.exists('build/voice_loud.wav') else 'build/voice_cut.wav'  # louder, lightly compressed voice
 w = wave.open(VOICE); v = np.frombuffer(w.readframes(w.getnframes()), dtype=np.int16).astype(float) / 32768; w.close()
 v = np.pad(v, (0, max(0, N - len(v))))[:N]; v = v / np.abs(v).max() * .92
-mus = mus / (np.sqrt(np.mean(mus ** 2)) + 1e-9) * 10 ** (-25.5 / 20)
+mus = mus / (np.sqrt(np.mean(mus ** 2)) + 1e-9) * 10 ** (-26.5 / 20)
 sfx = sfx * 5.5
 mix = (v * 1.12 + sfx + mus) * .88
 fade = np.ones(N); fl = int(.8 * SR); fade[-fl:] = np.linspace(1, 0, fl); mix *= fade   # (tiny fade only: it loops)
