@@ -81,12 +81,21 @@ put(sfx, door(), F(50.83), .2)                                                  
 put(sfx, engine(1.6), F(60.2), .1); put(sfx, gravel(1.4), F(61.3), .08)              # drive out to the dirt road
 put(sfx, bell(), F(67.98), .09)                                                        # shop door bell on the sign
 
+def rustle(d=.5): return norm(bp(noise(d), 1500, 6000) * (np.sin(2 * np.pi * 11 * tt(d)) > -.2)) * env(d, .03, .25)
+def stamp(): d = .25; return norm(lp(noise(d), 900)) * np.exp(-tt(d) * 25) + np.sin(2 * np.pi * 110 * tt(d)) * np.exp(-tt(d) * 20) * .5
+put(sfx, rustle(.6), F(9.26), .1)                                                     # partner leans over the map
+put(sfx, whoosh(.35), F(15.0), .1); put(sfx, stamp(), F(16.59), .16)                  # "it's called a paper town" - stamp
+put(sfx, whoosh(.35), F(36.6), .1)                                                    # years go by
+put(sfx, stamp(), F(48.06), .2)                                                       # Caught.
+put(sfx, rustle(.5), F(52.17), .1)                                                    # slapping the map down
+put(sfx, whoosh(.4), F(70.6), .1)                                                     # someone saw Agloe
+
 import os
 VOICE = 'build/voice_loud.wav' if os.path.exists('build/voice_loud.wav') else 'build/voice_cut.wav'  # louder, lightly compressed voice
 w = wave.open(VOICE); v = np.frombuffer(w.readframes(w.getnframes()), dtype=np.int16).astype(float) / 32768; w.close()
 v = np.pad(v, (0, max(0, N - len(v))))[:N]; v = v / np.abs(v).max() * .92
 mus = mus / (np.sqrt(np.mean(mus ** 2)) + 1e-9) * 10 ** (-25.5 / 20)
-sfx = sfx * 2.2
+sfx = sfx * 5.5
 mix = (v * 1.12 + sfx + mus) * .88
 fade = np.ones(N); fl = int(.8 * SR); fade[-fl:] = np.linspace(1, 0, fl); mix *= fade   # (tiny fade only: it loops)
 mix = np.clip(np.tanh(mix * 1.05) / np.tanh(1.05) * .95, -.98, .98)
