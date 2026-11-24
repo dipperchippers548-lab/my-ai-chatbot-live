@@ -69,7 +69,7 @@ WJ = json.load(open('build/words.json')); bw = wave.open('build/beep.wav'); BEEP
 BLEEPS = []
 for i, w in enumerate(WJ):    
     if w['w'].lower().startswith('shit') and i >= 2 and WJ[i - 2]['w'].lower() == 'loud':     # "loud as SHI-[BEEP]": the beep lands on the T
-        t0 = F(w['e']) - .07; t1 = max(F(w['e']), t0 + len(BEEP) / SR); BLEEPS.append((t0, t1))
+        t0 = F(w['s']) + .09; t1 = max(F(w['e']), t0 + len(BEEP) / SR); BLEEPS.append((t0, t1))
         a_, b_ = int(t0 * SR), int(t1 * SR); fade = int(.008 * SR); v[a_:b_] = 0; v[a_ - fade:a_] *= np.linspace(1, 0, fade)
 json.dump(BLEEPS, open('build/bleeps.json', 'w')); v = v / np.abs(v).max() * .92
 mus = mus / (np.sqrt(np.mean(mus ** 2)) + 1e-9) * 10 ** (-16.5 / 20)
