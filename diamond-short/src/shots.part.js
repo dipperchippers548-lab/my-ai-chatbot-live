@@ -397,7 +397,7 @@ H_(15.1, 17.4, t0 => { const S = field(), cam = newCam(38), moth = new THREE.Gro
     const a = place(S.sc, { ...MINER, ...fx(f, [[0, 'sad']]), hands: pk }, .42, 0, 0, -.15), b = place(S.sc, { ...PARTNER, ...fx(f, [[0, 'sad'], [at(t0, 15.58), 'cry']]), hands: pk }, -.42, 0, .05, .15);
     [a, a, b, b].forEach((g, i) => { flaps[i].position.copy(wpt(g, pk[i % 2]).add(V(0, -.05, .02))); flaps[i].rotation.z = (i % 2 ? -1 : 1) * .2; });
     const p0 = wpt(b, pk[1]), k = Math.max(0, f - .5); moth.position.set(p0.x + k * .5 + Math.sin(k * 9) * .08, p0.y + k * .55, p0.z + .1 + Math.cos(k * 7) * .06); moth.children.forEach((w, i) => w.rotation.y = (i ? 1 : -1) * Math.abs(Math.sin(tc * 40)) * 1.2); moth.lookAt(cam.position);
-    glide(cam, f, fd, [[0, 1.05, 3.6, 0, 1.0, 0], [0, 1.1, 3.0, 0, 1.05, 0]]); } }; });
+    glide(cam, f, fd, [[0, 1.0, 4.4, 0, .95, 0], [0, 1.05, 3.8, 0, 1.0, 0]]); } }; });
 // 5b "Their field has nothing in it but rocks." - camera skims the dirt, a tumbleweed rolls through
 H_(17.4, 19.7, t0 => { const S = field(), cam = newCam(46), tw = mesh(lowpoly(new THREE.IcosahedronGeometry(.32, 1), .08, 4), 0xa8844a); tw.material = tw.children ? tw.material : tw.material; S.sc.add(tw);
   for (let i = 0; i < 18; i++) { const r = mesh(lowpoly(new THREE.IcosahedronGeometry(.06 + hash(i + 40) * .12, 0), .03, i + 40), [0x8a7a6a, 0x6a5a4a][i % 2]); r.position.set(-2 + hash(i + 2) * 4, .03, -1 + hash(i + 9) * 3); r.scale.y = .6; S.sc.add(r); }
@@ -444,4 +444,90 @@ H_(30.6, 34.9, t0 => { const S = bankHall(), cam = newCam(40), hats = [0, 1, 2].
       const g = place(S.sc, { ...RICH, robe, hat: p > 0 ? null : 'top', ...fx(f, [[0, i === 1 ? 'smug' : 'smile'], [at(t0, 32.64), 'shock'], [pop + i * .05, 'scream']]), hands: p > 0 ? [V(-.45, 1.35, .2), V(.45, 1.35, .2)] : [V(-.25, .75, .25), V(.25, .75, .25)] }, x, 0, .1 + Math.abs(x) * -.15, ry);
       const hp = wpt(g, V(0, 1.6, 0)); hats[i].visible = p > 0; if (p > 0) { hats[i].position.set(hp.x + p * (i - 1) * .6, hp.y + p * 3.2 - p * p * 3, hp.z); hats[i].rotation.set(p * 6, 0, p * (i - 1) * 4); } });
     money.forEach((b, i) => { const p = f - pop; b.visible = p > 0; b.position.set((hash(i) - .5) * 2.6 + Math.sin(tc * 3 + i) * .1, 2.4 - ((p * .7 + hash(i + 3) * 2) % 2.3), .4 + (hash(i + 7) - .5)); b.rotation.set(tc * 2 + i, i, tc * 3); });
-    glide(cam, f, fd, [[0, 1.05, 3.6, 0, 1.1, 0], [0, 1.1, 2.9, 0, 1.15, 0]]); } }; });
+    glide(cam, f, fd, [[0, 1.1, 4.6, 0, 1.05, 0], [0, 1.1, 3.8, 0, 1.1, 0]]); } }; });
+// ===================== part 3: expert -> $600K -> vanish -> geologist -> cut diamond -> shovel =====================
+const JEWEL = { color: 0xfff0e0, glasses: true, mustache: true, hat: 'top', hatColor: 0x5a5a6a, robe: 0x2a2a4a, cravat: true, shoe: 0x111111 };
+const GEO = { color: 0xffe0c8, glasses: true, hat: 'pioneer', hatColor: 0xc8b48a, robe: 0x7a6a3a, bag: true, shoe: 0x3a2416 };
+function cutDiamond(s = 1) { const g = new THREE.Group(), r = .05 * s; const crown = new THREE.Mesh(new THREE.CylinderGeometry(r * .6, r, r * .45, 8), DIA_M); crown.position.y = r * .22; const pav = new THREE.Mesh(new THREE.ConeGeometry(r, r * 1.0, 8), DIA_M); pav.rotation.x = Math.PI; pav.position.y = -r * .5; g.add(crown, pav);
+  const gl = new THREE.Sprite(new THREE.SpriteMaterial({ map: glintT, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false })); gl.scale.setScalar(r * 3); gl.position.set(r * .4, r * .4, r * .3); gl.material.userData.keepTone = true; g.add(gl); g.userData.glint = gl; return g; }
+function loupe() { const g = new THREE.Group(); const t = inked(new THREE.CylinderGeometry(.09, .11, .14, 20, 1, true), 0x1a1a1a, .01); t.rotation.x = Math.PI / 2; g.add(t); const lens = new THREE.Mesh(new THREE.CircleGeometry(.09, 20), new THREE.MeshStandardMaterial({ color: 0xcfe8ff, transparent: true, opacity: .25, roughness: .05, metalness: .2 })); lens.position.z = .07; g.add(lens); return g; }
+function velvet() { const sc = new THREE.Scene(); window.__sc = sc; sc.background = new THREE.Color(0x05040a); sc.add(new THREE.HemisphereLight(0xc8d8ff, 0x080610, .3));
+  const sp = new THREE.SpotLight(0xfff0d8, 22, 6, .35, .6, 1.2); sp.position.set(.6, 2.2, .8); sp.target.position.set(0, 0, 0); sp.castShadow = true; sc.add(sp, sp.target);
+  const v = new THREE.Mesh(new THREE.PlaneGeometry(6, 6), new THREE.MeshStandardMaterial({ color: 0x0e0e30, roughness: 1 })); v.rotation.x = -Math.PI / 2; v.receiveShadow = true; v.userData.keep = true; sc.add(v); sc.userData.envI = .9; sc.userData.exposure = 1.1; return sc; }
+function digPatches(sc, n = 7) { const ps = []; for (let i = 0; i < n; i++) { const a = hash(i + 50) * 6.28, d = .8 + hash(i + 51) * 4; const x = Math.cos(a) * d, z = Math.sin(a) * d - 1; const h = new THREE.Mesh(new THREE.CircleGeometry(.4 + hash(i + 52) * .25, 12), new THREE.MeshStandardMaterial({ color: 0x4a2a12, roughness: 1 })); h.rotation.x = -Math.PI / 2; h.position.set(x, .015, z); h.scale.y = .8; sc.add(h); ps.push(h); } return ps; }
+
+// 10 "They send the best expert in the country." - the expert strides in past the rich men, camera dollies back ahead of him
+H_(34.9, 38.2, t0 => { const S = bankHall(), cam = newCam(42); motes(S.sc, 80, [4, 3, 4], V(0, 1.6, 1));
+  return { scene: S.sc, cam, update(f, fd, tc) { const k = clamp(f / (fd * .8)); walkTo(S.sc, { ...JEWEL, ...fx(f, [[0, 'smug']]) }, 0, -.4, 0, 1.6, k, tc, 0);
+    place(S.sc, { ...RICH, ...fx(f, [[0, 'shock']]), hands: [V(-.25, .75, .25), V(.25, .75, .25)] }, -1.1, 0, .3, .5); place(S.sc, { ...RICH, robe: 0x3a2a4a, ...fx(f, [[0, 'smile']]), hands: [V(-.25, .75, .25), V(.25, .75, .25)] }, 1.15, 0, .5, -.5);
+    glide(cam, f, fd, [[0, .95, 4.2, 0, 1.0, .2], [0, 1.0, 5.4, 0, 1.0, 1.4]]); } }; });
+// 11 "Tiffany's own jeweler." - hero shot, loupe up to his eye; a hand-drawn label points at him
+H_(38.2, 40.7, t0 => { const S = bankHall(), cam = newCam(36), lp = loupe(); S.sc.add(lp);
+  return { scene: S.sc, cam, draw(g, f) { scrawl(g, "TIFFANY'S", 560, 330, (f - .15) / .4, 96, -.08, false); scrawl(g, 'jeweler', 600, 440, (f - .45) / .4, 80, -.08); const k = clamp((f - .8) / .3); if (k > 0) { g.save(); g.strokeStyle = '#fff'; g.lineWidth = 9; g.lineCap = 'round'; g.beginPath(); g.moveTo(640, 500); g.quadraticCurveTo(600, 600, lerp(640, 560, k), lerp(500, 650, k)); g.stroke(); g.restore(); } },
+    update(f, fd, tc) { const j = place(S.sc, { ...JEWEL, ...fx(f, [[0, 'smug'], [.9, 'happy']]), eyesR: 'closed', hands: [V(-.25, .75, .3), V(.12, 1.32, .38)] }, -.2, 0, .8, .15); lp.position.copy(wpt(j, V(.14, 1.36, .45))); lp.rotation.y = .15;
+    glide(cam, f, fd, [[.7, 1.1, 3.8, -.1, 1.1, .8], [.45, 1.15, 3.3, -.15, 1.15, .8]]); } }; });
+// 12 "He looks at the stones." - macro: the loupe hovers over diamonds on black velvet, his giant eye behind the glass
+H_(40.7, 42.7, t0 => { const sc = velvet(), cam = newCam(36), lp = loupe(), ds = [...Array(9)].map((_, i) => { const d = diamond(2.2); d.position.set((hash(i) - .5) * .7, .05, (hash(i + 3) - .5) * .5); d.rotation.y = i; sc.add(d); return d; }); lp.scale.setScalar(1.6); sc.add(lp);
+  const eye = new THREE.Group(); const wh = new THREE.Mesh(new THREE.CircleGeometry(.11, 24), new THREE.MeshBasicMaterial({ color: 0xffffff })); const pu = new THREE.Mesh(new THREE.CircleGeometry(.055, 20), new THREE.MeshBasicMaterial({ color: 0x16121a })); pu.position.z = .002; eye.add(wh, pu); eye.userData.keep = true; wh.userData.keep = pu.userData.keep = true; sc.add(eye);
+  return { scene: sc, cam, update(f, fd, tc) { const x = Math.sin(f * 1.4) * .18; lp.position.set(x, .32, .05); lp.rotation.x = -Math.PI / 2; eye.position.set(x, .43, .05); eye.rotation.x = -Math.PI / 2; pu.position.x = Math.sin(f * 5) * .03; ds.forEach((d, i) => twinkle(d, tc, i));
+    glide(cam, f, fd, [[0, 2.0, .9, 0, .15, 0], [0, 1.7, .7, 0, .15, 0]]); } }; });
+// 13 "These are real. You boys are rich." - the expert announces it, the miners grin behind him
+H_(42.7, 46.8, t0 => { const S = bankHall(), cam = newCam(40), ds = [...Array(12)].map(() => { const d = diamond(1.2); S.sc.add(d); return d; });
+  return { scene: S.sc, cam, update(f, fd, tc) { const m = talkIf(tc, 42.76, 45.9); place(S.sc, { ...JEWEL, ...fx(f, [[0, 'smile'], [at(t0, 45.45), 'laugh']]), ...(m ? { mouth: m } : {}), hands: [V(-.25, .8, .3), V(.42, 1.15, .3)] }, 0, 0, .4, 0);
+    place(S.sc, { ...MINER, ...fx(f, [[0, 'smug'], [at(t0, 45.45), 'happy']]), hands: [V(-.25, .75, .25), V(.25, .75, .25)] }, -.95, 0, -.2, .4); place(S.sc, { ...PARTNER, ...fx(f, [[0, 'shock'], [at(t0, 45.45), 'laugh']]), hands: [V(-.25, .75, .25), V(.25, .75, .25)] }, .95, 0, -.25, -.4);
+    ds.forEach((d, i) => { d.position.set(-.6 + i * .11, .84, -.8 + (hash(i) - .5) * .12); twinkle(d, tc, i); });
+    glide(cam, f, fd, [[-.3, 1.05, 3.6, 0, 1.0, 0], [.2, 1.1, 3.1, 0, 1.05, 0]]); } }; });
+// 14 "The investors pay six hundred thousand dollars." - cash bricks pile up on the counter, $600,000 scrawls on
+H_(46.8, 50.8, t0 => { const S = bankHall(), cam = newCam(42), bricks = [...Array(48)].map(() => { const c = cash(1); S.sc.add(c); return c; });
+  return { scene: S.sc, cam, draw(g, f) { scrawl(g, '$600,000', 150, 360, (f - at(t0, 48.0)) / .7, 130); },
+    update(f, fd, tc) { const p0 = at(t0, 47.76); bricks.forEach((b, i) => { const k = clamp((f - p0 - i * .045) / .25), row = Math.floor(i / 12), col = i % 12; b.visible = k > 0; b.position.set(-.66 + (col % 6) * .24 + (row % 2) * .06, .82 + row * .065 + (1 - k) * .8, -.88 + Math.floor(col / 6) * .12); b.rotation.y = (hash(i) - .5) * .2; });
+    for (const [x, ry, robe, i] of [[-1.3, .4, 0x1e1e2a, 0], [1.3, -.4, 0x3a2a4a, 1]]) place(S.sc, { ...RICH, robe, ...fx(f, [[0, 'smile'], [p0 + i * .1, 'happy']]), hands: [V(-.25, .85, .35), V(.3, .9, .35)] }, x, 0, -.3, ry);
+    place(S.sc, { ...MINER, ...fx(f, [[0, 'happy']]), hands: [V(-.4, 1.2, .2), V(.4, 1.2, .2)] }, 0, 0, -1.7, 0);
+    glide(cam, f, fd, [[0, 1.4, 2.2, 0, .9, -.8], [0, 2.4, 1.6, 0, .85, -.9]]); } }; });
+// 15 "The miners disappear." - poof: a cartoon dust cloud where they stood, two hats spin down
+H_(50.8, 53.35, t0 => { const S = bankFront(), cam = newCam(44), puff = [...Array(16)].map((_, i) => { const p = new THREE.Mesh(new THREE.SphereGeometry(.22 + hash(i) * .2, 10, 8), new THREE.MeshStandardMaterial({ color: 0xe8dcc8, roughness: 1, transparent: true })); S.sc.add(p); return p; }), hats = [0, 1].map(() => { const h = new THREE.Group(); h.add(at3(inked(new THREE.CylinderGeometry(.13, .15, .16, 14), 0x8a5a2a, .01), 0, .08, 0)); h.add(inked(new THREE.CylinderGeometry(.3, .3, .02, 18), 0x8a5a2a, .01)); S.sc.add(h); return h; });
+  return { scene: S.sc, cam, update(f, fd, tc) { const pf = at(t0, 51.72), p = f - pf;
+    if (p < 0) { place(S.sc, { ...MINER, ...fx(f, [[0, 'smug']]), bag: true, hands: [V(-.25, .75, .3), V(.25, .75, .3)] }, -.45, 0, .5, .2); place(S.sc, { ...PARTNER, ...fx(f, [[0, 'happy'], [pf - .35, 'smug']]), eyesL: f > pf - .35 ? 'closed' : undefined, hands: [V(-.25, .75, .3), V(.25, .75, .3)] }, .45, 0, .5, -.2); }
+    puff.forEach((m, i) => { const k = clamp(p / .9); m.visible = p > 0; const a = hash(i) * 6.28; m.position.set(Math.cos(a) * (.2 + k * .7), .3 + hash(i + 2) * 1.2 + k * .3, .5 + Math.sin(a) * .3); m.scale.setScalar(.4 + k * 1.1); m.material.opacity = 1 - k * .9; });
+    hats.forEach((h, i) => { h.visible = p > 0; const q = Math.max(0, p); h.position.set((i ? .45 : -.45) + Math.sin(q * 4 + i) * .2, Math.max(.01, 2.0 + q * 1.5 - q * q * 2.2), .6); h.rotation.set(Math.sin(q * 6) * .5, q * 8, 0); });
+    glide(cam, f, fd, [[0, 1.0, 4.0, 0, 1.0, 0], [0, 1.0, 3.5, 0, 1.0, 0]]); } }; });
+// 16 "But a young geologist goes to see the field for himself." - follow cam trails him across the empty field
+H_(53.35, 57.6, t0 => { const S = field(), cam = newCam(42), ps = digPatches(S.sc); motes(S.sc, 140, [6, 3, 6], V(0, 1.3, 0));
+  return { scene: S.sc, cam, update(f, fd, tc) { const k = clamp(f / fd), x = lerp(-2.5, 1.0, k), z = lerp(2.0, -.5, k); const g = walkTo(S.sc, { ...GEO, ...fx(f, [[0, 'determined']]) }, -2.5, 2.0, 1.0, -.5, k, tc, 2.2);
+    look(cam, x + .81 * 2.6 + .59 * .9, 1.0, z - .59 * 2.6 + .81 * .9, x, .95, z); } }; });
+// 17 "And he notices something." - snap push into his face; he squints over his glasses
+H_(57.6, 59.95, t0 => { const S = field(), cam = newCam(36);
+  return { scene: S.sc, cam, update(f, fd, tc) { const g = place(S.sc, { ...GEO, ...fx(f, [[0, 'deadpan'], [at(t0, 58.71), 'determined']]), hands: [V(-.25, .8, .3), V(.2, 1.05, .35)] }, 0, 0, 0, .2);
+    const e = 1 - Math.exp(-f * 3); glide(cam, f, fd, [[.3, 1.1, 3.6, 0, 1.1, 0], [.2, 1.2, 2.6, 0, 1.2, 0]]); } }; });
+// 18 "The diamonds are only where the ground has been dug up." - overhead: diamonds sit ONLY in the dug patches; red circles scrawl round them
+H_(59.95, 63.95, t0 => { const S = field(), cam = newCam(44), ps = digPatches(S.sc), ds = [];
+  ps.forEach((p, j) => { for (let i = 0; i < 4; i++) { const d = diamond(1.4); d.position.set(p.position.x + (hash(i + j * 9) - .5) * .5, .04, p.position.z + (hash(i + j * 9 + 4) - .5) * .4); S.sc.add(d); ds.push(d); } });
+  const v = V();
+  return { scene: S.sc, cam, draw(g, f) { const k = clamp((f - at(t0, 62.8)) / .5); if (k <= 0) return; g.save(); g.strokeStyle = '#ff3030'; g.lineWidth = 10; g.lineCap = 'round'; ps.forEach((p, i) => { v.copy(p.position).project(this_cam); const x = (v.x + 1) / 2 * W, y = (1 - v.y) / 2 * H; if (v.z > 1) return; g.beginPath(); g.ellipse(x, y, 95, 75, -.2, 0, Math.PI * 2 * clamp(k * 1.3 - i * .05)); g.stroke(); }); g.restore(); },
+    update(f, fd, tc) { this_cam = cam; ds.forEach((d, i) => twinkle(d, tc, i)); place(S.sc, { ...GEO, ...fx(f, [[0, 'determined']]), hands: [V(-.25, .8, .3), V(.25, .8, .3)] }, -1.2, 0, 1.2, 2.4);
+    const a = f * .08; look(cam, Math.sin(a) * 2, 7.5 - f * .4, Math.cos(a) * 2 + 2, 0, 0, .4); } }; });
+let this_cam = null;
+// 19 "And one diamond... has already been cut by a jeweler." - macro: a perfect cut brilliant among the rough stones, loupe slides over it
+H_(63.95, 68.8, t0 => { const sc = velvet(), cam = newCam(34), hero = cutDiamond(2.6), lp = loupe(); sc.children[3].material.color.set(0x5a3a1e); sc.background.set(0x0a0604); hero.position.set(0, .14, 0); sc.add(hero); lp.scale.setScalar(1.3); sc.add(lp);
+  const rough = [...Array(8)].map((_, i) => { const d = diamond(2.0); d.position.set((hash(i) - .5) * .9, .05, (hash(i + 2) - .5) * .7 - .1); if (Math.hypot(d.position.x, d.position.z) < .2) d.position.x += .35; sc.add(d); return d; });
+  return { scene: sc, cam, draw(g, f) { scrawl(g, 'CUT', 640, 640, (f - at(t0, 66.72)) / .35, 120, .08); },
+    update(f, fd, tc) { hero.rotation.y = tc * .8; twinkle(hero, tc * 1.3, 0); rough.forEach((d, i) => twinkle(d, tc, i + 1)); const k = clamp((f - at(t0, 65.6)) / .6); lp.position.set(lerp(.6, 0, k), .3, .05); lp.rotation.x = -Math.PI / 2; lp.visible = false;
+    glide(cam, f, fd, [[.25, 1.4, 1.5, 0, .1, 0], [.1, 1.15, 1.05, 0, .12, 0]]); } }; });
+// 20 "Nature doesn't cut diamonds." - deadpan straight down the lens
+H_(68.8, 71.45, t0 => { const S = field(), cam = newCam(36);
+  return { scene: S.sc, cam, update(f, fd, tc) { const m = talkIf(tc, 68.87, 70.6); place(S.sc, { ...GEO, ...fx(f, [[0, 'deadpan'], [at(t0, 69.93), 'angry']]), ...(m ? { mouth: m } : {}), hands: [V(-.25, .8, .3), V(.35, 1.0, .35)] }, 0, 0, 0, 0);
+    glide(cam, f, fd, [[0, 1.15, 3.0, 0, 1.15, 0], [0, 1.18, 2.4, 0, 1.18, 0]]); } }; });
+// 21 "The biggest diamond rush in America..." - crane down over a field FULL of top hats digging like mad
+H_(71.45, 74.05, t0 => { const S = field(), cam = newCam(46), sh = [...Array(9)].map(() => { const s = shovel(); S.sc.add(s); return s; }); digPatches(S.sc, 10); motes(S.sc, 220, [10, 3, 10], V(0, 1.2, 0));
+  return { scene: S.sc, cam, update(f, fd, tc) { for (let i = 0; i < 9; i++) { const x = -3 + (i % 3) * 3 + (hash(i) - .5), z = -2.5 + Math.floor(i / 3) * 2.2, dig = (Math.sin(tc * 8 + i * 1.7) + 1) / 2;
+      const g = place(S.sc, { ...RICH, robe: [0x1e1e2a, 0x3a2a4a, 0x2a3a2a][i % 3], ...fx(f, [[0, i % 2 ? 'scream' : 'determined']]), bend: .3 + dig * .2, hands: [V(-.15, .7 + dig * .2, .35), V(.15, .85 + dig * .2, .38)] }, x, 0, z, hash(i + 4) * 6);
+      sh[i].position.copy(wpt(g, V(0, .78 + dig * .2, .36))).add(V(0, -.55, 0)); sh[i].rotation.set(0, g.rotation.y, .8 - dig * .4); }
+    glide(cam, f, fd, [[0, 6.5, 8, 0, 0, -1], [0, 2.6, 6, 0, .6, -.5]]); } }; });
+// 22 "...was two guys and a shovel." - the pair stroll off into the sunset, one shovel on a shoulder; turn, wink. END
+H_(74.05, 99, t0 => { const S = field(), cam = newCam(40), sv = shovel(), bags = [0, 1].map(() => { const b = mesh(new THREE.SphereGeometry(.15, 12, 8), 0x8ac87a); S.sc.add(b); return b; }); S.sc.add(sv); motes(S.sc, 160, [6, 3, 6], V(0, 1.2, -3));
+  return { scene: S.sc, cam, draw(g, f) { const k = clamp((f - at(t0, 75.69)) / .4); if (k > 0) { g.save(); g.globalAlpha = k; scrawl(g, '$600,000', 300, 380, 1, 90, -.04, false); g.restore(); } },
+    update(f, fd, tc) { const turn = at(t0, 75.69), wk = f < turn, k = clamp(f / 2.4);
+      const a = wk ? walkTo(S.sc, { ...MINER, ...fx(f, [[0, 'happy']]), hands: [V(-.2, .8, .3), V(.25, 1.35, .1)] }, -.35, 0, -.35, -1.4, k, tc, Math.PI) : place(S.sc, { ...MINER, ...fx(f, [[0, 'happy'], [turn + .15, 'smug']]), eyesL: f > turn + .15 ? 'closed' : undefined, hands: [V(-.2, .8, .3), V(.25, 1.35, .1)] }, -.35, 0, -1.4, .2);
+      const b = wk ? walkTo(S.sc, { ...PARTNER, ...fx(f, [[0, 'laugh']]), hands: [V(-.3, .8, .3), V(.3, .8, .3)] }, .4, 0, .4, -1.35, k, tc, Math.PI) : place(S.sc, { ...PARTNER, ...fx(f, [[0, 'laugh']]), hands: [V(-.3, .8, .3), V(.3, .8, .3)] }, .4, 0, -1.35, -.2);
+      sv.position.copy(wpt(a, V(.25, 1.35, .1))).add(V(0, -.2, 0)); sv.rotation.set(0, a.rotation.y, 2.6); bags[0].position.copy(wpt(b, V(-.3, .8, .3))).add(V(0, -.15, 0)); bags[1].position.copy(wpt(b, V(.3, .8, .3))).add(V(0, -.15, 0));
+      glide(cam, f, fd, [[0, .8, 3.6, 0, 1.0, -1.5], [0, .95, 2.9, 0, 1.0, -1.8]]); } }; });
