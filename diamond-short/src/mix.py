@@ -31,39 +31,36 @@ def ding(): x = tt(.8); return (np.sin(2 * np.pi * 2093 * x) + .5 * np.sin(2 * n
 
 # ================= MUSIC (original) =================
 
-# ===== MUSIC: intense Western-heist score (new style): galloping low strings, toms, shaker, a lonely whistle lead, whip cracks on the turns =====
-def strg(m, d, att=.01, rel=.15):
-    x = tt(d); f = hz(m); o = np.zeros(len(x))
-    for k, det in enumerate((-.005, 0, .006)): o += 2 * ((np.cumsum(f * (1 + det) * (1 + .003 * np.sin(2 * np.pi * 5.5 * x + k))) / SR + k * .3) % 1) - 1
-    return lp(o / 3, 1400) * env(d, att, rel)
-def tom(m=40, d=.45): x = tt(d); return np.sin(2 * np.pi * np.cumsum(hz(m) * (1 + .6 * np.exp(-x * 18))) / SR) * np.exp(-x * 7)
-def shk(): return norm(bp(noise(.05), 5000, 10000)) * np.exp(-tt(.05) * 60)
-def whistle(m, d): x = tt(d); f = hz(m) * (1 + .012 * np.sin(2 * np.pi * 5.8 * x) * np.minimum(1, x / .25)); return (np.sin(2 * np.pi * np.cumsum(f) / SR) + .08 * bp(noise(d), 1500, 4000)) * env(d, .06, .2)
-def whip(): d = .25; x = tt(d); return norm(hp(noise(d), 2500) * np.exp(-x * 30)) + np.sin(2 * np.pi * np.cumsum(3000 * np.exp(-x * 20) + 300) / SR) * np.exp(-x * 25) * .4
-def anvil(): x = tt(.8); return (np.sin(2 * np.pi * 1180 * x) + .6 * np.sin(2 * np.pi * 2730 * x)) * np.exp(-x * 9) * .6
+# ===== MUSIC: dark, warm "investigation" bed (new style, built to Ricks' measured profile: heavy bass + low-mids, almost no presence) =====
+# heartbeat saw-bass in 8ths, muffled e-piano chords, a deep pad, a soft muted kick; a ticking clock + rising pulse in the tense stretch
+def saw(f, d, det=(-.004, 0, .005)): x = tt(d); return sum(2 * ((np.cumsum(np.full(len(x), f * (1 + q))) / SR + k * .37) % 1) - 1 for k, q in enumerate(det)) / len(det)
+def pbass(m, d): return lp(saw(hz(m), d), 380) * env(d, .006, d * .6)
+def epiano(m, d): x = tt(d); f = hz(m); mod = 2.6 * np.exp(-x * 3) * np.sin(2 * np.pi * f * x); return np.sin(2 * np.pi * f * x + mod) * np.exp(-x * 1.6) * np.minimum(1, x / .004)
+def pad(m, d): return lp(saw(hz(m), d, (-.007, -.002, .003, .008)), 1300) * env(d, .8, 1.2)
+def mkick(): x = tt(.35); return np.sin(2 * np.pi * np.cumsum(42 + 70 * np.exp(-x * 25)) / SR) * np.exp(-x * 9)
+def tick(): x = tt(.04); return lp(bp(noise(.04), 1500, 4000), 3000) * np.exp(-x * 120)
+def boom(): x = tt(2.2); return np.sin(2 * np.pi * np.cumsum(55 * np.exp(-x * .6) + 25) / SR) * np.exp(-x * 2.2) + .3 * lp(noise(2.2), 200) * np.exp(-x * 4)
 END = DUR
-BPM = 132; b = 60 / BPM; BAR = 4 * b
-PROG = [40, 40, 43, 38, 40, 40, 36, 38]                         # E  E  G  D  E  E  C  D (E minor, Western)
-MEL = [(76, 1.5), (None, .5), (79, .5), (78, .5), (76, 1.0), (71, 2.0), (None, 2.0), (74, 1.0), (76, 1.0), (79, 1.5), (78, .5), (76, 4.0)]
-TENSE0, TENSE1 = F(53.3), F(68.8)
+BPM = 103; b = 60 / BPM; BAR = 4 * b
+PROG = [(38, [50, 53, 57]), (34, [50, 53, 58]), (36, [48, 52, 55]), (33, [49, 52, 57])]   # Dm  Bb  C  A  (D minor)
+TENSE0, TENSE1, DROP = F(53.3), F(68.8), F(68.87)
 t = 0.0; bar = 0
 while t < END - .4:
-    r = PROG[bar % 8]; tense = TENSE0 <= t < TENSE1
-    for beat in range(4):                                                     # gallop: da-da-DUM on every beat
-        for off, g in ((0, .55), (b / 3, .35), (2 * b / 3, .45)): put(mus, strg(r - 12 + (7 if (beat % 2 and off == 0) else 0), b * .3), t + beat * b + off, g)
-    put(mus, strg(r + 12, BAR, .3, .4) + strg(r + 19, BAR, .3, .4), t, .14)    # sustained upper strings
-    for off in ((0, 1.5, 2, 3) if not tense else (0, .5, 1.5, 2, 2.5, 3, 3.5)): put(mus, tom(38 if off in (0, 2) else 45), t + off * b, .5)
-    for k in range(8): put(mus, shk(), t + k * b / 2, .07 + .04 * (k % 2))
-    if tense: put(mus, anvil(), t + 3.5 * b, .25)
+    r, ch = PROG[bar % 4]; tense = TENSE0 <= t < TENSE1; intro = t < F(9.8)
+    if not (DROP - BAR * .5 < t < DROP + b * .5):
+        for k in range(8): put(mus, pbass(r + (12 if k % 4 == 3 else 0), b * .45), t + k * b / 2, .28 if k % 2 == 0 else .18)
+        for beat in ((0, 2) if not tense else (0, 1, 2, 3)):
+            if not intro or beat == 0: put(mus, mkick(), t + beat * b, .22)
+        if not intro:
+            for k in range(8): put(mus, tick(), t + k * b / 2, .05 if k % 2 else .03)
+            for n in ch: put(mus, epiano(n, BAR * .9), t, .2); put(mus, epiano(n + 12, BAR * .45), t + 2.5 * b, .08)
+        put(mus, pad(r + 12, BAR + .5), t, .1 if not tense else .14); put(mus, pad(r + 24, BAR + .5), t, .14 if not tense else .2)
+        if tense:
+            for k in range(8): put(mus, tick(), t + k * b / 2, .1 if k % 2 == 0 else .06)
+            put(mus, pad(r + 24, BAR, ), t, .05 * (1 + (t - TENSE0) / (TENSE1 - TENSE0)))
     t += BAR; bar += 1
-mt = 0.0                                                                         # whistle melody on top (rests during the tense section)
-while mt < END - 6:
-    for m, d in MEL:
-        dur = d * b
-        if m and not (TENSE0 <= mt < TENSE1): put(mus, whistle(m, dur * .95), mt, .22)
-        mt += dur
-    mt += BAR * 2
-for tw in (11.28, 42.76, 64.74, 69.93): put(mus, whip(), F(tw) - .05, .6)       # whip crack on each turn
+for tw in (11.28, 42.76, 64.74, 69.93, 75.69): put(mus, boom(), F(tw) - .02, .3)       # deep hit on each turn
+mus = lp(mus, 6000)                                                                         # keep the presence band clear for the voice, like Ricks
 fo = int(1.0 * SR); mus[-fo:] *= np.linspace(1, 0, fo)
 
 # ===== SOUND EFFECTS =====
@@ -94,7 +91,7 @@ import os
 VOICE = 'build/voice_loud.wav' if os.path.exists('build/voice_loud.wav') else 'build/voice_cut.wav'  # louder, lightly compressed voice
 w = wave.open(VOICE); v = np.frombuffer(w.readframes(w.getnframes()), dtype=np.int16).astype(float) / 32768; w.close()
 v = np.pad(v, (0, max(0, N - len(v))))[:N]; v = v / np.abs(v).max() * .92
-mus = mus / (np.sqrt(np.mean(mus ** 2)) + 1e-9) * 10 ** (-27.0 / 20)
+mus = mus / (np.sqrt(np.mean(mus ** 2)) + 1e-9) * 10 ** (-28.0 / 20)
 sfx = sfx * 4.0
 mix = (v + sfx + mus) * .84
 fade = np.ones(N); fl = int(.06 * SR); fade[-fl:] = np.linspace(1, 0, fl); mix *= fade   # (tiny fade only: it loops)
@@ -102,3 +99,4 @@ mix = np.clip(np.tanh(mix * 1.05) / np.tanh(1.05) * .95, -.98, .98)
 def db(x): return 20 * np.log10(np.sqrt(np.mean(x ** 2)) + 1e-9)
 print("sfx peak at %.2f s" % (np.argmax(np.abs(sfx)) / SR)); print('voice %.1f dB | sfx %.1f dB peak %.2f | music %.1f dB | mix peak %.2f' % (db(v), db(sfx), np.abs(sfx).max(), db(mus), np.abs(mix).max()))
 st = np.stack([mix, mix], 1); o = wave.open('build/mix.wav', 'w'); o.setnchannels(2); o.setsampwidth(2); o.setframerate(SR); o.writeframes((st * 32767).astype(np.int16).tobytes()); o.close()
+np.save('build/mus.npy', mus)
