@@ -1,0 +1,23 @@
+// ===================== HQ LOOK: PBR sets, soft GI-ish light, ambient occlusion, bloom, filmic tone, 1.5x supersampling =====================
+const SSAA = 1.0; renderer.setPixelRatio(SSAA); renderer.setSize(W, H, false); renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const pmrem = new THREE.PMREMGenerator(renderer); const ENV = pmrem.fromScene(new RoomEnvironment(renderer), .04).texture;
+const composer = new EffectComposer(renderer); composer.setPixelRatio(SSAA); composer.setSize(W, H);
+const rpass = new RenderPass(new THREE.Scene(), new THREE.PerspectiveCamera()); composer.addPass(rpass);
+const gtao = new GTAOPass(new THREE.Scene(), new THREE.PerspectiveCamera(), W * SSAA, H * SSAA); gtao.updateGtaoMaterial({ radius: .5, distanceExponent: 1.5, thickness: 1.5, scale: 1.2, samples: 8 }); gtao.blendIntensity = .9;
+const bloom = new UnrealBloomPass(new THREE.Vector2(W, H), .14, .5, .97); composer.addPass(new OutputPass());
+function hqRender(scene, cam) { scene.traverse(o => { if (o.material && (o.material.isMeshToonMaterial || o.material.isMeshBasicMaterial) && !o.material.userData.keepTone) o.material.toneMapped = false; }); renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = scene.userData.exposure || 1.0; rpass.scene = gtao.scene = scene; rpass.camera = gtao.camera = cam; composer.render(); }
+// PBR material helpers with painted canvas textures
+const pbr = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: .7, metalness: 0, envMapIntensity: .6, ...o });
+function texC(w, h, draw, rx = 1, ry = 1) { const t = ctex(w, h, draw); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rx, ry); t.anisotropy = 8; return t; }
+const pm = (geo, mat, cast = true) => { const m = new THREE.Mesh(geo, mat); m.castShadow = cast; m.receiveShadow = true; return m; };
+const blockTex = (top, bot) => texC(512, 512, (g, w, h) => { g.fillStyle = top; g.fillRect(0, 0, w, h); for (let r = 0; r < 8; r++) for (let c = 0; c < 4; c++) { const x = c * 128 + (r % 2) * 64, y = r * 64; g.fillStyle = `rgba(0,0,0,${.02 + Math.random() * .03})`; g.fillRect(x + 3, y + 3, 122, 58); g.strokeStyle = 'rgba(0,0,0,.13)'; g.lineWidth = 4; g.strokeRect(x, y, 128, 64); g.strokeRect(x - 128, y, 128, 64); }
+  for (let i = 0; i < 60; i++) { g.fillStyle = `rgba(80,60,40,${Math.random() * .05})`; g.beginPath(); g.arc(Math.random() * w, Math.random() * h, 4 + Math.random() * 30, 0, 7); g.fill(); } }, 3, 2);
+const floorTex = col => texC(512, 512, (g, w, h) => { g.fillStyle = col; g.fillRect(0, 0, w, h); for (let i = 0; i < 400; i++) { g.fillStyle = `rgba(0,0,0,${Math.random() * .05})`; g.beginPath(); g.ellipse(Math.random() * w, Math.random() * h, 3 + Math.random() * 40, 2 + Math.random() * 10, Math.random() * 3, 0, 7); g.fill(); }
+  for (let i = 0; i < 30; i++) { g.strokeStyle = 'rgba(0,0,0,.18)'; g.lineWidth = 2; g.beginPath(); let x = Math.random() * w, y = Math.random() * h; g.moveTo(x, y); for (let k = 0; k < 4; k++) { x += (Math.random() - .5) * 60; y += (Math.random() - .5) * 60; g.lineTo(x, y); } g.stroke(); } }, 4, 4);
+// fake volumetric light shaft: additive gradient planes along a direction
+function shaft(sc, from, to, w = .7, a = .22, col = 0xfff2d8) { const len = from.distanceTo(to); const tex = ctex(64, 256, (g, ww, hh) => { const gr = g.createLinearGradient(0, 0, 0, hh); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, ww, hh); const gx = g.createLinearGradient(0, 0, ww, 0); gx.addColorStop(0, 'rgba(0,0,0,1)'); gx.addColorStop(.5, 'rgba(0,0,0,0)'); gx.addColorStop(1, 'rgba(0,0,0,1)'); g.globalCompositeOperation = 'destination-out'; g.fillStyle = gx; g.fillRect(0, 0, ww, hh); });
+  const grp = new THREE.Group(); for (let i = 0; i < 3; i++) { const p = new THREE.Mesh(new THREE.PlaneGeometry(w * (1 - i * .2), len), new THREE.MeshBasicMaterial({ map: tex, color: col, transparent: true, opacity: a * (1 - i * .25), blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide })); p.material.userData.keepTone = true; p.rotation.y = i * Math.PI / 3; p.position.y = -len / 2; grp.add(p); }
+  grp.position.copy(from); grp.lookAt(to); grp.rotateX(-Math.PI / 2); sc.add(grp); return grp; }
+
+// the ink outline shells wrap each noodle, so ambient occlusion would see the body as "buried" and darken it: hide them while AO is computed
+{ const orig = gtao.render.bind(gtao); gtao.render = (...a) => { const hid = []; gtao.scene.traverse(o => { if (o.isMesh && o.visible && o.material && o.material.side === THREE.BackSide && o.material.isMeshBasicMaterial) { o.visible = false; hid.push(o); } }); orig(...a); hid.forEach(o => o.visible = true); }; }
