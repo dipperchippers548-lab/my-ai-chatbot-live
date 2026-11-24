@@ -40,9 +40,10 @@ function person(o) {
   // legs (short pants + skinny legs + chunky shoes)
   const legs = [-1, 1].map(s => { const L = new THREE.Group(); L.position.set(s * .13, .62, 0); body.add(L);
     L.add(at(mesh(lowpoly(new THREE.CylinderGeometry(.11, .1, .3, 6), .02, 3 + s), o.pants), 0, -.12, 0));
-    L.add(at(mesh(new THREE.CylinderGeometry(.055, .055, .26, 5), o.kind === 'cardigan' ? o.pants : o.skin), 0, -.38, 0));
-    if (o.kind !== 'cardigan') L.add(at(mesh(new THREE.CylinderGeometry(.065, .065, .1, 6), o.sock), 0, -.47, 0));
-    const sh = new THREE.Group(); sh.position.set(0, -.55, .05); L.add(sh); sh.add(at(mesh(lowpoly(new THREE.BoxGeometry(.19, .1, .32, 2, 1, 2), .03, 7 + s), o.shoe), 0, .03, 0)); sh.add(at(mesh(new THREE.BoxGeometry(.2, .04, .33), o.sole), 0, -.03, 0)); return L; });
+    const K = new THREE.Group(); K.position.y = -.26; L.add(K); L.userData.knee = K;                          // knee joint
+    K.add(at(mesh(new THREE.CylinderGeometry(.055, .055, .26, 5), o.kind === 'cardigan' ? o.pants : o.skin), 0, -.12, 0));
+    if (o.kind !== 'cardigan') K.add(at(mesh(new THREE.CylinderGeometry(.065, .065, .1, 6), o.sock), 0, -.21, 0));
+    const sh = new THREE.Group(); sh.position.set(0, -.29, .05); K.add(sh); sh.add(at(mesh(lowpoly(new THREE.BoxGeometry(.19, .1, .32, 2, 1, 2), .03, 7 + s), o.shoe), 0, .03, 0)); sh.add(at(mesh(new THREE.BoxGeometry(.2, .04, .33), o.sole), 0, -.03, 0)); return L; });
   // torso: tapered, low-poly
   const torso = new THREE.Group(); torso.position.y = .62; body.add(torso);
   torso.add(at(mesh(lowpoly(new THREE.CylinderGeometry(.21, .27, .6, 7, 2), .035, 11), o.top), 0, .3, 0));
@@ -51,8 +52,10 @@ function person(o) {
   else { torso.add(at(mesh(new THREE.BoxGeometry(.06, .55, .05), 0xf4ead8), 0, .3, .235)); }
   // arms (shoulder pivot, low-poly sleeve, mitten hand)
   const arms = [-1, 1].map(s => { const A = new THREE.Group(); A.position.set(s * .27, .52, 0); torso.add(A);
-    A.add(at(mesh(lowpoly(new THREE.CylinderGeometry(.075, .065, .42, 6), .02, 13 + s), o.top), 0, -.2, 0));
-    const hand = at(mesh(lowpoly(new THREE.IcosahedronGeometry(.075, 0), .015, 17 + s), o.skin), 0, -.45, 0); A.add(hand); A.rotation.z = s * .12; A.userData.hand = hand; return A; });
+    A.add(at(mesh(lowpoly(new THREE.CylinderGeometry(.075, .07, .23, 6), .02, 13 + s), o.top), 0, -.1, 0));
+    const E = new THREE.Group(); E.position.y = -.21; A.add(E); A.userData.elbow = E;                                // elbow joint
+    E.add(at(mesh(lowpoly(new THREE.CylinderGeometry(.07, .064, .22, 6), .02, 15 + s), o.top), 0, -.1, 0));
+    const hand = at(mesh(lowpoly(new THREE.IcosahedronGeometry(.075, 0), .015, 17 + s), o.skin), 0, -.24, 0); E.add(hand); A.rotation.z = s * .12; A.userData.hand = hand; return A; });
   // head: big, low-poly, slightly squashed
   const head = new THREE.Group(); head.position.y = .66; torso.add(head);
   head.add(at(mesh(new THREE.CylinderGeometry(.07, .08, .08, 6), o.skin), 0, 0, 0));
@@ -66,13 +69,33 @@ function person(o) {
     const tuft = mesh(new THREE.ConeGeometry(.06, .22, 4), o.hair); tuft.position.set(.03, .62, .02); tuft.rotation.z = -.4; head.add(tuft); }
   else { const cap = mesh(lowpoly(new THREE.IcosahedronGeometry(.31, 1), .02, 50), o.hair); cap.scale.set(1.02, .7, 1.0); cap.position.set(0, .4, -.05); head.add(cap); if (o.bun) head.add(at(mesh(lowpoly(new THREE.IcosahedronGeometry(.13, 0), .02, 51), o.hair), 0, .66, -.12));
     for (const s of [-1, 1]) head.add(at(mesh(new THREE.BoxGeometry(.1, .3, .2), o.hair), s * .27, .25, -.08)); }
-  root.userData = { body, torso, arms, legs, head, face };
-  root.setFace = e => { face.material.map = faceTex(e); };
+  root.userData = { body, torso, arms, legs, head, face, seed: Math.random() * 10 };
+  root.setFace = e => { root.userData.faceKey = e; face.material.map = faceTex(e); };
   return root;
 }
-function pose(p, { armL = [0, 0, .12], armR = [0, 0, -.12], lean = 0, headTilt = 0, walk = 0 } = {}) { const u = p.userData;
-  u.arms[0].rotation.set(armL[0], armL[1], armL[2]); u.arms[1].rotation.set(armR[0], armR[1], armR[2]); u.torso.rotation.x = lean; u.head.rotation.z = headTilt;
-  u.legs[0].rotation.x = Math.sin(walk) * .5; u.legs[1].rotation.x = -Math.sin(walk) * .5; }
+FACES.blink = ctex(256, 256, g => { g.strokeStyle = '#16121a'; g.lineWidth = 9; g.lineCap = 'round'; for (const x of [88, 168]) { g.beginPath(); g.arc(x, 112, 16, .15 * Math.PI, .85 * Math.PI); g.stroke(); } g.fillStyle = '#3a2216'; g.fillRect(64, 82, 48, 12); g.fillRect(144, 82, 48, 12); g.beginPath(); g.moveTo(110, 186); g.lineTo(146, 186); g.stroke(); });
+const BLINKABLE = new Set(['calm', 'happy', 'smug', 'worried', 'tired', 'mad', 'determined']);
+// Natural motion layer: two-joint limbs, poses ease toward their targets (no snapping), walk cycle with knee bend, arm swing,
+// bounce and twist, plus breathing, weight shift, a slow head drift and blinks. Pass snap:true for deliberately sudden moves.
+function pose(p, { armL = [0, 0, .12], armR = [0, 0, -.12], lean = 0, headTilt = 0, walk = 0, elbowL, elbowR, kneeL = 0, kneeR = 0, snap = false } = {}) {
+  const u = p.userData, T = window.__T ?? 0, sd = u.seed || 0, walking = walk !== 0;
+  const defL = armL[0] === 0 && armL[1] === 0 && Math.abs(armL[2] - .12) < 1e-6, defR = armR[0] === 0 && armR[1] === 0 && Math.abs(armR[2] + .12) < 1e-6;
+  const sw = Math.sin(walk), tgt = {
+    aL: [armL[0] + (walking && defL ? sw * .55 : 0), armL[1], armL[2]], aR: [armR[0] + (walking && defR ? -sw * .55 : 0), armR[1], armR[2]],
+    eL: elbowL ?? (walking ? -.35 - Math.max(0, sw) * .4 : -.22), eR: elbowR ?? (walking ? -.35 - Math.max(0, -sw) * .4 : -.22),
+    lL: walking ? sw * .55 : 0, lR: walking ? -sw * .55 : 0, kL: kneeL + (walking ? Math.max(0, -Math.cos(walk)) * .7 : 0), kR: kneeR + (walking ? Math.max(0, Math.cos(walk)) * .7 : 0),
+    lean, tilt: headTilt };
+  const dt = T - (u.lastT ?? -9); u.lastT = T; const k = snap || !(dt > 0 && dt < .3) || !u.cur ? 1 : 1 - Math.exp(-dt * 13);
+  if (!u.cur || k === 1) u.cur = JSON.parse(JSON.stringify(tgt)); else { const c = u.cur; for (const key of Object.keys(tgt)) { if (Array.isArray(tgt[key])) tgt[key].forEach((v, i) => c[key][i] += (v - c[key][i]) * k); else c[key] += (tgt[key] - c[key]) * k; } }
+  const c = u.cur; u.arms[0].rotation.set(...c.aL); u.arms[1].rotation.set(...c.aR); u.arms[0].userData.elbow.rotation.x = c.eL; u.arms[1].userData.elbow.rotation.x = c.eR;
+  u.legs[0].rotation.x = c.lL; u.legs[1].rotation.x = c.lR; u.legs[0].userData.knee.rotation.x = c.kL; u.legs[1].userData.knee.rotation.x = c.kR;
+  u.torso.rotation.x = c.lean; u.torso.rotation.y = walking ? Math.sin(walk) * .12 : Math.sin(T * .6 + sd) * .04; u.head.rotation.z = c.tilt + Math.sin(T * .9 + sd) * .03;
+  u.head.rotation.y = Math.sin(T * .5 + sd * 2) * .07; u.head.rotation.x = Math.sin(T * 1.3 + sd) * .025;
+  u.torso.scale.set(1, 1 + Math.sin(T * 2.4 + sd) * .012, 1);                                                                        // breathing
+  u.body.position.y = walking ? Math.abs(Math.cos(walk)) * .045 : 0; u.body.rotation.z = walking ? Math.sin(walk) * .03 : Math.sin(T * .8 + sd) * .015;   // bounce / weight shift
+  if (BLINKABLE.has(u.faceKey) && ((T * .29 + sd) % 1) < .035) u.face.material.map = faceTex('blink');
+}
+
 
 // ---------- SET: living room ----------
 function livingRoom() { const sc = new THREE.Scene(); sc.background = new THREE.Color(0xbfe4d8);
