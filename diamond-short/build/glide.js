@@ -1,0 +1,1 @@
+function glide(cam, f, fd, pts) { if (!pts._c) pts._c = [new THREE.CatmullRomCurve3(pts.map(p => V(p[0], p[1], p[2]))), new THREE.CatmullRomCurve3(pts.map(p => V(p[3], p[4], p[5])))]; const u = clamp(f / Math.max(fd, .01)); cam.position.copy(pts._c[0].getPointAt(u)); cam.lookAt(pts._c[1].getPointAt(u)); }
