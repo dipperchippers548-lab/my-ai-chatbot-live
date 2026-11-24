@@ -31,43 +31,40 @@ def ding(): x = tt(.8); return (np.sin(2 * np.pi * 2093 * x) + .5 * np.sin(2 * n
 
 # ================= MUSIC (original) =================
 
-# ===== MUSIC: driving "mission" score that never stops: pulsing 8th-note bass, punchy drums, staccato string stabs, risers into big moments =====
-def gtr(m, d=.5): x = tt(d); f = hz(m); return (np.sin(2 * np.pi * f * x) + .45 * np.sin(4 * np.pi * f * x) * np.exp(-x * 6)) * np.exp(-x * 6) * np.minimum(1, x / .002)
-def glock(m, d=.7): x = tt(d); f = hz(m); return (np.sin(2 * np.pi * f * x) + .25 * np.sin(2 * np.pi * f * 2.76 * x) * np.exp(-x * 12)) * np.exp(-x * 4.5)
-def saw(m, d): x = tt(d); return 2 * ((hz(m) * x) % 1) - 1
-def pulse(m, d): return lp(saw(m, d) + saw(m + .08, d), 700) * env(d, .004, d * .6)
-def stab(ms, d=.18): return lp(sum(saw(m, d) + saw(m + .1, d) for m in ms), 2600) / len(ms) * env(d, .004, .12)
-def kck(): x = tt(.28); return hp(np.tanh(2 * np.sin(2 * np.pi * np.cumsum(46 + 110 * np.exp(-x * 30)) / SR)) * np.exp(-x * 10), 70)
-def snr(): d = .2; return norm(bp(noise(d), 1200, 7000)) * np.exp(-tt(d) * 22) * .9 + np.sin(2 * np.pi * 190 * tt(d)) * np.exp(-tt(d) * 30) * .5
-def hat(o=False): d = .16 if o else .035; return norm(hp(noise(d), 7500)) * np.exp(-tt(d) * (16 if o else 100))
-def tom(m=40): x = tt(.4); return np.sin(2 * np.pi * np.cumsum(hz(m) * (1 + .5 * np.exp(-x * 15))) / SR) * np.exp(-x * 7)
-def riser(d=1.5): x = tt(d); return norm(bp(noise(d), 800, 6000)) * (x / d) ** 2.5 * .7 + np.sin(2 * np.pi * np.cumsum(200 * 2 ** (2 * x / d)) / SR) * (x / d) ** 3 * .3
-def boom(): x = tt(1.6); return np.sin(2 * np.pi * np.cumsum(38 * (1 + .8 * np.exp(-x * 8))) / SR) * np.exp(-x * 2.5) + norm(lp(noise(1.6), 300)) * np.exp(-x * 6) * .4
+# ===== MUSIC: intense Western-heist score (new style): galloping low strings, toms, shaker, a lonely whistle lead, whip cracks on the turns =====
+def strg(m, d, att=.01, rel=.15):
+    x = tt(d); f = hz(m); o = np.zeros(len(x))
+    for k, det in enumerate((-.005, 0, .006)): o += 2 * ((np.cumsum(f * (1 + det) * (1 + .003 * np.sin(2 * np.pi * 5.5 * x + k))) / SR + k * .3) % 1) - 1
+    return lp(o / 3, 1400) * env(d, att, rel)
+def tom(m=40, d=.45): x = tt(d); return np.sin(2 * np.pi * np.cumsum(hz(m) * (1 + .6 * np.exp(-x * 18))) / SR) * np.exp(-x * 7)
+def shk(): return norm(bp(noise(.05), 5000, 10000)) * np.exp(-tt(.05) * 60)
+def whistle(m, d): x = tt(d); f = hz(m) * (1 + .012 * np.sin(2 * np.pi * 5.8 * x) * np.minimum(1, x / .25)); return (np.sin(2 * np.pi * np.cumsum(f) / SR) + .08 * bp(noise(d), 1500, 4000)) * env(d, .06, .2)
+def whip(): d = .25; x = tt(d); return norm(hp(noise(d), 2500) * np.exp(-x * 30)) + np.sin(2 * np.pi * np.cumsum(3000 * np.exp(-x * 20) + 300) / SR) * np.exp(-x * 25) * .4
+def anvil(): x = tt(.8); return (np.sin(2 * np.pi * 1180 * x) + .6 * np.sin(2 * np.pi * 2730 * x)) * np.exp(-x * 9) * .6
 END = DUR
-BPM = 116; b = 60 / BPM; BAR = 4 * b
-TENSE0, TENSE1 = F(53.3), F(68.8)          # the geologist investigates
-PROG = [(45, [57, 60, 64]), (41, [57, 60, 65]), (48, [55, 60, 64]), (43, [55, 59, 62])]       # Am F C G (heroic minor)
-TPROG = [(45, [57, 60, 64]), (46, [58, 62, 65]), (45, [57, 60, 64]), (44, [56, 59, 64])]      # Am Bb Am G#dim - tense
-HOOK = [69, None, 72, 71, 69, None, 64, 67]
+BPM = 132; b = 60 / BPM; BAR = 4 * b
+PROG = [40, 40, 43, 38, 40, 40, 36, 38]                         # E  E  G  D  E  E  C  D (E minor, Western)
+MEL = [(76, 1.5), (None, .5), (79, .5), (78, .5), (76, 1.0), (71, 2.0), (None, 2.0), (74, 1.0), (76, 1.0), (79, 1.5), (78, .5), (76, 4.0)]
+TENSE0, TENSE1 = F(53.3), F(68.8)
 t = 0.0; bar = 0
-while t < END:
-    tense = TENSE0 <= t < TENSE1; root, ch = (TPROG if tense else PROG)[bar % 4]
-    for k in range(8): put(mus, pulse(root - 12 + (12 if k % 4 == 3 else 0), b * .5), t + k * b / 2, .5)       # 8th-note driving bass
-    if tense:
-        for off in (0, 1.5, 2.5): put(mus, tom(38 + (bar % 2) * 2), t + off * b, .5)
-        for k in range(16): put(mus, hat(), t + k * b / 4, .05 + .03 * (k % 4 == 0))
-        for off in (0, 2): put(mus, stab([m + 12 for m in ch], .12), t + off * b + b * .5, .16)
-    else:
-        for off in (0, 1.5, 2, 2.75): put(mus, kck(), t + off * b, .55 if off in (0, 2) else .35)
-        for off in (1, 3): put(mus, snr(), t + off * b, .4)
-        for k in range(8): put(mus, hat(k == 7), t + k * b / 2, .06 + .03 * (k % 2))
-        for off in (0, .75, 1.5, 2.5, 3.25): put(mus, stab([m + 12 for m in ch]), t + off * b, .14)
-        if bar % 4 in (1, 3):
-            for k, m in enumerate(HOOK):
-                if m: put(mus, glock(m + 12, b), t + k * b / 2, .07)
+while t < END - .4:
+    r = PROG[bar % 8]; tense = TENSE0 <= t < TENSE1
+    for beat in range(4):                                                     # gallop: da-da-DUM on every beat
+        for off, g in ((0, .55), (b / 3, .35), (2 * b / 3, .45)): put(mus, strg(r - 12 + (7 if (beat % 2 and off == 0) else 0), b * .3), t + beat * b + off, g)
+    put(mus, strg(r + 12, BAR, .3, .4) + strg(r + 19, BAR, .3, .4), t, .14)    # sustained upper strings
+    for off in ((0, 1.5, 2, 3) if not tense else (0, .5, 1.5, 2, 2.5, 3, 3.5)): put(mus, tom(38 if off in (0, 2) else 45), t + off * b, .5)
+    for k in range(8): put(mus, shk(), t + k * b / 2, .07 + .04 * (k % 2))
+    if tense: put(mus, anvil(), t + 3.5 * b, .25)
     t += BAR; bar += 1
-for tw in (9.88, 25.45, 34.98, 53.37, 68.87): put(mus, riser(1.4), F(tw) - 1.4, .35)          # build into each big turn
-for tw in (11.28, 42.76, 64.74, 69.93): put(mus, boom(), F(tw), .45)                       # "Watch me", 63 hours, walked out, here's why
+mt = 0.0                                                                         # whistle melody on top (rests during the tense section)
+while mt < END - 6:
+    for m, d in MEL:
+        dur = d * b
+        if m and not (TENSE0 <= mt < TENSE1): put(mus, whistle(m, dur * .95), mt, .22)
+        mt += dur
+    mt += BAR * 2
+for tw in (11.28, 42.76, 64.74, 69.93): put(mus, whip(), F(tw) - .05, .6)       # whip crack on each turn
+fo = int(1.0 * SR); mus[-fo:] *= np.linspace(1, 0, fo)
 
 # ===== SOUND EFFECTS =====
 def twinkle(n=6):
