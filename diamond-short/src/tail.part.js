@@ -46,6 +46,7 @@ function post(s, tc) {
   if (s.scope) { og.drawImage(scopeC, 0, 0); og.save(); og.strokeStyle = 'rgba(20,20,20,.85)'; og.lineWidth = 4; const cx = W / 2, cy = H * .46, r = W * .44; og.beginPath(); og.moveTo(cx - r, cy); og.lineTo(cx + r, cy); og.moveTo(cx, cy - r); og.lineTo(cx, cy + r); og.stroke(); for (let i = -4; i <= 4; i++) { if (!i) continue; og.beginPath(); og.moveTo(cx + i * r / 5, cy - 14); og.lineTo(cx + i * r / 5, cy + 14); og.stroke(); } og.restore(); }
   if (s.sepia) { og.save(); og.globalCompositeOperation = 'color'; og.globalAlpha = .6; og.fillStyle = '#c8955a'; og.fillRect(0, 0, W, H); og.globalCompositeOperation = 'soft-light'; og.globalAlpha = .45; og.fillStyle = '#ffd08a'; og.fillRect(0, 0, W, H); og.restore(); }
   { const vg = og.createRadialGradient(W / 2, H * .45, W * .45, W / 2, H * .45, H * .7); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, s.hq ? 'rgba(10,5,0,.45)' : 'rgba(0,0,0,.35)'); og.fillStyle = vg; og.fillRect(0, 0, W, H); }
+  if (s.draw) s.draw(og, tc - s.f0);
   if (s.fade) { og.fillStyle = `rgba(0,0,0,${s.fade})`; og.fillRect(0, 0, W, H); }
 }
 const XF = .22;

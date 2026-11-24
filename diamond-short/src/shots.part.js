@@ -327,3 +327,121 @@ H_(4.5, 9.8, t0 => { const S = field(), cam = newCam(42), ds = [...Array(30)].ma
 H_(9.8, 12.6, t0 => { const S = field(), cam = newCam(38); motes(S.sc, 140, [2, 2, 2], V(.5, 1.4, 0));
   return { scene: S.sc, cam, update(f, fd, tc) { const m = talkIf(tc, 9.8, 11.9); place(S.sc, { ...MINER, ...fx(f, [[0, 'smug'], [at(t0, 11.28), 'happy']]), ...(m ? { mouth: m } : {}), eyesL: f > at(t0, 11.28) ? 'closed' : undefined, arms: [[-.5, .3, .1], [.5, .55, .3]] }, .4, 0, 0, -.25);
     glide(cam, f, fd, [[-.4, 1.1, 3.0, .35, 1.25, 0], [-.1, 1.2, 2.2, .38, 1.35, 0]]); } }; });
+// ===================== part 2: 1872 -> broke -> cheap gems -> bury -> bank -> rich men =====================
+const RICH = { color: 0xfff0e0, hat: 'top', hatColor: 0x1a1a22, mustache: true, robe: 0x1e1e2a, cravat: true, shoe: 0x111111 };
+const TELLER = { color: 0xf8dcc0, glasses: true, robe: 0x3a5a3a, shoe: 0x2a1a10 };
+const wpt = (g, v) => { g.updateMatrixWorld(true); return g.localToWorld(v.clone()); };
+// hand-drawn overlay text that writes itself on (Ricks' chalky "10 FT" notes)
+function scrawl(g, txt, x, y, k, size = 120, rot = -.06, under = true) { if (k <= 0) return; g.save(); g.translate(x, y); g.rotate(rot); g.font = `800 italic ${size}px Nunito`; g.textAlign = 'left'; g.textBaseline = 'middle'; const w = g.measureText(txt).width;
+  g.beginPath(); g.rect(-10, -size, (w + 20) * Math.min(1, k * 1.4), size * 2); g.clip(); g.lineJoin = 'round'; g.lineWidth = 12; g.strokeStyle = 'rgba(20,14,10,.85)'; g.strokeText(txt, 0, 0); g.fillStyle = '#fff'; g.fillText(txt, 0, 0);
+  if (under) { g.lineCap = 'round'; g.lineWidth = 7; g.strokeStyle = '#fff'; g.beginPath(); g.moveTo(-6, size * .55); g.quadraticCurveTo(w * .5, size * .62, w + 10, size * .48); g.stroke(); } g.restore(); }
+function lantern(sc, x, y, z, I = 5, dist = 7) { const g = new THREE.Group(); g.position.set(x, y, z); sc.add(g); g.add(at3(inked(new THREE.CylinderGeometry(.07, .08, .03, 10), 0x2a2a2a, .006), 0, 0, 0)); const gl = new THREE.Mesh(new THREE.CylinderGeometry(.06, .06, .14, 10), new THREE.MeshBasicMaterial({ color: 0xffc870 })); gl.position.y = .09; gl.userData.keep = true; g.add(gl);
+  g.add(at3(inked(new THREE.ConeGeometry(.08, .06, 10), 0x2a2a2a, .006), 0, .19, 0)); const L = new THREE.PointLight(0xffa040, I, dist, 1.6); L.position.set(x, y + .12, z); sc.add(L); g.userData.light = L; return g; }
+function stars(sc, n = 400) { const geo = new THREE.BufferGeometry(), p = []; for (let i = 0; i < n; i++) { const a = hash(i) * 6.28, e = .15 + hash(i + 3) * 1.2; p.push(Math.cos(a) * Math.cos(e) * 90, Math.sin(e) * 90, Math.sin(a) * Math.cos(e) * 90); } geo.setAttribute('position', new THREE.Float32BufferAttribute(p, 3)); const m = new THREE.Points(geo, new THREE.PointsMaterial({ color: 0xffffff, size: .5, sizeAttenuation: true, fog: false })); m.userData.keep = true; sc.add(m); }
+function nightField() { const S = field(), sc = S.sc; sc.background = skyTex('#03050f', '#0a1230', '#1c2650'); sc.fog.color.set(0x0c1228); sc.fog.near = 8; sc.fog.far = 40; S.sun.color.set(0x6a80d0); S.sun.intensity = 1.1; S.sun.position.set(6, 9, -4);
+  sc.children.find(o => o.isHemisphereLight).intensity = .22; stars(sc); const moon = new THREE.Mesh(new THREE.CircleGeometry(2.2, 32), new THREE.MeshBasicMaterial({ color: 0xf4f0d8, fog: false })); moon.position.set(14, 22, -60); moon.lookAt(0, 0, 0); moon.userData.keep = true; sc.add(moon); sc.userData.envI = .15; sc.userData.exposure = 1.15; return S; }
+function shovel() { const g = new THREE.Group(); g.add(at3(box(.035, 1.0, .035, 0x8a5a34, .01), 0, .5, 0)); g.add(at3(box(.2, .26, .03, 0x9aa0ac, .01), 0, -.1, 0)); g.add(at3(box(.14, .04, .04, 0x6a4a2a, .01), 0, 1.0, 0)); return g; }
+function hole(sc, x, z, r = .35) { const h = new THREE.Mesh(new THREE.CircleGeometry(r, 18), new THREE.MeshStandardMaterial({ color: 0x1e1208, roughness: 1 })); h.rotation.x = -Math.PI / 2; h.position.set(x, .012, z); sc.add(h); const md = mesh(lowpoly(new THREE.SphereGeometry(r * .9, 10, 6, 0, 6.3, 0, 1.4), .05, 3), 0x7a4a26); md.scale.y = .45; md.position.set(x + r * 1.6, 0, z - r * .4); sc.add(md); return h; }
+function topHat(c = 0x1a1a22) { const g = new THREE.Group(); g.add(at3(inked(new THREE.CylinderGeometry(.16, .16, .3, 16), c, .012), 0, .15, 0)); g.add(at3(inked(new THREE.CylinderGeometry(.26, .26, .025, 18), c, .012), 0, 0, 0)); g.add(at3(inked(new THREE.CylinderGeometry(.162, .162, .05, 16), 0x7a1a1a, .004), 0, .05, 0)); return g; }
+const marbleT = texC(512, 512, (g, w, h) => { for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) { g.fillStyle = (r + c) % 2 ? '#e8e0d0' : '#2a2420'; g.fillRect(c * 128, r * 128, 128, 128); } for (let i = 0; i < 50; i++) { g.strokeStyle = `rgba(140,120,100,${Math.random() * .25})`; g.lineWidth = 1 + Math.random() * 2; g.beginPath(); let x = Math.random() * w, y = Math.random() * h; g.moveTo(x, y); for (let k = 0; k < 5; k++) { x += (Math.random() - .5) * 90; y += (Math.random() - .5) * 90; g.lineTo(x, y); } g.stroke(); } }, 10, 10);
+function cash(n = 1) { const g = new THREE.Group(); for (let i = 0; i < n; i++) { const b = inked(new THREE.BoxGeometry(.22, .06, .1), 0x8ac87a, .008); b.position.set((hash(i) - .5) * .05, .03 + i * .062, (hash(i + 2) - .5) * .03); b.rotation.y = (hash(i + 5) - .5) * .3; g.add(b); const band = mesh(new THREE.BoxGeometry(.05, .065, .105), 0xf0e8c8); band.position.copy(b.position); band.rotation.y = b.rotation.y; g.add(band); } return g; }
+function bankerLamp(sc, x, y, z) { const g = new THREE.Group(); g.position.set(x, y, z); sc.add(g); g.add(at3(box(.14, .02, .1, 0xc8a050, .006), 0, .01, 0)); g.add(at3(box(.015, .16, .015, 0xc8a050, .004), 0, .09, 0)); const sh = inked(new THREE.CylinderGeometry(.03, .09, .07, 12, 1, false, 0, Math.PI), 0x1a7a4a, .006); sh.rotation.x = Math.PI / 2; sh.rotation.z = Math.PI / 2; sh.position.set(0, .17, 0); g.add(sh);
+  const L = new THREE.PointLight(0xffc070, 1.6, 2.2, 1.5); L.position.set(x, y + .12, z + .02); sc.add(L); return g; }
+function bankHall() { const sc = new THREE.Scene(); window.__sc = sc; sc.background = new THREE.Color(0x120c08); sc.fog = new THREE.Fog(0x1a120a, 8, 22); sc.add(new THREE.HemisphereLight(0xffd8a8, 0x2a1a10, .35));
+  const key = new THREE.SpotLight(0xffd8a0, 30, 14, .62, .55, 1.4); key.position.set(-1.2, 4.2, 2.4); key.target.position.set(0, .8, -.6); key.castShadow = true; key.shadow.mapSize.set(2048, 2048); key.shadow.bias = -.0015; key.shadow.normalBias = .06; sc.add(key, key.target);
+  const fl = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), new THREE.MeshStandardMaterial({ map: marbleT, roughness: .25, metalness: .05 })); fl.rotation.x = -Math.PI / 2; fl.receiveShadow = true; fl.userData.keep = true; sc.add(fl);
+  const wall = new THREE.Mesh(new THREE.PlaneGeometry(14, 6), new THREE.MeshStandardMaterial({ color: 0x2f4a3a, roughness: .8 })); wall.position.set(0, 3, -2.6); wall.receiveShadow = true; wall.userData.keep = true; sc.add(wall);
+  const wains = new THREE.Mesh(new THREE.BoxGeometry(14, 1.3, .08), new THREE.MeshStandardMaterial({ map: woodT, color: 0x8a5a34, roughness: .6 })); wains.position.set(0, .65, -2.55); wains.receiveShadow = true; wains.userData.keep = true; sc.add(wains);
+  for (const x of [-3.2, 3.2, -6, 6]) { const c = inked(new THREE.CylinderGeometry(.28, .32, 5.6, 16), 0xe8dcc8, .015); c.position.set(x, 2.8, -2.1); sc.add(c); sc.add(at3(box(.8, .2, .8, 0xd8ccb8, .012), x, .1, -2.1)); sc.add(at3(box(.8, .2, .8, 0xd8ccb8, .012), x, 5.5, -2.1)); }
+  // the teller counter with brass bars + windows
+  const ctr = woodBox(5.6, .78, .7); ctr.position.set(0, .39, -.9); sc.add(ctr); sc.add(at3(box(5.8, .05, .8, 0x4a2a16, .012), 0, .8, -.9));
+  for (let i = 0; i < 29; i++) { const x = -2.8 + i * .2; if (Math.abs(x) < .5 || Math.abs(x - 2) < .35 || Math.abs(x + 2) < .35) continue; const b = mesh(new THREE.CylinderGeometry(.012, .012, .7, 6), 0xd8b060); b.position.set(x, 1.17, -1.05); b.userData.metal = .9; b.userData.rough = .3; sc.add(b); }
+  sc.add(at3(box(5.6, .05, .05, 0xd8b060, .008), 0, 1.52, -1.05));
+  const sign = card(1.1, .22, (g, w, h) => { g.fillStyle = '#16121a'; g.fillRect(0, 0, w, h); g.strokeStyle = '#d8b060'; g.lineWidth = 6; g.strokeRect(6, 6, w - 12, h - 12); g.fillStyle = '#e8c870'; g.font = `900 ${h * .5}px Nunito`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('TELLER', w / 2, h * .54); }); sign.position.set(0, 1.68, -1.05); sc.add(KEEP(sign));
+  bankerLamp(sc, -1.3, .83, -.85); bankerLamp(sc, 1.3, .83, -.85);
+  for (const [x, n] of [[-2.2, 3], [-1.9, 2], [2.1, 4]]) { const c = cash(n); c.position.set(x, .83, -.95); sc.add(c); }
+  const ledger = box(.3, .05, .22, 0x6a1a1a, .008); ledger.position.set(-.7, .85, -.9); ledger.rotation.y = .2; sc.add(ledger);
+  // vault door glowing in the back
+  const v = new THREE.Group(); v.position.set(2.2, 2.0, -2.5); sc.add(v); const vd = inked(new THREE.CylinderGeometry(1.0, 1.0, .2, 32), 0x9aa0a8, .02); vd.rotation.x = Math.PI / 2; vd.userData.metal = .8; vd.userData.rough = .35; v.add(vd); for (let i = 0; i < 6; i++) { const sp = box(.05, .9, .05, 0xd8b060, .006); sp.rotation.z = i * Math.PI / 3; sp.position.z = .15; v.add(sp); } v.add(at3(inked(new THREE.CylinderGeometry(.14, .14, .1, 16), 0xd8b060, .008), 0, 0, .14)); v.children[v.children.length - 1].rotation.x = Math.PI / 2;
+  const clk = wallClock(); clk.position.set(-2.0, 3.0, -2.5); clk.scale.setScalar(.8); sc.add(KEEP(clk));
+  const cand = new THREE.Group(); cand.position.set(0, 4.2, .2); sc.add(cand); for (let i = 0; i < 6; i++) { const a = i / 6 * 6.28; const b = new THREE.Mesh(new THREE.SphereGeometry(.07, 10, 8), new THREE.MeshBasicMaterial({ color: 0xfff0c0 })); b.position.set(Math.cos(a) * .5, 0, Math.sin(a) * .5); b.userData.keep = true; cand.add(b); } cand.add(at3(inked(new THREE.TorusGeometry(.5, .03, 6, 24), 0xd8b060, .008), 0, 0, 0)); cand.children[cand.children.length - 1].rotation.x = Math.PI / 2;
+  const cl = new THREE.PointLight(0xffc880, 6, 9, 1.4); cl.position.set(0, 3.9, .2); sc.add(cl);
+  for (const x of [-4.4, 4.4]) { const pot = inked(new THREE.CylinderGeometry(.25, .2, .45, 12), 0x8a4a2a, .012); pot.position.set(x, .22, -1.6); sc.add(pot); for (let i = 0; i < 7; i++) { const lf = mesh(new THREE.ConeGeometry(.09, .9, 4), 0x3a7a3a); lf.position.set(x, .8, -1.6); lf.rotation.set(Math.cos(i) * .7, i, Math.sin(i * 1.7) * .7); sc.add(lf); } }
+  sc.userData.envI = .45; sc.userData.exposure = 1.05; return { sc, key }; }
+function bankFront() { const sc = new THREE.Scene(); window.__sc = sc; sc.background = skyTex('#3a5a90', '#c89a7a', '#f2b878'); sc.fog = new THREE.Fog(0xd8d0c0, 16, 60); sc.add(new THREE.HemisphereLight(0xdce8ff, 0x5a4a3a, .75)); const sun = sunLight(sc, 0xffb870, 4.6, -10, 4.5, 3, 12);
+  const gr = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), new THREE.MeshStandardMaterial({ map: blockTex('#8a8276', '#6a6258'), roughness: .9 })); gr.material.map.repeat.set(20, 20); gr.rotation.x = -Math.PI / 2; gr.receiveShadow = true; gr.userData.keep = true; sc.add(gr);
+  const fac = new THREE.Mesh(new THREE.BoxGeometry(12, 7, 1), new THREE.MeshStandardMaterial({ map: blockTex('#c8a884', '#a88a68'), roughness: .8 })); fac.position.set(0, 3.5, -4); fac.castShadow = fac.receiveShadow = true; fac.userData.keep = true; sc.add(fac);
+  for (let i = 0; i < 3; i++) sc.add(at3(box(6.4 - i * .5, .2, 1.2 + (2 - i) * .5, 0xd8ccb8, .015), 0, .1 + i * .2, -2.6 - i * .1));
+  for (const x of [-2.4, -.85, .85, 2.4]) { const c = inked(new THREE.CylinderGeometry(.24, .28, 3.6, 16), 0xf0e6d4, .018); c.position.set(x, 2.4, -2.9); sc.add(c); }
+  sc.add(at3(box(6.2, .5, 1.0, 0xe8dcc8, .018), 0, 4.45, -2.9)); sc.add(at3(box(6.6, .25, 1.2, 0xd8ccb8, .018), 0, 4.82, -2.9)); sc.add(at3(box(5.4, .5, .9, 0xe8dcc8, .018), 0, 5.2, -3.0));
+  const sign = card(4.6, .42, (g, w, h) => { g.fillStyle = '#2a2420'; g.fillRect(0, 0, w, h); g.fillStyle = '#e8c870'; g.font = `900 ${h * .52}px Nunito`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('BANK OF SAN FRANCISCO', w / 2, h * .55); }, 512); sign.position.set(0, 4.45, -2.39); sc.add(KEEP(sign));
+  const door = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 2.4), new THREE.MeshBasicMaterial({ color: 0xffb060 })); door.position.set(0, 1.8, -3.48); door.userData.keep = true; sc.add(door); sc.add(at3(box(1.5, .12, .2, 0x4a2a16, .01), 0, 3.05, -3.45));
+  for (const sx of [-1, 1]) for (let i = 0; i < 2; i++) { const wdw = new THREE.Mesh(new THREE.PlaneGeometry(.8, 1.3), new THREE.MeshBasicMaterial({ color: 0xffc880 })); wdw.position.set(sx * (3.9 + i * 1.3), 2.2, -3.48); wdw.userData.keep = true; sc.add(wdw); }
+  // red-white-blue bunting under the sign (Ricks' mine has it)
+  for (let i = 0; i < 6; i++) { const b = new THREE.Mesh(new THREE.CircleGeometry(.36, 16, Math.PI, Math.PI), new THREE.MeshStandardMaterial({ map: ctex(64, 32, g => { ['#c83a3a', '#f4f0e8', '#2a4a9a'].forEach((c, k) => { g.fillStyle = c; g.fillRect(0, k * 11, 64, 11); }); }), side: THREE.DoubleSide })); b.position.set(-2.9 + i * 1.16, 4.1, -2.35); sc.add(b); }
+  for (const x of [-4.2, 4.2]) { sc.add(at3(box(.08, 3.2, .08, 0x1a1a1a, .01), x, 1.6, -.8)); const gl = new THREE.Mesh(new THREE.BoxGeometry(.24, .32, .24), new THREE.MeshBasicMaterial({ color: 0xffd890 })); gl.position.set(x, 3.3, -.8); gl.userData.keep = true; sc.add(gl); sc.add(at3(box(.32, .06, .32, 0x1a1a1a, .008), x, 3.5, -.8)); }
+  for (const [x, z] of [[-5, -1.8], [-4.4, -1.5], [5.2, -2]]) sc.add(at3(inked(new THREE.CylinderGeometry(.22, .22, .55, 12), 0x7a5030, .012), x, .27, z));
+  sc.add(at3(woodBox(.6, .5, .5), 4.6, .25, -1.3));
+  for (const x of [-14, 14]) { const b = new THREE.Mesh(new THREE.BoxGeometry(8, 9 + (x > 0 ? 2 : 0), 6), new THREE.MeshStandardMaterial({ map: blockTex(x > 0 ? '#b8786a' : '#a89a80', '#887060'), roughness: .9 })); b.position.set(x, 4.5, -5); b.userData.keep = true; b.castShadow = b.receiveShadow = true; sc.add(b); }
+  sc.userData.envI = .3; sc.userData.exposure = .85; return { sc, sun }; }
+
+// 4 "It's 1872." - low lateral track past the rocks to the two miners by their wagon; 1872 scrawls on
+H_(12.6, 15.1, t0 => { const S = field(), cam = newCam(40); motes(S.sc, 140, [5, 2.5, 5], V(-2.5, 1.2, -1.5));
+  return { scene: S.sc, cam, draw(g, f) { scrawl(g, '1872', 120, 330, (f - at(t0, 13.0)) / .45, 150); }, update(f, fd, tc) {
+    place(S.sc, { ...MINER, ...fx(f, [[0, 'deadpan']]), hands: [V(-.3, .7, .2), V(.3, .7, .2)] }, -3.2, 0, -2.2, .6); place(S.sc, { ...PARTNER, ...fx(f, [[0, 'sad']]), hands: [V(-.3, .7, .2), V(.3, .7, .2)] }, -2.1, 0, -1.7, .4);
+    glide(cam, f, fd, [[1.4, .5, 3.0, -2.6, .9, -1.9], [.2, .6, 2.4, -2.6, .95, -1.9]]); } }; });
+// 5a "Two broke miners." - two-shot, pockets pulled out, a moth flutters out
+H_(15.1, 17.4, t0 => { const S = field(), cam = newCam(38), moth = new THREE.Group(); [-1, 1].forEach(s => { const w = new THREE.Mesh(new THREE.CircleGeometry(.05, 8), new THREE.MeshStandardMaterial({ color: 0xd8c8a8, side: THREE.DoubleSide })); w.position.x = s * .045; moth.add(w); }); S.sc.add(moth);
+  const flaps = [...Array(4)].map(() => { const p = mesh(new THREE.BoxGeometry(.11, .13, .03), 0xf4ecd8); S.sc.add(p); return p; });
+  return { scene: S.sc, cam, update(f, fd, tc) { const pk = [V(-.28, .62, .18), V(.28, .62, .18)];
+    const a = place(S.sc, { ...MINER, ...fx(f, [[0, 'sad']]), hands: pk }, .42, 0, 0, -.15), b = place(S.sc, { ...PARTNER, ...fx(f, [[0, 'sad'], [at(t0, 15.58), 'cry']]), hands: pk }, -.42, 0, .05, .15);
+    [a, a, b, b].forEach((g, i) => { flaps[i].position.copy(wpt(g, pk[i % 2]).add(V(0, -.05, .02))); flaps[i].rotation.z = (i % 2 ? -1 : 1) * .2; });
+    const p0 = wpt(b, pk[1]), k = Math.max(0, f - .5); moth.position.set(p0.x + k * .5 + Math.sin(k * 9) * .08, p0.y + k * .55, p0.z + .1 + Math.cos(k * 7) * .06); moth.children.forEach((w, i) => w.rotation.y = (i ? 1 : -1) * Math.abs(Math.sin(tc * 40)) * 1.2); moth.lookAt(cam.position);
+    glide(cam, f, fd, [[0, 1.05, 3.6, 0, 1.0, 0], [0, 1.1, 3.0, 0, 1.05, 0]]); } }; });
+// 5b "Their field has nothing in it but rocks." - camera skims the dirt, a tumbleweed rolls through
+H_(17.4, 19.7, t0 => { const S = field(), cam = newCam(46), tw = mesh(lowpoly(new THREE.IcosahedronGeometry(.32, 1), .08, 4), 0xa8844a); tw.material = tw.children ? tw.material : tw.material; S.sc.add(tw);
+  for (let i = 0; i < 18; i++) { const r = mesh(lowpoly(new THREE.IcosahedronGeometry(.06 + hash(i + 40) * .12, 0), .03, i + 40), [0x8a7a6a, 0x6a5a4a][i % 2]); r.position.set(-2 + hash(i + 2) * 4, .03, -1 + hash(i + 9) * 3); r.scale.y = .6; S.sc.add(r); }
+  return { scene: S.sc, cam, update(f, fd, tc) { tw.position.set(-3 + f * 2.4, .32 + Math.abs(Math.sin(f * 5)) * .12, -.8); tw.rotation.z = -f * 7;
+    place(S.sc, { ...MINER, ...fx(f, [[0, 'deadpan'], [at(t0, 18.48), 'sad']]), hands: [V(-.3, .75, .2), V(.3, .75, .2)] }, .9, 0, -3.2, -.3);
+    glide(cam, f, fd, [[-1.4, .18, 2.4, .3, .25, -1.5], [.6, .22, 2.0, .7, .45, -2.4]]); } }; });
+// 6 "So they spend their last dollars on cheap gems..." - macro on a lantern-lit crate: coins slide in, a pouch spills gems
+H_(19.7, 22.2, t0 => { const sc = new THREE.Scene(); window.__sc = sc; sc.background = new THREE.Color(0x0e0905); sc.add(new THREE.HemisphereLight(0xffc890, 0x1a0e06, .25)); lantern(sc, -.55, .02, -.35, 4, 4);
+  const top = woodBox(1.3, .1, .9); top.children[0].material.color.set(0x9a6a40); top.position.y = -.05; sc.add(top); const coins = [0, 1, 2].map(i => { const c = makeCoin('plain', .07, .015); sc.add(c); return c; });
+  const pouch = new THREE.Group(); pouch.position.set(.18, 0, 0); sc.add(pouch); const pb = mesh(new THREE.SphereGeometry(.13, 14, 10), 0xb8905a); pb.scale.set(1, .8, 1); pb.position.y = .1; pouch.add(pb); pouch.add(at3(mesh(new THREE.CylinderGeometry(.04, .07, .08, 10), 0xa8804a), 0, .22, 0));
+  const GEMC = [0xff4a6a, 0x4ad88a, 0x6aa8ff, 0xffd84a]; const gems = [...Array(16)].map((_, i) => { const d = diamond(1.3); if (i % 3) { const m = d.children[0]; m.material = DIA_M.clone(); m.material.color.set(GEMC[i % 4]); m.material.emissive.set(GEMC[i % 4]); m.material.emissiveIntensity = .25; } sc.add(d); return d; });
+  sc.userData.envI = .5; sc.userData.exposure = 1.1;
+  return { scene: sc, cam: newCam(34), update(f, fd, tc) { const cam = this.cam;
+    coins.forEach((c, i) => { const k = clamp((f - .1 - i * .15) / .35); c.position.set(lerp(-.9, -.18 + i * .07, 1 - (1 - k) ** 3), .002 + i * .016 * (k >= 1 ? 1 : 0), .2 - i * .03); });
+    const tip = clamp((f - at(t0, 21.6)) / .3); pouch.rotation.z = -tip * 1.3;
+    gems.forEach((d, i) => { const k = clamp((f - at(t0, 21.7) - i * .02) / .45); const a = hash(i) * 2.2 - .6, r = .1 + hash(i + 4) * .38; d.visible = k > 0; d.position.set(.3 + Math.cos(a) * r * k, .03 + Math.sin(k * Math.PI) * .12, Math.sin(a) * r * k * .8); d.rotation.y = tc * 2 + i; twinkle(d, tc, i); });
+    glide(cam, f, fd, [[-.35, 1.35, 1.6, .05, 0, 0], [0, 1.0, 1.25, .12, .02, 0]]); } }; });
+// 7 "...and bury them." - night, lantern on the dirt, one digs, one drops the gems in
+H_(22.2, 25.4, t0 => { const S = nightField(), cam = newCam(40); lantern(S.sc, .55, 0, .55, 7, 6); const hl = hole(S.sc, 0, .25), sh = shovel(); S.sc.add(sh); const ds = [...Array(6)].map(() => { const d = diamond(1.2); S.sc.add(d); return d; }); const clods = [...Array(8)].map((_, i) => { const c = mesh(lowpoly(new THREE.IcosahedronGeometry(.04, 0), .02, i), 0x6a3a1a); S.sc.add(c); return c; });
+  return { scene: S.sc, cam, update(f, fd, tc) { const dig = (Math.sin(f * 7) + 1) / 2;
+    const a = place(S.sc, { ...MINER, ...fx(f, [[0, 'determined']]), bend: .25 + dig * .15, hands: [V(-.15, .7 + dig * .2, .35), V(.15, .85 + dig * .2, .38)] }, -.55, 0, .1, .9);
+    const hp = wpt(a, V(0, .78 + dig * .2, .36)); sh.position.copy(hp).add(V(.25, -.55, 0)); sh.rotation.z = .8 - dig * .4; sh.rotation.y = .9;
+    clods.forEach((c, i) => { const k = ((f * 1.1 + i / 8) % 1); c.position.set(lerp(-.1, .7, k), .05 + Math.sin(k * Math.PI) * .5, .25 + (hash(i) - .5) * .3); });
+    const b = place(S.sc, { ...PARTNER, ...fx(f, [[0, 'smug']]), bag: true, hands: [V(-.2, .85, .35), V(.3, .95, .4)] }, .55, 0, -.5, -.7);
+    const hp2 = wpt(b, V(.3, .95, .4)); ds.forEach((d, i) => { const k = ((f * .9 + i / 6) % 1); d.position.set(lerp(hp2.x, .05, k), lerp(hp2.y, .02, k * k), lerp(hp2.z, .25, k)); twinkle(d, tc, i); });
+    glide(cam, f, fd, [[2.2, .7, 3.6, 0, .6, 0], [1.2, .55, 3.0, 0, .6, 0]]); } }; });
+// 8a "Then they walk into a bank in San Francisco" - crane down off the sign to the miners climbing the steps
+H_(25.4, 28.4, t0 => { const S = bankFront(), cam = newCam(46); motes(S.sc, 100, [6, 3, 4], V(0, 1.5, 0));
+  return { scene: S.sc, cam, update(f, fd, tc) { const k = clamp(f / fd * 1.1);
+    walkTo(S.sc, { ...MINER, ...fx(f, [[0, 'smug']]), bag: true }, -.5, 2.2, -.4, -1.9, k, tc, Math.PI); walkTo(S.sc, { ...PARTNER, ...fx(f, [[0, 'happy']]) }, .5, 2.6, .45, -1.7, k * .97, tc, Math.PI);
+    for (const [x, z, ry, s] of [[-3.6, -1.0, .5, 1], [3.4, -.6, -.8, 2], [-5, .5, .9, 3]]) place(S.sc, { ...RICH, robe: [0x1e1e2a, 0x3a2a4a, 0x2a3a2a][s - 1], ...fx(f, [[0, s === 2 ? 'smug' : 'deadpan']]), hands: [V(-.25, .75, .2), V(.25, .75, .2)] }, x, 0, z, ry);
+    glide(cam, f, fd, [[0, 5.0, 6.5, 0, 4.2, -2.4], [0, 2.4, 6.0, 0, 1.8, -2], [0, 1.2, 5.2, 0, 1.1, -1.5]]); } }; });
+// 8b "...with a bag of diamonds." - the bag slams on the counter, gems spill across the marble
+H_(28.4, 30.6, t0 => { const S = bankHall(), cam = newCam(38), bag = new THREE.Group(); const bb = mesh(new THREE.SphereGeometry(.17, 14, 10), 0x8a5a3a); bb.scale.y = .8; bb.position.y = .13; bag.add(bb); bag.add(at3(mesh(new THREE.CylinderGeometry(.05, .08, .1, 10), 0x7a4a2a), 0, .27, 0)); S.sc.add(bag);
+  const ds = [...Array(22)].map(() => { const d = diamond(1.3); S.sc.add(d); return d; });
+  return { scene: S.sc, cam, update(f, fd, tc) { const sl = at(t0, 28.76), k = clamp((f - sl + .25) / .25); bag.position.set(0, .82 + (1 - k * k) * .6, -.75); bag.scale.set(1 + (k >= 1 ? Math.exp(-(f - sl) * 12) * .3 : 0), 1 - (k >= 1 ? Math.exp(-(f - sl) * 12) * .3 : 0), 1); bag.rotation.z = k >= 1 ? .5 : 0;
+    ds.forEach((d, i) => { const q = clamp((f - sl - .05 - i * .015) / .5); d.visible = q > 0; const a = hash(i) * 3.4 - 1.7 + Math.PI / 2, r = .1 + hash(i + 5) * .6; d.position.set(.12 + Math.sin(a) * r * q, .84 + Math.sin(q * Math.PI) * .1, -.75 + Math.cos(a) * r * q * .35); d.rotation.y = tc * 2 + i; twinkle(d, tc, i); });
+    place(S.sc, { ...TELLER, ...fx(f, [[0, 'deadpan'], [sl, 'shock']]), hands: [V(-.25, .85, .3), V(.25, .85, .3)] }, 0, 0, -1.6, 0);
+    glide(cam, f, fd, [[1.0, 1.4, 1.5, 0, .95, -1.0], [.6, 1.25, 1.0, 0, .95, -1.0]]); } }; });
+// 9 "And the richest men in America lose their minds." - three top hats lined up; on "minds" the hats blast off
+H_(30.6, 34.9, t0 => { const S = bankHall(), cam = newCam(40), hats = [0, 1, 2].map(() => { const h = topHat(); S.sc.add(h); return h; }), money = [...Array(14)].map(() => { const b = mesh(new THREE.BoxGeometry(.16, .004, .08), 0x8ac87a); S.sc.add(b); return b; });
+  return { scene: S.sc, cam, update(f, fd, tc) { const pop = at(t0, 33.48);
+    [[-.85, .3, 0x1e1e2a], [0, 0, 0x3a2a4a], [.85, -.3, 0x2a3a2a]].forEach(([x, ry, robe], i) => { const p = f - pop - i * .05;
+      const g = place(S.sc, { ...RICH, robe, hat: p > 0 ? null : 'top', ...fx(f, [[0, i === 1 ? 'smug' : 'smile'], [at(t0, 32.64), 'shock'], [pop + i * .05, 'scream']]), hands: p > 0 ? [V(-.45, 1.35, .2), V(.45, 1.35, .2)] : [V(-.25, .75, .25), V(.25, .75, .25)] }, x, 0, .1 + Math.abs(x) * -.15, ry);
+      const hp = wpt(g, V(0, 1.6, 0)); hats[i].visible = p > 0; if (p > 0) { hats[i].position.set(hp.x + p * (i - 1) * .6, hp.y + p * 3.2 - p * p * 3, hp.z); hats[i].rotation.set(p * 6, 0, p * (i - 1) * 4); } });
+    money.forEach((b, i) => { const p = f - pop; b.visible = p > 0; b.position.set((hash(i) - .5) * 2.6 + Math.sin(tc * 3 + i) * .1, 2.4 - ((p * .7 + hash(i + 3) * 2) % 2.3), .4 + (hash(i + 7) - .5)); b.rotation.set(tc * 2 + i, i, tc * 3); });
+    glide(cam, f, fd, [[0, 1.05, 3.6, 0, 1.1, 0], [0, 1.1, 2.9, 0, 1.15, 0]]); } }; });
