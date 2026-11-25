@@ -339,7 +339,7 @@ shot(54.9, 60.5, () => { const S = office(), b = dressBoss(person(BOSS)); S.sc.a
     const k = ss(0, TL + 1.5, t); camAt(lerp(.5, 0, k), lerp(1.55, 1.5, k), lerp(.9, -.6, k), 0, 1.48, -1.5, lerp(40, 30, k), t, .003); }; });
 // 10 "FUCK NO! YOU ARE NOT GETTING THIS JOB!" - full scream, papers blast, our guy gets blown back
 shot(60.5, 64.3, () => { const S = office(), b = dressBoss(person(BOSS)), h = dressHero(person(HERO)), papers = [...Array(14)].map(() => { const p = new THREE.Mesh(new THREE.PlaneGeometry(.12, .16), new THREE.MeshLambertMaterial({ color: 0xf8f8f0, side: THREE.DoubleSide })); S.sc.add(p); return p; }); S.sc.add(b, h); bossSit(S, b); heroSit(S, h);
-  return t => { b.setFace('scream'); pose(b, { armL: [-2.2, 0, .6], armR: [-2.2, 0, -.6], lean: .25, snap: t < .05 }); sitP(b); b.position.y = SEAT + .02 + Math.abs(Math.sin(t * 22)) * .04;
+  return t => { b.setFace('scream'); pose(b, { armL: [-1.3, 0, 1.3], armR: [-1.3, 0, -1.3], elbowL: -.3, elbowR: -.3, lean: .25, snap: t < .05 }); sitP(b); b.position.y = SEAT + .02 + Math.abs(Math.sin(t * 22)) * .04;
     h.setFace('shock'); pose(h, { lean: -.4, armL: [-2.5, 0, .4], armR: [-2.5, 0, -.4], snap: t < .05 }); sitP(h); S.hc.rotation.x = Math.min(.35, t * 2); h.position.z = .3 + Math.min(.12, t * .8);
     papers.forEach((p, i) => { const q = (t * .9 + hash(i)) % 1; p.position.set((hash(i + 1) - .5) * 1.6 + q * (hash(i + 2) - .5), .85 + q * 1.0, -.9 + q * 1.4); p.rotation.set(t * 6 + i, t * 4 + i * 2, i); });
     const sh = .05 * Math.exp(-t * 1.2); camAt(.5 + noise1(t * 30) * sh, 1.6 + noise1(t * 31 + 5) * sh, .6, 0, 1.4, -1.5, 46, t, .02); }; });
