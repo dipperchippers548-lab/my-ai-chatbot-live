@@ -240,7 +240,7 @@ function roomLP(wall = 0xd8e8f4, floor = 0xc8a07a, bg = 0xd8e8f4) { const sc = n
   const fl = new THREE.Mesh(new THREE.PlaneGeometry(14, 14), new THREE.MeshLambertMaterial({ color: floor })); fl.rotation.x = -Math.PI / 2; fl.receiveShadow = true; sc.add(fl); sc.add(at(mesh(new THREE.BoxGeometry(14, 4, .2), wall), 0, 2, -2.6)); sc.add(at(mesh(new THREE.BoxGeometry(.2, 4, 14), wall), -3.2, 2, 0)); sc.add(at(mesh(new THREE.BoxGeometry(14, .16, .25), 0xf4f0e8), 0, .08, -2.45)); return sc; }
 // ===================== "Why Some People Fumble During a Job Interview" =====================
 const SK = 0xf0b48a;
-const HERO = { skin: SK, hair: 0x3a2416, top: 0x2a3a6a, top2: 0x22305a, pants: 0x2a3a6a, shoe: 0x16121a, sole: 0x2a2a2a, sock: 0x2a3a6a, kind: 'cardigan' };
+const HERO = { skin: SK, hair: 0xd8632a, top: 0x2a3a6a, top2: 0x22305a, pants: 0x2a3a6a, shoe: 0x16121a, sole: 0x2a2a2a, sock: 0x2a3a6a, kind: 'cardigan' };
 const BOSS = { skin: SK, hair: SK, top: 0x7a7a86, top2: 0x6a6a76, pants: 0x4a4a54, shoe: 0x16121a, sole: 0x2a2a2a, sock: 0x4a4a54, kind: 'cardigan' };
 function adult(p, s = 1.06) { p.scale.setScalar(s); p.userData.head.scale.setScalar(.85); return p; }
 // faces: talking versions (open mouth) for lip sync
@@ -250,7 +250,14 @@ FACES.tiredtalk = openMouth('tired'); FACES.calmtalk = openMouth('calm'); FACES.
 const talking = () => lvl(window.__T) >= 2;
 const tf = (p, base) => p.setFace(talking() && FACES[base + 'talk'] ? base + 'talk' : base);
 // --- wardrobe ---
-function dressHero(p) { const T = p.userData.torso; const tie = new THREE.Group(); tie.position.set(0, .38, -.255); T.add(tie); tie.add(at(mesh(new THREE.BoxGeometry(.09, .07, .04), 0xe8323a), 0, .12, 0)); tie.add(at(mesh(new THREE.ConeGeometry(.07, .32, 4), 0xe8323a), 0, -.07, 0)); tie.children[1].rotation.x = Math.PI;
+// our funkin' genius kid's spiky orange hair, combed down a bit for the interview
+const HAIR = 0xd8632a;
+function cleanSpikes(p) { const hd = p.userData.head; [...hd.children].forEach(c => { if (c.isMesh && c.material.color && c.material.color.getHex() === HAIR) hd.remove(c); });
+  const base = mesh(lowpoly(new THREE.IcosahedronGeometry(.25, 1), .02, 44), HAIR); base.scale.set(1.1, .55, 1.02); base.position.set(0, .42, -.05); hd.add(base);
+  for (let i = 0; i < 9; i++) { const a = i / 9 * Math.PI * 2, c = mesh(lowpoly(new THREE.ConeGeometry(.08, .15, 4), .01, 30 + i), HAIR); c.position.set(Math.cos(a) * .15, .5, Math.sin(a) * .13 - .05); c.rotation.set(Math.sin(a) * .5 - .5, 0, -Math.cos(a) * .5); hd.add(c); }
+  const tuft = mesh(new THREE.ConeGeometry(.055, .16, 4), HAIR); tuft.position.set(-.06, .6, .08); tuft.rotation.set(.5, 0, .9); hd.add(tuft);   // neat little front flick, combed to the side
+  return p; }
+function dressHero(p) { cleanSpikes(p); const T = p.userData.torso; const tie = new THREE.Group(); tie.position.set(0, .38, -.255); T.add(tie); tie.add(at(mesh(new THREE.BoxGeometry(.09, .07, .04), 0xe8323a), 0, .12, 0)); tie.add(at(mesh(new THREE.ConeGeometry(.07, .32, 4), 0xe8323a), 0, -.07, 0)); tie.children[1].rotation.x = Math.PI;
   const belly = mesh(lowpoly(new THREE.IcosahedronGeometry(.13, 1), .01, 3), SK); belly.scale.set(1, .55, .45); belly.position.set(0, .06, .22); T.add(belly);
   for (const s of [-1, 1]) T.add(at(mesh(new THREE.BoxGeometry(.012, .3, .012), 0xf4ead8), s * .12, .3, .23));
   const btn = mesh(new THREE.CylinderGeometry(.03, .03, .012, 8), 0xd8b060); btn.rotation.x = Math.PI / 2; btn.position.set(0, .2, .25); T.add(btn); p.userData.btn = btn; p.userData.tie = tie; return p; }
