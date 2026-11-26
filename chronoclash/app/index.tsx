@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, AppState, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, AppState, Platform, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArchiveModal } from '../components/ArchiveModal';
 import { GameSession } from '../components/GameSession';
@@ -99,6 +99,17 @@ export default function GameScreen() {
   );
 
   const onUnlockPro = useCallback(() => {
+    const unlock = () => {
+      const current = statsRef.current;
+      if (!current) return;
+      commit({ ...current, isPro: true });
+      Sound.play('fanfare');
+    };
+    // Alert dialogs are a no-op on web, so the simulated purchase unlocks directly there.
+    if (Platform.OS === 'web') {
+      unlock();
+      return;
+    }
     Alert.alert(
       'ChronoClash Pro',
       'Unlock the full daily archive, remove ads and get free lifelines.\n\n(Simulated purchase — wire up your IAP provider for production.)',
@@ -106,12 +117,7 @@ export default function GameScreen() {
         { text: 'Not now', style: 'cancel' },
         {
           text: 'Unlock Pro',
-          onPress: () => {
-            const current = statsRef.current;
-            if (!current) return;
-            commit({ ...current, isPro: true });
-            Sound.play('fanfare');
-          },
+          onPress: unlock,
         },
       ],
     );

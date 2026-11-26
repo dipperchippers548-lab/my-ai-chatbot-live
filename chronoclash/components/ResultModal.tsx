@@ -1,7 +1,7 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { Play, RotateCcw, Share2, X } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
-import { Modal, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
+import { Modal, Platform, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, ZoomIn } from 'react-native-reanimated';
 import { COLORS } from '../constants/theme';
 import { msUntilNextDaily } from '../utils/dailySeed';
@@ -68,7 +68,21 @@ export function ResultModal({
   primary,
   showNextDaily,
 }: Props) {
+  const [copied, setCopied] = useState(false);
+
   const onShare = async () => {
+    // Browsers without a share sheet: copy to the clipboard (must run inside the tap).
+    const nav = typeof navigator !== 'undefined' ? (navigator as Navigator & { share?: unknown }) : undefined;
+    if (Platform.OS === 'web' && !nav?.share && nav?.clipboard) {
+      try {
+        await nav.clipboard.writeText(shareText);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch {
+        // Clipboard refused; nothing else to try on web.
+      }
+      return;
+    }
     try {
       await Share.share({ message: shareText });
     } catch {
@@ -118,7 +132,7 @@ export function ResultModal({
                 style={styles.shareBtn}
               >
                 <Share2 size={20} color="#FFFFFF" strokeWidth={2.6} />
-                <Text style={styles.shareText}>SHARE RESULT</Text>
+                <Text style={styles.shareText}>{copied ? 'COPIED TO CLIPBOARD' : 'SHARE RESULT'}</Text>
               </LinearGradient>
             </Pressable>
 
