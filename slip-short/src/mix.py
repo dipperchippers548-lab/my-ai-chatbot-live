@@ -101,7 +101,7 @@ for tw in (48.03, 53.83, 55.79, 56.76, 58.25, 59.05, 61.76): put(sfx, kaching(),
 put(sfx, boom(), F(62.77), .12)                                                     # THE WHOLE WORLD
 for k in range(6): put(sfx, kaching(), F(71.74) + k * .1, .08)                     # money rains
 put(sfx, coinsPour(1.4), F(75.03), .1); put(sfx, kaching(), F(75.53), .14); put(sfx, twang(), F(78.71), .16)   # forty thousand... Texas
-put(sfx, zip_(), F(86.37), .25); put(sfx, steps(6, .08), F(86.5), .2); put(sfx, squeak(), F(87.75), .3); put(sfx, thud(), F(88.2), .2)   # runs at it, slips on purpose
+put(sfx, zip_(), F(86.37), .18); put(sfx, steps(6, .08), F(86.5), .16); put(sfx, squeak(), F(87.75), .18); put(sfx, thud(), F(88.2), .2)   # runs at it, slips on purpose
 put(sfx, ding(), F(88.61), .16)                                                     # Genius.
 
 import os
