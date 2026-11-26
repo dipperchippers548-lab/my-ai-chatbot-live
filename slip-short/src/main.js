@@ -1,4 +1,4 @@
-// "Why Some People Fumble During a Job Interview" - low-poly flat-shaded short, rendered frame by frame.
+// "You Slipped on a Wet Floor at Work" - low-poly flat-shaded short, rendered frame by frame.
 import * as THREE from '/node_modules/three/build/three.module.js';
 const W = 1080, H = 1920;
 await document.fonts.load('900 96px Nunito');
@@ -240,7 +240,7 @@ function roomLP(wall = 0xd8e8f4, floor = 0xc8a07a, bg = 0xd8e8f4) { const sc = n
   const fl = new THREE.Mesh(new THREE.PlaneGeometry(14, 14), new THREE.MeshLambertMaterial({ color: floor })); fl.rotation.x = -Math.PI / 2; fl.receiveShadow = true; sc.add(fl); sc.add(at(mesh(new THREE.BoxGeometry(14, 4, .2), wall), 0, 2, -2.6)); sc.add(at(mesh(new THREE.BoxGeometry(.2, 4, 14), wall), -3.2, 2, 0)); sc.add(at(mesh(new THREE.BoxGeometry(14, .16, .25), 0xf4f0e8), 0, .08, -2.45)); return sc; }
 // ===================== "Why Some People Fumble During a Job Interview" =====================
 const SK = 0xf0b48a;
-const HERO = { skin: SK, hair: 0xd8632a, top: 0x2a3a6a, top2: 0x22305a, pants: 0x2a3a6a, shoe: 0x16121a, sole: 0x2a2a2a, sock: 0x2a3a6a, kind: 'cardigan' };
+const SUITGUY = { skin: SK, hair: 0xd8632a, top: 0x2a3a6a, top2: 0x22305a, pants: 0x2a3a6a, shoe: 0x16121a, sole: 0x2a2a2a, sock: 0x2a3a6a, kind: 'cardigan' };
 const BOSS = { skin: SK, hair: SK, top: 0x7a7a86, top2: 0x6a6a76, pants: 0x4a4a54, shoe: 0x16121a, sole: 0x2a2a2a, sock: 0x4a4a54, kind: 'cardigan' };
 function adult(p, s = 1.06) { p.scale.setScalar(s); p.userData.head.scale.setScalar(.85); return p; }
 // faces: talking versions (open mouth) for lip sync
@@ -300,84 +300,167 @@ function sweat(sc, n = 10) { return [...Array(n)].map(() => { const d = mesh(new
 function sweatUp(ds, h, t, k = 1) { h.updateMatrixWorld(true); ds.forEach((d, i) => { const q = (t * (1.2 + k) + hash(i)) % 1, side = i % 2 ? 1 : -1; const p = h.userData.head.localToWorld(V(side * (.22 + q * .15), .5 - q * .1, .05)); d.position.set(p.x, p.y - q * q * 1.2, p.z); d.visible = i < 3 + k * 7; }); }
 const HP = p => { p.updateMatrixWorld(true); return p.userData.head.localToWorld(V(0, .3, .2)); };
 
-// 0 "You walk into your first fucking job interview." - FIRST FRAME: door flies open, our guy struts in, sweating already
-shot(0, 3.06, () => { const S = office(), h = dressHero(person(HERO)), b = dressBoss(person(BOSS)), ds = sweat(S.sc); S.sc.add(h, b); bossSit(S, b);
-  return t => { const op = ss(0, .35, t); S.doorPiv.rotation.y = op * 1.6; const k = clamp((t - .2) / 1.5); h.position.set(lerp(-1.95, -.5, k), 0, lerp(-2.1, .9, k)); h.rotation.y = k < 1 ? Math.atan2(1.45, 3.0) : .2; h.setFace(k < 1 ? 'smug' : 'worried'); pose(h, { walk: k < 1 ? t * 9 : 0 }); sweatUp(ds, h, t, .3);
-    b.setFace('tired'); pose(b); sitP(b); camAt(.8, 1.6, 2.0, -.7, 1.15, -.5, 50, t); }; });
-// 1 "Your suit is two sizes too small, your tie is on backwards, and you're sweating like a fucking sinner in church." - orbit him
-shot(3.06, 10.6, () => { const S = office(), h = dressHero(person(HERO)), ds = sweat(S.sc, 12); S.sc.add(h); h.position.set(-.4, 0, .9); h.rotation.y = .2; const TB = L(4.62, 3.06), TT = L(5.5, 3.06), TS = L(7.41, 3.06);
-  return t => { h.setFace(t < TS ? 'worried' : 'shock'); pose(h, { armL: [0, 0, .35], armR: [0, 0, -.35] }); h.userData.torso.scale.x = 1.12; const bt = h.userData.btn, q = t - TB; if (q > 0) { bt.position.set(q * .6, .2 + q * 1.4 - q * q * 3, .25 + q * 1.5); bt.rotation.y = q * 20; }
-    const orb = ss(TT - .1, TT + .9, t) * (1 - ss(TS - .3, TS + .4, t)); sweatUp(ds, h, t, t > TS ? 1 : .2); const a = .2 + orb * 2.7, r = 2.7;
-    camAt(-.4 + Math.sin(a) * r, 1.5, .9 + Math.cos(a) * r, -.4, 1.35, .9, 42, t); }; });
-// 2 "So... tell me about yourself." - the interviewer, bored out of his mind
-shot(10.6, 13.17, () => { const S = office(), b = dressBoss(person(BOSS)); S.sc.add(b); bossSit(S, b); return t => { tf(b, 'tired'); pose(b, { armL: [-.7, 0, .3], armR: [-.7, 0, -.3], elbowL: -1.2, elbowR: -1.2 }); sitP(b); camAt(.35, 1.55, .7, 0, 1.42, -1.5, 40, t); }; });
-// 3 "And you, being a funkin' genius, decide honesty is the best fucking policy." - push in on the smug genius
-shot(13.17, 19.15, () => { const S = office(), h = dressHero(person(HERO)), ds = sweat(S.sc); S.sc.add(h); heroSit(S, h); return t => { h.setFace(t < L(15.7, 13.17) ? 'happy' : 'smug'); pose(h); sitP(h); sweatUp(ds, h, t, .2); const k = ss(0, 6, t); camAt(lerp(.6, .25, k), lerp(1.65, 1.55, k), lerp(-2.3, -1.6, k), 0, 1.3, .3, 42, t); }; });
-// 4 "Well, I got fired from my last three jobs. One for sleeping. One for stealing. And one for sleeping while I was stealing."
-shot(19.15, 28.4, () => { const S = office(), h = dressHero(person(HERO)), b = dressBoss(person(BOSS)); S.sc.add(h, b); heroSit(S, h); bossSit(S, b); return t => { tf(h, 'smug'); pose(h, { armR: [-1.3, 0, -.3], elbowR: -.8 }); sitP(h); b.setFace(t < L(24.0, 19.15) ? 'tired' : 'shock'); pose(b); sitP(b); camAt(-1.0, 1.75, -2.2, 0, 1.2, .3, 44, t); }; });
-// 5a "He writes something down." - the notepad: N... O. Circled.
-shot(28.4, 30.05, () => { const S = office(); return t => { const k = clamp((t - .1) / .8); S.pad.userData.draw(k); S.pen.position.set(-.18 + k * .18 + Math.sin(t * 30) * .01, .81, -.95 + Math.cos(t * 25) * .01); camAt(-.1, 1.35, -.62, -.1, .78, -.95, 40, t, .004); }; });
-// 5b "You think that's a good sign." - thumbs up
-shot(30.05, 32.42, () => { const S = office(), h = dressHero(person(HERO)); S.sc.add(h); heroSit(S, h); return t => { h.setFace('happy'); pose(h, { armR: [-1.6, 0, -.5], elbowR: -1.4 }); sitP(h); camAt(.3, 1.6, -1.7, 0, 1.3, .3, 40, t); }; });
-// 6a "What's your biggest weakness?"
-shot(32.42, 34.45, () => { const S = office(), b = dressBoss(person(BOSS)); S.sc.add(b); bossSit(S, b); return t => { tf(b, 'tired'); pose(b); sitP(b); camAt(-.35, 1.55, .7, 0, 1.42, -1.5, 40, t); }; });
-// 6b "Waking up. And Mondays. And Tuesdays. Honestly? Work." - counting on his fingers, each one pops up
-shot(34.45, 40.42, () => { const S = office(), h = dressHero(person(HERO)), b = dressBoss(person(BOSS)); S.sc.add(h, b); heroSit(S, h); bossSit(S, b); const TW = L(39.67, 34.45);
-  return t => { tf(h, t < TW ? 'calm' : 'smug'); const c = Math.floor(t * 1.2) % 2; pose(h, { armL: [-1.2, 0, .3], armR: [-1.2 - c * .2, 0, -.3], elbowL: -1.0, elbowR: -1.2 }); sitP(h); b.setFace(t < TW ? 'tired' : 'mad'); pose(b); sitP(b); camAt(1.3, 1.5, -1.3, -.1, 1.1, .2, 46, t); }; });
-// 7a "Why do you want to work here?"
-shot(40.42, 42.25, () => { const S = office(), b = dressBoss(person(BOSS)); S.sc.add(b); bossSit(S, b); return t => { tf(b, 'tired'); pose(b, { armR: [-1.0, 0, -.2], elbowR: -1.3 }); sitP(b); camAt(.4, 1.55, .6, 0, 1.42, -1.5, 38, t); }; });
-// 7b "I don't. My mom said if I don't get a job, she's turning my room into a fucking gym." - mom's text pops up
-shot(42.25, 48.0, () => { const S = office(), h = dressHero(person(HERO)); S.sc.add(h); heroSit(S, h); return t => { tf(h, t < L(44.0, 42.25) ? 'calm' : 'worried'); pose(h, { armL: [0, 0, .5], armR: [0, 0, -.5] }); sitP(h); camAt(-.3, 1.6, -1.8, 0, 1.3, .3, 42, t); }; });
-// 8a "Where do you see yourself in five years?"
-shot(48.0, 50.58, () => { const S = office(), b = dressBoss(person(BOSS)); S.sc.add(b); bossSit(S, b); return t => { tf(b, 'tired'); pose(b); sitP(b); camAt(-.3, 1.55, .5, 0, 1.42, -1.5, 36, t); }; });
-// 8b "In your chair, bro. I'm taking your fucking job." - he leans back and points at the boss's chair
-shot(50.58, 54.9, () => { const S = office(), h = dressHero(person(HERO)), b = dressBoss(person(BOSS)); S.sc.add(h, b); heroSit(S, h); bossSit(S, b); const TJ = L(52.35, 50.58);
-  return t => { tf(h, 'smug'); pose(h, { armR: [-1.5, 0, -.1], elbowR: -.05, lean: -.15 }); sitP(h); b.setFace(t < TJ ? 'tired' : 'shock'); pose(b); sitP(b); const k = ss(TJ, TJ + 1.6, t); camAt(lerp(-1.4, -.5, k), lerp(1.8, 1.6, k), lerp(-2.4, -1.9, k), 0, 1.3, .3, 44, t); }; });
-// 9 "He puts down his pen. Takes a deep breath. Looks you dead in the eyes..." - slow, slow push to his eyes
-shot(54.9, 60.5, () => { const S = office(), b = dressBoss(person(BOSS)); S.sc.add(b); bossSit(S, b); const TB = L(56.76, 54.9), TL = L(58.52, 54.9);
-  return t => { b.setFace(t < TL ? 'calm' : 'mad'); pose(b, { armR: t < .8 ? [-.9, 0, -.2] : [0, 0, -.12] }); sitP(b); const br = ss(TB, TB + .8, t) * (1 - ss(TL - .4, TL, t)); b.userData.torso.scale.set(1 + br * .15, 1 + br * .08, 1 + br * .15);
-    const k = ss(0, TL + 1.5, t); camAt(lerp(.5, 0, k), lerp(1.55, 1.5, k), lerp(.9, -.6, k), 0, 1.48, -1.5, lerp(40, 30, k), t, .003); }; });
-// 10 "FUCK NO! YOU ARE NOT GETTING THIS JOB!" - full scream, papers blast, our guy gets blown back
-shot(60.5, 64.3, () => { const S = office(), b = dressBoss(person(BOSS)), h = dressHero(person(HERO)), papers = [...Array(14)].map(() => { const p = new THREE.Mesh(new THREE.PlaneGeometry(.12, .16), new THREE.MeshLambertMaterial({ color: 0xf8f8f0, side: THREE.DoubleSide })); S.sc.add(p); return p; }); S.sc.add(b, h); bossSit(S, b); heroSit(S, h);
-  return t => { b.setFace('scream'); pose(b, { armL: [-1.3, 0, 1.3], armR: [-1.3, 0, -1.3], elbowL: -.3, elbowR: -.3, lean: .25, snap: t < .05 }); sitP(b); b.position.y = SEAT + .02 + Math.abs(Math.sin(t * 22)) * .04;
-    h.setFace('shock'); pose(h, { lean: -.4, armL: [-2.5, 0, .4], armR: [-2.5, 0, -.4], snap: t < .05 }); sitP(h); S.hc.rotation.x = Math.min(.35, t * 2); h.position.z = .3 + Math.min(.12, t * .8);
-    papers.forEach((p, i) => { const q = (t * .9 + hash(i)) % 1; p.position.set((hash(i + 1) - .5) * 1.6 + q * (hash(i + 2) - .5), .85 + q * 1.0, -.9 + q * 1.4); p.rotation.set(t * 6 + i, t * 4 + i * 2, i); });
-    const sh = .05 * Math.exp(-t * 1.2); camAt(.5 + noise1(t * 30) * sh, 1.6 + noise1(t * 31 + 5) * sh, .6, 0, 1.4, -1.5, 46, t, .02); }; });
-// 11a "And then he sprints out of his own fucking office!" - cartoon sprint, dust puffs, door SLAM
-shot(64.3, 67.0, () => { const S = office(), b = dressBoss(person(BOSS)), h = dressHero(person(HERO)), puffs = [...Array(8)].map(() => { const p = mesh(new THREE.IcosahedronGeometry(.14, 0), 0xe8e8e8); S.sc.add(p); return p; }); S.sc.add(b, h); heroSit(S, h); const T0 = L(64.71, 64.3), TS = L(66.4, 64.3);
-  return t => { const k = clamp((t - T0) / (TS - T0 - .1)); const P = [V(0, 0, -1.5), V(-1.2, 0, -1.9), V(-1.9, 0, -2.6)], seg = k < .5 ? 0 : 1, u = (k % .5) * 2; const pos = k >= 1 ? P[2] : P[seg].clone().lerp(P[seg + 1], u);
-    b.position.copy(pos); b.rotation.y = k <= 0 ? 0 : Math.atan2(P[seg + 1].x - P[seg].x, P[seg + 1].z - P[seg].z); b.visible = k < 1; b.setFace('scream'); pose(b, { walk: k > 0 ? t * 26 : 0, lean: k > 0 ? .3 : 0 }); if (k <= 0) sitP(b);
-    S.doorPiv.rotation.y = k > 0 && t < TS ? 1.6 : lerp(1.6, 0, ss(TS - .08, TS, t)); puffs.forEach((p, i) => { const age = (t - T0 - i * .08); p.visible = age > 0 && age < .8 && k < 1; const q = clamp(i / 8); const pp = P[q < .5 ? 0 : 1].clone().lerp(P[q < .5 ? 1 : 2], (q % .5) * 2); p.position.set(pp.x, .15 + age * .3, pp.z); p.scale.setScalar(.5 + age * 1.5); });
-    h.setFace('shock'); pose(h); sitP(h); h.userData.head.rotation.y = -.6 * k; camAt(1.6, 1.9, .9, -.9, 1.0, -1.7, 50, t, t > TS ? .03 : .01); }; });
-// 11b "Leaves his coffee!" - steaming mug, alone
-shot(67.0, 68.18, () => { const S = office(), st = [...Array(4)].map(() => { const s = new THREE.Mesh(new THREE.SphereGeometry(.03, 6, 5), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: .6 })); S.sc.add(s); return s; });
-  return t => { st.forEach((s, i) => { const q = (t * .8 + i / 4) % 1; s.position.set(-.55 + Math.sin(q * 6 + i) * .03, .92 + q * .3, -.62); s.scale.setScalar(1 + q * 2); s.material.opacity = .5 * (1 - q); }); S.mug.rotation.z = Math.sin(t * 20) * .03 * Math.exp(-t * 3); camAt(-.3, 1.2, .1, -.55, .88, -.62, 36, t, .004); }; });
-// 11c "Leaves his laptop!" - spreadsheet still open
-shot(68.18, 69.45, () => { const S = office(); S.disp.material = new THREE.MeshBasicMaterial({ map: ctex(256, 160, (g, w, h) => { g.fillStyle = '#fff'; g.fillRect(0, 0, w, h); g.strokeStyle = '#c8d0d8'; for (let x = 0; x < w; x += 32) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, h); g.stroke(); } for (let y = 0; y < h; y += 16) { g.beginPath(); g.moveTo(0, y); g.lineTo(w, y); g.stroke(); } g.fillStyle = '#2a8a3a'; g.fillRect(0, 0, w, 16); g.fillStyle = '#16121a'; g.font = '900 15px Nunito'; g.fillText('CANDIDATES.xls', 6, 12); g.fillStyle = '#e8323a'; g.font = '900 22px Nunito'; g.fillText('NOT THIS GUY', 50, 90); }) });
-  return t => { camAt(.45, 1.12, -1.35, .42, .9, -.75, 38, t, .004); }; });
-// 11d "Leaves YOU!" - alone in the office, crickets
-shot(69.45, 71.4, () => { const S = office(), h = dressHero(person(HERO)); S.sc.add(h); heroSit(S, h); return t => { h.setFace('worried'); pose(h); sitP(h); h.userData.head.rotation.y = Math.sin(t * 2.5) * .5; camAt(1.8, 2.4, -2.0, 0, .8, .1, 50, t, .004); }; });
-// 12 "So you sit in his chair. Feet up on the desk. Congratulations... you're the boss now." - feet up, nameplate flips, confetti
-shot(71.4, 999, () => { const S = office(), h = dressHero(person(HERO)), conf = [...Array(40)].map((_, i) => { const c = new THREE.Mesh(new THREE.PlaneGeometry(.05, .03), new THREE.MeshBasicMaterial({ color: [0xe8323a, 0xf2c230, 0x3a6ad8, 0x3ab86a, 0xe86ad8][i % 5], side: THREE.DoubleSide })); S.sc.add(c); return c; }); S.sc.add(h); const TF = L(73.24, 71.4), TC = L(75.17, 71.4), TB = L(77.22, 71.4);
-  return t => { const sitk = clamp(t / .8); h.position.set(0, SEAT + .02, lerp(-.95, -1.5, sitk)); h.rotation.y = lerp(Math.PI, 0, sitk); h.setFace(t < TC ? 'smug' : 'happy'); pose(h, { armL: [-2.7, 0, .7], armR: [-2.7, 0, -.7], elbowL: -1.6, elbowR: -1.6, lean: -ss(TF, TF + .4, t) * .35 });
-    const fu = ss(TF, TF + .4, t); h.userData.legs.forEach(l => { l.rotation.x = lerp(-1.45, -1.9, fu); l.userData.knee.rotation.x = lerp(1.45, .05, fu); }); h.userData.body.position.y = -.2 + fu * .12; S.bc.rotation.x = -fu * .15;
-    S.plate.userData.draw(t > TB - .1 ? 1 : 0); conf.forEach((c, i) => { const q = t - TC - hash(i) * .3; c.visible = q > 0; c.position.set((hash(i + 3) - .5) * 2.4 + Math.sin(q * 3 + i) * .1, 2.6 - q * .9 - hash(i + 5) * .4, -1.0 + (hash(i + 7) - .5) * 1.4); c.rotation.set(q * 6 + i, q * 4, i); });
-    const k = ss(0, 4, t); S.lap.visible = false; camAt(lerp(2.6, 3.0, k), lerp(1.7, 1.85, k), lerp(-1.0, -.8, k), 0, .95, -1.3, 46, t); }; });
+// ===================== "You Slipped on a Wet Floor at Work" =====================
+CAP.forEach(c => { c.text = c.text.replace(/\bASS+\b/g, 'A**').replace(/A{4,}H+/g, 'AHHHH').replace(/Y{4,}/g, 'YYY').replace(/E{4,}/g, 'EEE').replace(/S{4,}/g, 'SSS'); });
+const GKID = { ...DALE, skin: SK, top: 0x3a8ad8, top2: 0x2a6ab8 };      // our funkin' genius kid, messy spiky hair and all
+function nameTag(p) { const t = new THREE.Mesh(new THREE.PlaneGeometry(.14, .08), new THREE.MeshBasicMaterial({ map: ctex(140, 80, g => { g.fillStyle = '#e8323a'; g.fillRect(0, 0, 140, 24); g.fillStyle = '#fff'; g.fillRect(0, 24, 140, 56); g.fillStyle = '#fff'; g.font = '900 16px Nunito'; g.textAlign = 'center'; g.fillText('HELLO', 70, 18); g.fillStyle = '#16121a'; g.font = '900 26px Nunito'; g.fillText('genius', 70, 62); }) })); t.position.set(-.1, .4, .255); p.userData.torso.add(t); return p; }
+const kid = () => nameTag(person(GKID));
+// --- props ---
+const billT = ctex(200, 92, (g, w, h) => { g.fillStyle = '#9ad08a'; g.fillRect(0, 0, w, h); g.strokeStyle = '#2a6a3a'; g.lineWidth = 6; g.strokeRect(5, 5, w - 10, h - 10); g.fillStyle = '#5a9a5a'; g.beginPath(); g.ellipse(w / 2, h / 2, 26, 32, 0, 0, 7); g.fill(); g.fillStyle = '#1a4a2a'; g.font = '900 30px Nunito'; g.fillText('100', 12, 36); g.textAlign = 'right'; g.fillText('100', w - 12, h - 12); });
+function bill(s = 1) { const m = new THREE.Mesh(new THREE.PlaneGeometry(.3 * s, .14 * s), new THREE.MeshLambertMaterial({ map: billT, side: THREE.DoubleSide })); return m; }
+function handPos(p, i = 1) { p.updateMatrixWorld(true); return p.userData.arms[i].userData.hand.getWorldPosition(V()); }
+function holdBill(sc, p, i = 1) { const b = bill(); sc.add(b); return () => { b.position.copy(handPos(p, i)).add(V(0, .06, .06)); b.rotation.set(-.3, p.rotation.y, .1); }; }
+const signT = ctex(180, 260, (g, w, h) => { g.fillStyle = '#ffd21a'; g.fillRect(0, 0, w, h); g.fillStyle = '#16121a'; g.font = '900 30px Nunito'; g.textAlign = 'center'; g.fillText('CAUTION', w / 2, 44); g.fillRect(14, 56, w - 28, 5);
+  g.lineWidth = 9; g.lineCap = 'round'; g.strokeStyle = '#16121a'; g.beginPath(); g.arc(98, 92, 13, 0, 7); g.fill(); g.beginPath(); g.moveTo(92, 108); g.lineTo(70, 150); g.moveTo(84, 124); g.lineTo(120, 112); g.moveTo(84, 124); g.lineTo(52, 118); g.moveTo(70, 150); g.lineTo(104, 166); g.lineTo(124, 150); g.moveTo(70, 150); g.lineTo(46, 176); g.stroke();
+  g.lineWidth = 4; g.beginPath(); g.moveTo(30, 186); g.quadraticCurveTo(90, 176, 150, 186); g.stroke(); g.font = '900 28px Nunito'; g.fillText('WET', w / 2, 220); g.fillText('FLOOR', w / 2, 250); });
+function wetSign() { const g = new THREE.Group(); for (const s of [-1, 1]) { const p = new THREE.Mesh(new THREE.PlaneGeometry(.36, .55), new THREE.MeshLambertMaterial({ map: signT, side: THREE.DoubleSide })); p.position.set(0, .27, s * .08); p.rotation.x = s * .28; if (s < 0) p.rotation.y = Math.PI; p.castShadow = true; g.add(p); } g.add(at(mesh(new THREE.BoxGeometry(.38, .04, .06), 0xe8b81a), 0, .55, 0)); return g; }
+function puddle(sc, x, z, r = .7) { const p = new THREE.Mesh(new THREE.CircleGeometry(r, 18), new THREE.MeshPhongMaterial({ color: 0x9ad8ff, transparent: true, opacity: .55, shininess: 120, specular: 0xffffff })); p.rotation.x = -Math.PI / 2; p.position.set(x, .006, z); p.scale.set(1.3, 1, 1); sc.add(p); return p; }
+function capHat(p, col = 0xe8323a) { const g = new THREE.Group(); g.position.set(0, .48, -.02); p.userData.head.add(g); g.add(mesh(new THREE.SphereGeometry(.32, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), col)); g.add(at(mesh(new THREE.BoxGeometry(.32, .03, .26), col), 0, .02, .3)); return g; }
+function shadesOn(p) { const g = new THREE.Group(); g.position.set(0, .32, .28); p.userData.head.add(g); for (const s of [-1, 1]) g.add(at(mesh(new THREE.BoxGeometry(.16, .08, .03), 0x16121a), s * .09, 0, 0)); g.add(at(mesh(new THREE.BoxGeometry(.05, .02, .02), 0x16121a), 0, .02, 0)); return g; }
+function specsOn(p) { const g = new THREE.Group(); g.position.set(0, .3, .29); p.userData.head.add(g); for (const s of [-1, 1]) { const r = mesh(new THREE.TorusGeometry(.06, .012, 5, 12), 0xc8a050); r.position.x = s * .08; g.add(r); } return g; }
+// --- the cast of people who feel bad for you ---
+const CAST = {
+  janitor: { o: { skin: 0xc98a64, hair: 0x2a1a14, top: 0x3a7a9a, top2: 0x2a6a8a, pants: 0x3a7a9a, shoe: 0x16121a, sole: 0x2a2a2a, sock: 0x3a7a9a, kind: 'cardigan' }, dress: p => { capHat(p, 0x2a5a7a); } },
+  mailman: { o: { skin: 0xf0c8a0, hair: 0x8a5a2a, top: 0x5a7ac8, top2: 0x4a6ab8, pants: 0x2a3a6a, shoe: 0x16121a, sole: 0x2a2a2a, sock: 0x2a3a6a, kind: 'cardigan' }, dress: p => { capHat(p, 0x2a3a6a); p.userData.torso.add(at(mesh(new THREE.BoxGeometry(.3, .26, .12), 0x8a5a34), .2, .15, .2)); } },
+  pizza: { o: { skin: 0xe8b890, hair: 0x16121a, top: 0xe8323a, top2: 0xc8282a, pants: 0x2a2a34, shoe: 0x16121a, sole: 0xf4f4f0, sock: 0xf4f4f0, kind: 'cardigan' }, dress: p => { capHat(p, 0xe8323a); } },
+  grandma: { o: { ...MOM, skin: 0xf0c8a8, hair: 0xe0e0e8, top: 0xc87ab8, top2: 0xa85a98, pants: 0x6a5a7a }, dress: p => { specsOn(p); } },
+  dude: { o: { skin: 0x8a5a3a, hair: 0x16121a, top: 0x3ab86a, top2: 0x2a985a, pants: 0x3a3a44, shoe: 0xf4f4f0, sole: 0xe8323a, sock: 0xf4f4f0, kind: 'cardigan' }, dress: p => { shadesOn(p); } },
+  co1: { o: { skin: 0xd89a70, hair: 0x5a3a1a, top: 0xf2b630, top2: 0xd8962a, pants: 0x3a3a54, shoe: 0x16121a, sole: 0x2a2a2a, sock: 0x3a3a54, kind: 'cardigan', bun: true, lashes: true } },
+  co2: { o: { skin: 0xf0c8a0, hair: 0x16121a, top: 0x8a5ac8, top2: 0x6a40a8, pants: 0x2a2a34, shoe: 0x16121a, sole: 0x2a2a2a, sock: 0x2a2a34, kind: 'cardigan' } },
+  co3: { o: { skin: 0x8a5a3a, hair: 0x16121a, top: 0x3ab8a8, top2: 0x2a9888, pants: 0x4a4a54, shoe: 0x16121a, sole: 0x2a2a2a, sock: 0x4a4a54, kind: 'cardigan' }, dress: p => specsOn(p) } };
+function npc(k) { const c = CAST[k], p = adult(person(c.o)); if (c.dress) c.dress(p); return p; }
+// --- sets ---
+function workBath() { const sc = roomLP(0xcfe8ec, 0xe8ecf0, 0xcfe8ec);
+  for (let i = 0; i < 10; i++) for (let j = 0; j < 8; j++) { const t = new THREE.Mesh(new THREE.PlaneGeometry(.49, .49), new THREE.MeshLambertMaterial({ color: (i + j) % 2 ? 0xf4f6f8 : 0xc8d0d8 })); t.rotation.x = -Math.PI / 2; t.position.set(-2.75 + i * .5, .003, -2.25 + j * .5); t.receiveShadow = true; sc.add(t); }
+  for (let i = 0; i < 3; i++) { const x = -2.4 + i * .9; sc.add(at(mesh(new THREE.BoxGeometry(.05, 1.9, 1.3), 0x6a9ac8), x - .45, 1.05, -1.9)); const d = mesh(new THREE.BoxGeometry(.8, 1.7, .05), 0x7aaad8); d.position.set(x, 1.0, -1.25); sc.add(d); sc.add(at(mesh(new THREE.SphereGeometry(.03, 6, 4), 0xc8ccd8), x + .3, 1.0, -1.22)); }
+  sc.add(at(mesh(new THREE.BoxGeometry(.05, 1.9, 1.3), 0x6a9ac8), .3, 1.05, -1.9));
+  sc.add(at(mesh(new THREE.BoxGeometry(1.8, .12, .55), 0xe8e4dc), 1.55, .85, -2.25)); for (const x of [1.1, 2.0]) { sc.add(at(mesh(new THREE.CylinderGeometry(.18, .14, .1, 10), 0xf4f4f8), x, .92, -2.2)); sc.add(at(mesh(new THREE.CylinderGeometry(.02, .02, .2, 6), 0xc8ccd8), x, 1.0, -2.42)); }
+  const mir = new THREE.Mesh(new THREE.PlaneGeometry(1.7, .9), new THREE.MeshPhongMaterial({ color: 0xc8e0f0, shininess: 90 })); mir.position.set(1.55, 1.65, -2.49); sc.add(mir); sc.add(at(mesh(new THREE.BoxGeometry(.35, .3, .2), 0xd8dce4), 2.75, 1.4, -2.4));
+  const door = mesh(new THREE.BoxGeometry(.95, 2.1, .06), 0x8a6a4a); door.position.set(-3.08, 1.05, .6); door.rotation.y = Math.PI / 2; sc.add(door); const sign = wetSign(); sign.position.set(.1, 0, -.4); sign.rotation.y = .4; sc.add(sign); puddle(sc, .1, -.2, .75);
+  const clk = new THREE.Mesh(new THREE.CircleGeometry(.18, 20), new THREE.MeshLambertMaterial({ map: ctex(128, 128, g => { g.fillStyle = '#fff'; g.beginPath(); g.arc(64, 64, 62, 0, 7); g.fill(); g.lineWidth = 7; g.strokeStyle = '#16121a'; g.stroke(); g.lineWidth = 6; g.beginPath(); g.moveTo(64, 64); g.lineTo(64, 104); g.moveTo(64, 64); g.lineTo(64, 20); g.stroke(); }) })); clk.position.set(-1.2, 2.55, -2.49); sc.add(clk);
+  return { sc, sign }; }
+function street() { const sc = new THREE.Scene(); window.__sc = sc; sc.background = new THREE.Color(0x8fd0ff); sc.fog = new THREE.Fog(0x8fd0ff, 16, 40); sc.add(new THREE.HemisphereLight(0xffffff, 0x9a9a9a, 1.6)); const k = new THREE.DirectionalLight(0xfff0dc, 1.8); k.position.set(3, 7, 5); k.castShadow = true; k.shadow.mapSize.set(2048, 2048); Object.assign(k.shadow.camera, { left: -6, right: 6, top: 6, bottom: -6 }); sc.add(k);
+  sc.add(at(mesh(new THREE.BoxGeometry(40, .1, 40), 0x4a4a54), 0, -.05, 0)); sc.add(at(mesh(new THREE.BoxGeometry(40, .14, 4), 0xc8c8cc), 0, .02, -1.0)); for (let i = -8; i < 9; i++) sc.add(at(mesh(new THREE.BoxGeometry(.9, .01, .12), 0xf2c230), i * 2, .01, 2.3));
+  const cols = [0xe8a07a, 0x7ab8e8, 0xf2d27a, 0xb88ad8, 0x8ad8a0, 0xe87a8a]; for (let i = 0; i < 8; i++) { const h = 3 + hash(i) * 4, b = mesh(new THREE.BoxGeometry(2.6, h, 2), cols[i % 6]); b.position.set(-9 + i * 2.7, h / 2, -4.2); sc.add(b); for (let r = 0; r < Math.floor(h / 1.1); r++) for (const dx of [-.6, .6]) sc.add(at(new THREE.Mesh(new THREE.PlaneGeometry(.5, .6), new THREE.MeshLambertMaterial({ color: 0x9ad8ff })), -9 + i * 2.7 + dx, .9 + r * 1.1, -3.19)); }
+  const bs = new THREE.Group(); bs.position.set(2.6, 0, -2.2); sc.add(bs); bs.add(at(mesh(new THREE.BoxGeometry(2.2, .08, 1), 0x3a6ad8), 0, 2.2, 0)); for (const x of [-1, 1]) bs.add(at(mesh(new THREE.BoxGeometry(.08, 2.2, .08), 0xc8ccd8), x, 1.1, .4)); bs.add(at(mesh(new THREE.BoxGeometry(1.6, .08, .4), 0x8a5a34), 0, .5, -.2));
+  const bsign = new THREE.Mesh(new THREE.PlaneGeometry(.6, .3), new THREE.MeshBasicMaterial({ map: ctex(120, 60, g => { g.fillStyle = '#3a6ad8'; g.fillRect(0, 0, 120, 60); g.fillStyle = '#fff'; g.font = '900 34px Nunito'; g.textAlign = 'center'; g.fillText('BUS', 60, 44); }) })); bsign.position.set(-1.0, 2.55, .45); bs.add(bsign); bs.add(at(mesh(new THREE.BoxGeometry(.06, 2.6, .06), 0xc8ccd8), -1.0, 1.3, .5));
+  for (const [x, z] of [[-4.5, -2.3], [6, -2.3]]) { sc.add(at(mesh(new THREE.CylinderGeometry(.1, .14, 1.4, 5), 0x7a4a2a), x, .7, z)); sc.add(at(mesh(lowpoly(new THREE.IcosahedronGeometry(.8, 0), .1, x * 10), 0x4aa84a), x, 1.9, z)); }
+  return { sc }; }
+// lying flat on your back (face up), legs kicking
+function layDown(p, x, z, ry = 0, y = .26) { p.position.set(x, y, z); p.rotation.set(-Math.PI / 2, 0, 0); p.rotation.order = 'YXZ'; p.rotation.y = ry; }
+const stars3 = sc => [...Array(5)].map(() => { const s = new THREE.Mesh(new THREE.OctahedronGeometry(.06, 0), new THREE.MeshBasicMaterial({ color: 0xffd23a })); sc.add(s); return s; });
+function lieCam(h, t, back = .75, up = 1.0, side = .25, fov = 46, sh = .01) { const hp = HP(h), a = V(hp.x - h.position.x, 0, hp.z - h.position.z).normalize(), r = V(-a.z, 0, a.x); camAt(hp.x + a.x * back + r.x * side, hp.y + up, hp.z + a.z * back + r.z * side, hp.x - a.x * .15, hp.y - .05, hp.z - a.z * .15, fov, t, sh); }
+function lieCamF(h, t, d = 1.4, up = 1.5, side = .2, fov = 44, sh = .01) { const hp = HP(h), a = V(hp.x - h.position.x, 0, hp.z - h.position.z).normalize(), r = V(-a.z, 0, a.x); camAt(hp.x - a.x * d + r.x * side, hp.y + up, hp.z - a.z * d + r.z * side, hp.x - a.x * .2, hp.y, hp.z - a.z * .2, fov, t, sh); }
+function spinStars(st, c, t) { st.forEach((s, i) => { const a = t * 4 + i / st.length * 6.28; s.position.set(c.x + Math.cos(a) * .35, c.y + .15 + Math.sin(t * 8 + i) * .03, c.z + Math.sin(a) * .35); s.rotation.y = t * 5; }); }
+
+// 0 "AHHHHHH MYYYYY CHEEEEKS!" - FIRST FRAME: already flat on the wet floor, legs in the air, stars spinning; overhead camera twists
+shot(0, 3.85, () => { const S = workBath(), h = kid(), st = stars3(S.sc); S.sc.add(h); layDown(h, .5, .3, .4);
+  return t => { h.setFace('scream'); pose(h, { armL: [-.4, 0, 1.4], armR: [-.4, 0, -1.4], kneeL: .3, kneeR: .1 }); h.userData.legs.forEach((l, i) => l.rotation.x = -.5 + Math.sin(t * 14 + i * 2) * .3); spinStars(st, HP(h), t); lieCamF(h, t, lerp(1.2, 1.5, ss(0, 3.8, t)), lerp(1.4, 1.7, ss(0, 3.8, t)), Math.sin(t * .8) * .3, 48, .02); }; });
+// 1 "It's 6 AM. You're at your fucking job." - dead-eyed at his desk, clock says 6:00
+shot(3.85, 7.0, () => { const S = office(), h = kid(); S.sc.add(h); h.position.set(0, SEAT + .02, -1.5); S.mug.position.set(-.35, .78, -1.0); return t => { h.setFace('tired'); pose(h, { armL: [-1.0, 0, .2], armR: [-1.0, 0, -.2], elbowL: -1.2, elbowR: -1.2, headTilt: Math.sin(t * .9) * .15 }); sitP(h); camAt(.35, 1.5, .5, 0, 1.3, -1.5, 40, t); }; });
+// 2 "You haven't had coffee. You haven't had breakfast. You haven't had a single good day since 2019."
+shot(7.0, 13.85, () => { const S = office(), h = kid(); S.sc.add(h); h.position.set(0, SEAT + .02, -1.5); const TC = L(7.62, 7.0), TB = L(9.08, 7.0), TD = L(12.06, 7.0);
+  return t => { S.mug.rotation.z = t > TC ? lerp(0, 2.2, ss(TC, TC + .3, t)) : 0; S.mug.position.y = .78 + (t > TC ? Math.sin(ss(TC, TC + .3, t) * Math.PI) * .1 : 0); h.setFace(t < TB ? 'tired' : t < TD ? 'worried' : 'tired'); pose(h, { armL: [-1.0, 0, .2], armR: t > TB && t < TD ? [-.6, 0, -.6] : [-1.0, 0, -.2], elbowL: -1.2, elbowR: -1.2 }); sitP(h);
+    const k = ss(0, 6.8, t); camAt(lerp(.6, .2, k), 1.5, lerp(.9, .1, k), 0, 1.35, -1.5, 40, t); }; });
+// 3 "You walk into the bathroom... and there it is." - he shuffles in through the door
+shot(13.85, 16.95, () => { const S = workBath(), h = kid(); S.sc.add(h); return t => { const k = clamp(t / 2.0); h.position.set(lerp(-2.8, -1.5, k), 0, lerp(.6, .5, k)); h.rotation.y = k < 1 ? Math.PI / 2 : 1.2; h.setFace(k < 1 ? 'tired' : 'shock'); pose(h, { walk: k < 1 ? t * 6 : 0 }); camAt(-.5, 1.5, 2.5, -2.0, 1.0, .4, 46, t); }; });
+// 4 "A little yellow sign. CAUTION. WET FLOOR." - dramatic low dolly into the sign glinting in its puddle
+shot(16.95, 21.6, () => { const S = workBath(); return t => { const k = ss(0, 4.6, t); camAt(lerp(.9, .35, k), lerp(.35, .3, k), lerp(1.8, .45, k), .1, .28, -.4, lerp(46, 40, k), t, .006); }; });
+// 5 "And you, being a funkin' genius, decide you're too smart for the sign." - taps his temple
+shot(21.6, 26.85, () => { const S = workBath(), h = kid(); S.sc.add(h); h.position.set(-1.2, 0, .5); h.rotation.y = 1.0; const TS = L(24.28, 21.6);
+  return t => { h.setFace(t < TS ? 'smug' : 'happy'); pose(h, { armR: t > TS ? [-2.4, 0, -.3] : [0, 0, -.12], elbowR: t > TS ? -1.8 : -.22 }); camAt(-.2, 1.5, 1.9, -1.0, 1.25, .2, 42, t); }; });
+// 6 "You tiptoe around it. Like a fucking ninja." - tiptoe arc around the sign, ninja hands
+shot(26.85, 30.6, () => { const S = workBath(), h = kid(); S.sc.add(h); const TN = L(28.52, 26.85);
+  return t => { const k = clamp(t / 3.6), a = Math.PI * .95 + k * 1.3; h.position.set(.1 + Math.cos(a) * 1.0, .04 + Math.abs(Math.sin(t * 5)) * .03, -.4 + Math.sin(a) * .9); h.rotation.y = -a; h.setFace(t > TN ? 'mad' : 'smug');
+    pose(h, { walk: t * 4, armL: t > TN ? [-1.4, 0, .9] : [-.6, 0, .9], armR: t > TN ? [-1.2, 0, -.2] : [-.6, 0, -.9], elbowL: -1.4, elbowR: -.4, kneeL: .4, kneeR: .4 }); camAt(.2, 2.4, 2.2, .1, .5, -.4, 48, t); }; });
+// 7 "One step. Two steps. Three-" - close on the sneakers, squeaking on wet tile
+shot(30.6, 34.72, () => { const S = workBath(), h = kid(); S.sc.add(h); h.position.set(.95, 0, -.1); h.rotation.y = -1.6; const ST = [31.0, 32.42, 33.43].map(x => L(x, 30.6));
+  return t => { const n = ST.filter(x => t > x).length, step = ST.reduce((a, x) => a + ss(x, x + .25, t), 0); h.position.x = .95 - step * .22; h.setFace('worried'); pose(h, { walk: step * Math.PI, armL: [-.6, 0, .9], armR: [-.6, 0, -.9], kneeL: .3, kneeR: .3 }); camAt(h.position.x + .1, .3, .9, h.position.x - .1, .12, -.1, 40, t, .004); }; });
+// 8 "Your feet go up. Your soul leaves your body." - slow-mo: horizontal in mid-air, a ghost of him floats up out
+shot(34.72, 38.05, () => { const S = workBath(), h = kid(), soul = kid(); S.sc.add(h, soul); soul.traverse(o => { if (o.material) { o.material = o.material.clone(); o.material.transparent = true; o.material.opacity = .45; o.material.color && o.material.color.lerp(new THREE.Color(0xffffff), .7); o.castShadow = false; } });
+  const drops = [...Array(14)].map(() => { const d = mesh(new THREE.SphereGeometry(.035, 6, 5), 0x8ad0ff); S.sc.add(d); return d; }); const TS = L(36.08, 34.72);
+  return t => { const k = ss(0, .6, t); h.position.set(.9, .3 + k * .9, -.2); h.rotation.set(-k * 1.45, 1.4, 0); h.rotation.order = 'YXZ'; h.setFace('shock'); pose(h, { armL: [-2.4, 0, .6], armR: [-2.4, 0, -.6], snap: true }); h.userData.legs.forEach(l => l.rotation.x = -.4);
+    const q = Math.max(0, t - TS); soul.visible = q > 0; soul.position.set(.9, 1.2 + q * .9, -.2); soul.rotation.copy(h.rotation); soul.setFace('happy'); pose(soul, { armL: [-2.6, 0, .8], armR: [-2.6, 0, -.8], snap: true });
+    drops.forEach((d, i) => { const a = hash(i) * 6.28, r = clamp(t * .8) * (.3 + hash(i + 2) * .7); d.position.set(.1 + Math.cos(a) * r, .05 + Math.sin(clamp(t * .8) * Math.PI) * (.3 + hash(i + 4) * .5), -.2 + Math.sin(a) * r); });
+    camAt(.4, 1.5, 3.4, .2, 1.35 + q * .4, -.2, 52, t, .004); }; });
+// 9 "You land straight on your ass." - BAM: the splash, camera shakes
+shot(38.05, 40.6, () => { const S = workBath(), h = kid(), st = stars3(S.sc), drops = [...Array(24)].map(() => { const d = mesh(new THREE.SphereGeometry(.04, 6, 5), 0x8ad0ff); S.sc.add(d); return d; }); S.sc.add(h); const TL = L(39.52, 38.05);
+  return t => { const f = ss(0, TL, t); h.position.set(.1, lerp(1.3, .05, f * f), -.2); h.rotation.set(0, 1.4, 0); h.setFace(t < TL ? 'shock' : 'scream'); pose(h, { armL: [-2.6, 0, .6], armR: [-2.6, 0, -.6], snap: true }); sitP(h); h.userData.legs.forEach(l => { l.rotation.x = -1.6; l.userData.knee.rotation.x = .1; }); h.userData.body.position.y = -.55;
+    const q = Math.max(0, t - TL); drops.forEach((d, i) => { const a = hash(i) * 6.28, s = .6 + hash(i + 3) * 1.2; d.visible = q > 0 && q < 1; d.position.set(.1 + Math.cos(a) * q * s, Math.max(.02, q * 2.5 * (1 + hash(i)) - q * q * 6), -.2 + Math.sin(a) * q * s); }); if (q > 0) spinStars(st, HP(h), t); else st.forEach(s => s.visible = false);
+    const sh = q > 0 ? .08 * Math.exp(-q * 4) : 0; camAt(1.6 + noise1(t * 40) * sh, .7 + noise1(t * 41) * sh, 1.6, .1, .55, -.2, 46, t, .004); }; });
+// 10 "AHHHHHH! MY FUCKING ASS HURTS!" - face-up scream, camera spirals down onto him
+shot(40.6, 43.85, () => { const S = workBath(), h = kid(), st = stars3(S.sc); S.sc.add(h); layDown(h, .1, .1, .9);
+  return t => { h.setFace('scream'); pose(h, { armL: [-.3, 0, 1.5], armR: [-.3, 0, -1.5] }); h.userData.legs.forEach((l, i) => l.rotation.x = -.5 + Math.sin(t * 16 + i * 2) * .35); spinStars(st, HP(h), t); lieCamF(h, t, lerp(1.6, 1.2, ss(0, 3, t)), lerp(1.8, 1.4, ss(0, 3, t)), -.25, 46, .025); }; });
+// 11 "So you limp to your boss. My ass hurts. He gives you a hundred dollars."
+shot(43.85, 49.65, () => { const S = office(), h = kid(), b = dressBoss(person(BOSS)); S.sc.add(h, b); bossSit(S, b); const hb = holdBill(S.sc, b), TG = L(47.58, 43.85);
+  return t => { const k = clamp(t / 1.6); h.position.set(lerp(-1.6, -.25, k), 0, lerp(.9, -.05, k)); h.rotation.y = k < 1 ? 2.2 : Math.PI + .3; tf(h, 'worried'); pose(h, { walk: k < 1 ? t * 5 : 0, lean: .25, armL: [.7, 0, .3], armR: [.7, 0, -.3], elbowL: -.6, elbowR: -.6, kneeL: k < 1 ? .3 + Math.sin(t * 5) * .2 : 0 });
+    b.setFace(t < TG ? 'worried' : 'calm'); pose(b, { armR: t > TG ? [-1.4, 0, -.1] : [0, 0, -.12] }); sitP(b); hb(); camAt(1.4, 1.6, 1.4, -.1, 1.15, -.8, 46, t); }; });
+// 12 "You tell your coworkers. My ass hurts. They give you a hundred dollars." - three sad faces, three bills
+shot(49.65, 55.3, () => { const S = office(), h = kid(), cw = ['co1', 'co2', 'co3'].map(npc); S.sc.add(h, ...cw); const hbs = cw.map(p => holdBill(S.sc, p)), TG = L(53.38, 49.65);
+  cw.forEach((p, i) => { p.position.set(-1.0 + i * .9, 0, -.0 + (i === 1 ? -.3 : 0)); p.rotation.y = 0; }); h.position.set(1.1, 0, .8); h.rotation.y = -2.1;
+  return t => { tf(h, 'worried'); pose(h, { lean: .2, armL: [.7, 0, .3], armR: [.7, 0, -.3], elbowL: -.6, elbowR: -.6 }); cw.forEach((p, i) => { p.setFace(t < TG - .3 ? 'worried' : 'tired'); pose(p, { armR: t > TG + i * .12 ? [-1.4, 0, -.1] : [0, 0, -.12] }); hbs[i](); });
+    camAt(.7, 1.6, 3.8, .25, 1.15, .1, 46, t); }; });
+// 13a-e the janitor, the mailman, the pizza guy, grandma, a random dude at the bus stop - each one slaps a bill in his hand
+const PARADE = [['janitor', 55.3, 56.6, 'bath'], ['mailman', 56.6, 57.65, 'street'], ['pizza', 57.65, 58.85, 'street'], ['grandma', 58.85, 60.1, 'street'], ['dude', 60.1, 62.75, 'street']];
+PARADE.forEach(([who, a, b, set], n) => shot(a, b, () => { const S = set === 'bath' ? workBath() : street(), p = npc(who), h = kid(); S.sc.add(p, h); const hb = holdBill(S.sc, p);
+  let mop = null; if (who === 'janitor') { mop = new THREE.Group(); mop.add(at(mesh(new THREE.CylinderGeometry(.02, .02, 1.3, 5), 0x8a5a34), 0, .65, 0)); mop.add(at(mesh(new THREE.CylinderGeometry(.14, .1, .14, 8), 0xe8e4d0), 0, .05, 0)); S.sc.add(mop); }
+  let box = null; if (who === 'pizza') { box = mesh(new THREE.BoxGeometry(.45, .07, .45), 0xd8b87a); S.sc.add(box); }
+  const px = set === 'bath' ? .9 : (who === 'dude' ? 2.4 : .7), pz = set === 'bath' ? .5 : (who === 'dude' ? -1.4 : .2); p.position.set(px, who === 'dude' ? 0 : 0, pz); p.rotation.y = -.8; h.position.set(px - 1.0, 0, pz + .4); h.rotation.y = .9;
+  return t => { p.setFace(t < .35 ? 'worried' : 'calm'); pose(p, { armR: t > .3 ? [-1.4, 0, -.1] : [0, 0, -.12], armL: who === 'pizza' ? [-1.2, 0, .3] : [0, 0, .12], elbowL: who === 'pizza' ? -1.3 : undefined }); hb();
+    if (mop) mop.position.copy(handPos(p, 0)).add(V(0, -.6, 0)); if (box) box.position.copy(handPos(p, 0)).add(V(.15, .05, .1));
+    tf(h, 'worried'); pose(h, { lean: .2, armL: [.7, 0, .3], armR: [.7, 0, -.3], elbowL: -.6, elbowR: -.6 }); h.updateMatrixWorld(true);
+    const mid = p.position.clone().add(h.position).multiplyScalar(.5); camAt(mid.x + (n % 2 ? -.9 : .9), 1.5, mid.z + 2.6, mid.x, 1.1, mid.z, 44, t); }; }));
+// 14 "YOU TELL THE WHOLE FUCKING WORLD YOUR ASS HURTS!" - standing on top of the planet with a megaphone
+shot(62.75, 66.85, () => { const sc = new THREE.Scene(); window.__sc = sc; sc.background = new THREE.Color(0x0e1230); sc.add(new THREE.HemisphereLight(0xffffff, 0x445588, 1.4)); const k = new THREE.DirectionalLight(0xfff0dc, 1.8); k.position.set(4, 6, 5); sc.add(k);
+  const earth = new THREE.Group(); sc.add(earth); earth.add(mesh(lowpoly(new THREE.IcosahedronGeometry(3, 2), .08, 5), 0x3a7ad8)); for (let i = 0; i < 14; i++) { const c = mesh(lowpoly(new THREE.IcosahedronGeometry(.6 + hash(i) * .7, 1), .1, i), 0x4ab85a); const a = hash(i + 2) * 6.28, e = (hash(i + 4) - .5) * 2.6; c.position.set(Math.cos(a) * Math.cos(e) * 2.75, Math.sin(e) * 2.75, Math.sin(a) * Math.cos(e) * 2.75); c.scale.set(1, .35, 1); c.lookAt(0, 0, 0); c.rotateX(Math.PI / 2); earth.add(c); }
+  for (let i = 0; i < 160; i++) { const s = new THREE.Mesh(new THREE.SphereGeometry(.03, 4, 3), new THREE.MeshBasicMaterial({ color: 0xffffff })); const a = hash(i) * 6.28, e = (hash(i + 9) - .3) * 2; s.position.set(Math.cos(a) * 20, Math.sin(e) * 12, Math.sin(a) * 20 - 6); sc.add(s); }
+  const h = kid(), mega = new THREE.Group(); mega.add(mesh(new THREE.CylinderGeometry(.14, .05, .32, 10, 1, true), 0xf4f4f0)); mega.add(at(mesh(new THREE.CylinderGeometry(.03, .03, .14, 6), 0xe8323a), 0, -.18, 0)); sc.add(h, mega); h.position.set(0, 3.0, 0);
+  return t => { earth.rotation.y = t * .25; h.setFace('scream'); pose(h, { armR: [-1.6, 0, -.1], elbowR: -.4, armL: [-2.6, 0, .7] }); const hp = handPos(h, 1); mega.position.copy(hp).add(V(0, .05, .2)); mega.rotation.set(Math.PI / 2, 0, 0);
+    const a = t * .35; camAt(Math.sin(a) * 4.5, 4.2 - t * .2, Math.cos(a) * 4.5 + 1.2, 0, 3.6, 0, 50, t, .02); }; });
+// 15 "And every single one of them feels so bad... they give you a hundred dollars." - a crowd, all sad, then it RAINS hundreds
+shot(66.85, 73.95, () => { const S = street(), h = kid(), crowd = [...Array(10)].map((_, i) => npc(['janitor', 'mailman', 'pizza', 'grandma', 'dude', 'co1', 'co2', 'co3'][i % 8])), bills = [...Array(60)].map(() => { const b = bill(); S.sc.add(b); return b; }); S.sc.add(h, ...crowd); const TR = L(71.4, 66.85);
+  crowd.forEach((p, i) => { const a = -1.2 + i / 9 * 2.4, r = 2.2 + (i % 2) * .7; p.position.set(Math.sin(a) * r, 0, -Math.cos(a) * r + .6); p.lookAt(0, 0, .6); }); h.position.set(0, 0, .6); h.rotation.y = 0;
+  return t => { crowd.forEach((p, i) => { p.setFace(t < TR ? (i % 3 ? 'worried' : 'tired') : 'calm'); pose(p, { armR: t > TR ? [-2.4, 0, -.2] : [0, 0, -.12] }); });
+    h.setFace(t < TR ? 'worried' : 'happy'); pose(h, { armL: t > TR ? [-2.7, 0, .6] : [.7, 0, .3], armR: t > TR ? [-2.7, 0, -.6] : [.7, 0, -.3], elbowL: -.4, elbowR: -.4 });
+    bills.forEach((b, i) => { const q = t - TR - hash(i) * 1.2; b.visible = q > 0; const y = 3.5 - q * 1.4; b.position.set((hash(i + 2) - .5) * 3 + Math.sin(q * 3 + i) * .2, Math.max(.01, y), .6 + (hash(i + 5) - .5) * 2.4); b.rotation.set(y > .02 ? q * 4 + i : -Math.PI / 2, i, y > .02 ? q * 3 : 0); });
+    const k = ss(0, 7, t); camAt(lerp(.4, 0, k), lerp(1.7, 3.2, k), lerp(3.6, 5.2, k), 0, 1.0, -.2, 46, t); }; });
+// 16 "By Friday you have forty thousand dollars and a bruise shaped like Texas." - lounging on a mountain of cash
+shot(73.95, 80.15, () => { const sc = roomLP(0xf4e4c8, 0xb88a5a, 0xf4e4c8), h = kid(); const pile = new THREE.Group(); sc.add(pile); for (let i = 0; i < 120; i++) { const r = Math.sqrt(hash(i)) * 1.2, a = hash(i + 3) * 6.28, y = (1.2 - r) * .55 + hash(i + 7) * .05; const b = mesh(new THREE.BoxGeometry(.3, .07, .14), i % 5 ? 0x8ac87a : 0x7ab86a); b.position.set(Math.cos(a) * r, y, Math.sin(a) * r - .4); b.rotation.y = hash(i + 9) * 3; pile.add(b); }
+  sc.add(h); const st = [...Array(14)].map(() => { const b = bill(.8); sc.add(b); return b; });
+  return t => { h.setFace('happy'); h.position.set(0, .5, -.4); h.rotation.set(-.9, 0, 0); h.rotation.order = 'YXZ'; pose(h, { armL: [-2.7, 0, .7], armR: [-2.7, 0, -.7], elbowL: -1.6, elbowR: -1.6 }); h.userData.legs.forEach(l => { l.rotation.x = -.6; l.userData.knee.rotation.x = .9; });
+    st.forEach((b, i) => { const q = (t * .5 + hash(i)) % 1; b.position.set((hash(i + 1) - .5) * 2, 2.4 - q * 2, -.4 + (hash(i + 4) - .5) * 1.5); b.rotation.set(t * 2 + i, i, t); });
+    const k = ss(0, 6, t); camAt(lerp(1.4, .9, k), lerp(1.6, 1.4, k), lerp(2.4, 1.9, k), 0, .8, -.4, 46, t); }; });
+// 17 "So the next morning, you walk into the bathroom. You see the wet floor sign..." - he sees it... and smiles
+shot(80.15, 85.95, () => { const S = workBath(), h = kid(); S.sc.add(h); const TS = L(83.55, 80.15);
+  return t => { const k = clamp(t / 2.2); h.position.set(lerp(-2.8, -1.4, k), 0, lerp(.6, .5, k)); h.rotation.y = k < 1 ? Math.PI / 2 : 1.25; h.setFace(t < TS ? 'calm' : 'smug'); pose(h, { walk: k < 1 ? t * 6 : 0 });
+    const z = ss(TS, TS + 2, t); camAt(lerp(-.2, -.9, z), lerp(1.5, 1.4, z), lerp(2.6, 1.6, z), lerp(-1.1, -1.4, z), lerp(1.0, 1.3, z), lerp(-.1, .5, z), 46, t); }; });
+// 18 "...and you run straight at it." - full sprint, feet first, BAM
+shot(85.95, 88.55, () => { const S = workBath(), h = kid(); S.sc.add(h); const TJ = L(87.75, 85.95);
+  return t => { const k = clamp(t / TJ); h.position.set(lerp(-2.4, -.2, k), 0, lerp(.6, -.2, k)); h.rotation.y = 1.25; h.setFace('happy'); pose(h, { walk: t * 18, lean: .35, armL: [-1.0, 0, .3], armR: [1.0, 0, -.3] });
+    if (t > TJ) { const q = t - TJ; h.position.x = -.2 + q * 1.2; h.position.y = Math.max(0, .5 * Math.sin(Math.min(q * 4, Math.PI))); h.rotation.order = 'YXZ'; h.rotation.x = -Math.min(1.4, q * 5); pose(h, { armL: [-2.6, 0, .6], armR: [-2.6, 0, -.6], snap: true }); h.setFace('scream'); }
+    camAt(.6, .8, 2.4, -.4, .7, -.2, 48, t, t > TJ ? .03 : .01); }; });
+// 19 "Genius." - flat on the wet floor, thumbs up, grinning
+shot(88.55, 999, () => { const S = workBath(), h = kid(), st = stars3(S.sc); S.sc.add(h); layDown(h, .4, .1, 1.3);
+  return t => { h.setFace('happy'); pose(h, { armL: [-.3, 0, 1.4], armR: [-3.0, 0, -.2], elbowR: -1.4 }); h.userData.legs.forEach(l => l.rotation.x = -.2); spinStars(st, HP(h), t); lieCamF(h, t, 1.4, 1.6, .3, 44, .004); }; });
 
 // ===================== RENDER =====================
 window.__BLEEPS = [];
 const built = new Map();
+function bruiseCard(t, t0, t1) { if (t < t0 || t > t1) return; const k = pop(t - t0); og.save(); og.translate(W * .5, H * .3); og.scale(k, k); og.rotate(-.04); og.fillStyle = '#fff'; og.strokeStyle = '#16121a'; og.lineWidth = 12; og.beginPath(); og.roundRect(-300, -220, 600, 420, 40); og.fill(); og.stroke();
+  const P = [[.25, 0], [.45, 0], [.45, .3], [.7, .35], [.95, .38], [1, .6], [.95, .72], [.75, .85], [.62, 1], [.55, .95], [.45, .78], [.35, .7], [.25, .55], [.15, .6], [0, .45], [.25, .45]];
+  og.fillStyle = '#8a4ab8'; og.beginPath(); P.forEach(([x, y], i) => { const X = -170 + x * 340, Y = -190 + y * 280; i ? og.lineTo(X, Y) : og.moveTo(X, Y); }); og.closePath(); og.fill(); og.fillStyle = '#5a2a88'; og.globalAlpha = .5; og.beginPath(); og.arc(10, -40, 60, 0, 7); og.fill(); og.globalAlpha = 1;
+  og.fillStyle = '#16121a'; og.font = '900 54px Nunito'; og.textAlign = 'center'; og.fillText('THE BRUISE', 0, 160); og.restore(); }
 function renderAt(t) { window.__T = t; let i = SH.findIndex((s, k) => t >= s.a && (k + 1 >= SH.length || t < SH[k + 1].a)); if (i < 0) i = 0; const s = SH[i];
   if (!built.has(i)) { for (const k of [...built.keys()]) if (k < i - 1) built.delete(k); const up = s.build(); built.set(i, { up, sc: window.__sc }); }
   const B = built.get(i); B.up(t - s.a); renderer.render(B.sc, cam); og.drawImage(renderer.domElement, 0, 0);
-  bubble(t, F(0.05), F(3.0), 'first job interview', W / 2, H * .17, '#ffd23a'); bang(t, F(4.62), 'POP!', '#ffffff', W * .66, H * .3, .1); bang(t, F(6.26), 'BACKWARDS', '#ff8a3a', W / 2, H * .22, -.06);
-  bubble(t, F(22.59), F(23.5), 'FIRED: sleeping', W / 2, H * .17, '#ff8a8a'); bubble(t, F(24.04), F(25.0), 'FIRED: stealing', W / 2, H * .17, '#ff8a8a'); bubble(t, F(26.4), F(28.3), 'FIRED: BOTH', W / 2, H * .17, '#ff4a4a');
-  bubble(t, F(31.0), F(32.4), 'good sign?', W * .6, H * .17, '#ffffff');
-  bang(t, F(34.49), 'WAKING UP', '#ffd23a', W / 2, H * .18, -.05); bang(t, F(35.63), 'MONDAYS', '#ffd23a', W / 2, H * .18, .05); bang(t, F(36.71), 'TUESDAYS', '#ffd23a', W / 2, H * .18, -.05); bang(t, F(39.67), 'WORK', '#ff4a4a', W / 2, H * .18, .06);
-  notif(t, F(43.3), F(47.9), 'MOM', 'get a job or ur room is a gym');
-  bang(t, F(53.06), 'YOUR JOB', '#ff4a4a', W / 2, H * .2, -.05);
-  bang(t, F(60.55), 'F*** NO!', '#ff3030', W / 2, H * .24, -.06); bang(t, F(61.85), 'NOT HIRED', '#ffffff', W / 2, H * .2, .04); bang(t, F(66.4), 'SLAM!', '#ffd23a', W / 2, H * .2, -.05);
-  bang(t, F(75.17), 'CONGRATS', '#ffd23a', W / 2, H * .18, -.04); bubble(t, F(77.22), F(78.5) + 2, "I'M THE BOSS", W * .5, H * .17, '#ffd23a');
+  bubble(t, F(4.05), F(6.9), '6:00 AM', W / 2, H * .17, '#ffd23a');
+  bubble(t, F(7.62), F(8.95), 'no coffee', W / 2, H * .17, '#ffffff'); bubble(t, F(9.08), F(10.9), 'no breakfast', W / 2, H * .17, '#ffffff'); bubble(t, F(11.19), F(13.8), 'last good day: 2019', W / 2, H * .17, '#ffffff');
+  bang(t, F(19.04), 'CAUTION', '#ffd21a', W / 2, H * .2, -.05); bang(t, F(20.04), 'WET FLOOR', '#ffd21a', W / 2, H * .2, .05);
+  bang(t, F(29.48), 'NINJA', '#ffffff', W / 2, H * .2, -.06); bang(t, F(31.0), '1', '#ffffff', W / 2, H * .2, 0); bang(t, F(32.42), '2', '#ffffff', W / 2, H * .2, 0); bang(t, F(33.43), '3...', '#ff4a4a', W / 2, H * .2, 0);
+  bang(t, F(39.52), 'BAM!', '#ff4a4a', W / 2, H * .24, -.08);
+  for (const [w, x] of [[48.03, 0], [53.83, 0], [55.79, 0], [56.76, 0], [58.25, 0], [59.05, 0], [61.76, 0]]) bang(t, F(w), '+$100', '#3ab86a', W / 2, H * .2, -.04);
+  bubble(t, F(75.03), F(77.0), '$40,000', W / 2, H * .17, '#3ab86a'); bruiseCard(t, F(77.2), F(80.1));
+  bang(t, F(88.61), 'GENIUS', '#ffd23a', W / 2, H * .2, -.05);
   caption(t); }
 window.renderTime = t => { renderAt(t); return out.toDataURL('image/jpeg', .9); };
 window.renderFrame = i => { renderAt(i / FPS); return out.toDataURL('image/jpeg', .92); };
